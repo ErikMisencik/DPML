@@ -173,17 +173,18 @@ class PaperIoEnv:
             x, y = cell
             self.grid[x, y] = player_id
             captured_area += 1  # Increment captured territory count
-        self.capture_area(player_id)
+        captured_area += self.capture_area(player_id)
         player['trail'] = []
 
         # Reward based on how much area was captured
         return captured_area
 
     def capture_area(self, player_id):
-        # Implement area capture logic
+        # Implement area capture logic and track territories lost by other players
         player_cells = (self.grid == player_id) | (self.grid == -player_id)
         mask = ~player_cells
         filled = np.zeros_like(self.grid, dtype=bool)
+        territory_lost = [0] * self.num_players  # Track territory lost for each player
 
         def flood_fill(start_x, start_y):
             stack = [(start_x, start_y)]
@@ -207,5 +208,18 @@ class PaperIoEnv:
             flood_fill(self.grid_size - 1, y)
 
         enclosed_area = ~filled & mask
+
+        # Assign territory to the player and subtract it from others
+        for x, y in zip(*np.where(enclosed_area)):
+            old_player_id = self.grid[x, y]
+            if old_player_id > 0 and old_player_id != player_id:
+                # Subtract territory from the original owner
+                territory_lost[old_player_id - 1] += 1
         self.grid[enclosed_area] = player_id
 
+        # Penalize players who lost territory
+        for i in range(self.num_players):
+            if i != player_id - 1 and self.alive[i]:
+                self.players[i]['territory'] -= territory_lost[i]
+
+        return np.sum(enclosed_area)
