@@ -1,6 +1,6 @@
 import cv2
 
-from examples.paper_io.test import PaperIoEnv
+from examples.paper_io.Paper_io_develop import PaperIoEnv
 # from examples.paper_io.Paper_io import PaperIoEnv
 
 
