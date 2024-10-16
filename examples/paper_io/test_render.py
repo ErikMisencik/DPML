@@ -12,12 +12,15 @@ def main():
         actions = []
         for i in range(env.num_players):
             if env.alive[i]:
-                actions.append(env.action_space.sample())
+                # Sample an action from the player's action space
+                actions.append(env.action_spaces[i].sample())
             else:
                 actions.append(None)  # Placeholder for eliminated players
 
         obs, rewards, done, info = env.step(actions)
         env.render()
+
+        cv2.waitKey(1)  # Add a short delay to allow the rendering window to update
 
     cv2.destroyAllWindows()
 

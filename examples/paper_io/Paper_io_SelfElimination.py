@@ -4,24 +4,18 @@ from gym.spaces import Box, Discrete
 
 class PaperIoEnv:
     def __init__(self, grid_size=50, num_players=2):
-        self.grid_size = grid_size  # Size of the game grid
+        self.grid_size = grid_size  # Reduced size of the game grid
         self.num_players = num_players
         self.reset()
 
-        # Define observation and action spaces for each player
-        self.observation_spaces = [
-            Box(
-                low=-self.num_players,
-                high=self.num_players,
-                shape=(self.grid_size, self.grid_size),
-                dtype=np.int8
-            )
-            for _ in range(self.num_players)
-        ]
-        self.action_spaces = [Discrete(4) for _ in range(self.num_players)]  # Up, Down, Left, Right
+        # Define observation and action spaces
+        self.observation_space = Box(
+            low=-self.num_players, high=self.num_players, shape=(grid_size, grid_size), dtype=np.int8
+        )
+        self.action_space = Discrete(4)  # Up, Down, Left, Right
 
     def reset(self):
-        # Initialize the grid and player states
+        # 0: empty, positive integers: player territory, negative integers: player trail
         self.grid = np.zeros((self.grid_size, self.grid_size), dtype=np.int8)
         self.players = []
         self.alive = [True] * self.num_players
@@ -42,9 +36,7 @@ class PaperIoEnv:
             })
             self.grid[x, y] = player_id  # Mark the territory
 
-        # Return observations for each player
-        observations = [self.get_observation_for_player(i) for i in range(self.num_players)]
-        return observations
+        return self.get_observation()
 
     def step(self, actions):
         # Actions: List of actions for each player
@@ -57,7 +49,7 @@ class PaperIoEnv:
 
         # Move players
         for i, action in enumerate(actions):
-            if not self.alive[i] or action is None:
+            if not self.alive[i]:
                 continue  # Skip if the player is eliminated
 
             player = self.players[i]
@@ -79,16 +71,21 @@ class PaperIoEnv:
             cell_value = self.grid[new_x, new_y]
 
             # Check for collisions
-            if cell_value == 0 or cell_value == player_id or cell_value == -player_id:
-                # Empty cell, own territory, or own trail
+            if cell_value == 0 or cell_value == player_id:
+                # Empty cell or own territory
                 player['position'] = new_position
-                if cell_value == 0 or cell_value == -player_id:
+                if cell_value == 0:
                     # Leaving a trail
                     self.grid[new_x, new_y] = -player_id
                     player['trail'].append(new_position)
                 elif cell_value == player_id and player['trail']:
                     # Returning to own territory with a trail; capture area
                     self.convert_trail_to_territory(player_id)
+            elif cell_value == -player_id:
+                # Stepped on own trail; eliminate self
+                self.alive[i] = False
+                eliminations.append(i)
+                rewards[i] -= 1  # Penalize the eliminated player
             else:
                 # Collision with another player's trail or territory
                 if cell_value < 0:
@@ -116,16 +113,14 @@ class PaperIoEnv:
             # Remove player's territory from the grid
             self.grid[self.grid == player['id']] = 0
 
-        # Prepare the observations per player
-        observations = [self.get_observation_for_player(i) for i in range(self.num_players)]
-        rewards = [rewards[i] for i in range(self.num_players)]
-        infos = [{} for _ in range(self.num_players)]
+        # Prepare the observation
+        observation = self.get_observation()
 
         # Check if the game is over
         if sum(self.alive) <= 1:
             done = True
 
-        return observations, rewards, done, infos
+        return observation, rewards, done, info
 
     def convert_trail_to_territory(self, player_id):
         player = self.players[player_id - 1]
@@ -192,8 +187,8 @@ class PaperIoEnv:
             if not np.any(self.grid == other_player_id):
                 self.alive[idx] = False
 
-    def get_observation_for_player(self, player_idx):
-        # For now, return the full grid
+    def get_observation(self):
+        # Return a copy of the grid as the observation
         return self.grid.copy()
 
     def render(self):
