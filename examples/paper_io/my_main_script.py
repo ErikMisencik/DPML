@@ -19,5 +19,4 @@ match_list = [[1, 2]]
 policy_types = {1: "ppo", 2: "random"}
 
 # Train with this configuration
-arena.kickoff(match_list, policy_types, num_games=15000, render=True, scale=True)
-
+arena.kickoff(match_list, policy_types, 15000, render=True, scale=True)

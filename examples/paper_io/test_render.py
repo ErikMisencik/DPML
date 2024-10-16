@@ -1,6 +1,7 @@
 import cv2
 
 from examples.paper_io.test import PaperIoEnv
+# from examples.paper_io.Paper_io import PaperIoEnv
 
 
 def main():
@@ -14,6 +15,7 @@ def main():
             if env.alive[i]:
                 # Sample an action from the player's action space
                 actions.append(env.action_spaces[i].sample())
+              # actions.append(env.action_space.sample())
             else:
                 actions.append(None)  # Placeholder for eliminated players
 
