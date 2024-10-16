@@ -1,10 +1,10 @@
-# test_render.py
 import cv2
-from examples.paper_io.Paper_io import PaperIoEnv
-# from make_env import make_env
+
+from examples.paper_io.test import PaperIoEnv
+
 
 def main():
-    env = PaperIoEnv()
+    env = PaperIoEnv(num_players=2)
     obs = env.reset()
 
     done = False

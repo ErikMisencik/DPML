@@ -3,13 +3,15 @@ import cv2
 from gym.spaces import Box, Discrete
 
 class PaperIoEnv:
-    def __init__(self, grid_size=100, num_players=2):
-        self.grid_size = grid_size  # Size of the game grid
+    def __init__(self, grid_size=70, num_players=2):
+        self.grid_size = grid_size  # Reduced size of the game grid
         self.num_players = num_players
         self.reset()
 
         # Define observation and action spaces
-        self.observation_space = Box(low=-self.num_players, high=self.num_players, shape=(grid_size, grid_size), dtype=np.int8)
+        self.observation_space = Box(
+            low=-self.num_players, high=self.num_players, shape=(grid_size, grid_size), dtype=np.int8
+        )
         self.action_space = Discrete(4)  # Up, Down, Left, Right
 
     def reset(self):
@@ -21,8 +23,8 @@ class PaperIoEnv:
         # Initialize players at different positions
         for i in range(self.num_players):
             while True:
-                x = np.random.randint(10, self.grid_size - 10)
-                y = np.random.randint(10, self.grid_size - 10)
+                x = np.random.randint(5, self.grid_size - 5)
+                y = np.random.randint(5, self.grid_size - 5)
                 if self.grid[x, y] == 0:
                     break
             position = (x, y)
@@ -98,10 +100,6 @@ class PaperIoEnv:
                 self.grid[new_x, new_y] = -player_id
                 player['trail'].append(new_position)
 
-                # Optional: Eliminate self if you don't want players to move into others' territories
-                # self.alive[i] = False
-                # rewards[i] -= 1
-
         # After all movements, check if any players have been eliminated and remove their trails
         for idx in eliminations:
             player = self.players[idx]
@@ -110,6 +108,8 @@ class PaperIoEnv:
                 x, y = trail_cell
                 self.grid[x, y] = 0
             player['trail'] = []
+            # Remove player's territory from the grid
+            self.grid[self.grid == player['id']] = 0
 
         # Prepare the observation
         observation = self.get_observation()
@@ -144,16 +144,20 @@ class PaperIoEnv:
         # Flood fill from the boundaries on the inverted mask
         filled = np.zeros_like(self.grid, dtype=bool)
 
-        def flood_fill(x, y):
-            if x < 0 or x >= self.grid_size or y < 0 or y >= self.grid_size:
-                return
-            if filled[x, y] or not mask[x, y]:
-                return
-            filled[x, y] = True
-            flood_fill(x - 1, y)
-            flood_fill(x + 1, y)
-            flood_fill(x, y - 1)
-            flood_fill(x, y + 1)
+        # Iterative flood fill using a stack
+        def flood_fill(start_x, start_y):
+            stack = [(start_x, start_y)]
+            while stack:
+                x, y = stack.pop()
+                if x < 0 or x >= self.grid_size or y < 0 or y >= self.grid_size:
+                    continue
+                if filled[x, y] or not mask[x, y]:
+                    continue
+                filled[x, y] = True
+                stack.append((x - 1, y))
+                stack.append((x + 1, y))
+                stack.append((x, y - 1))
+                stack.append((x, y + 1))
 
         # Flood fill from all edges
         for x in range(self.grid_size):
@@ -187,7 +191,9 @@ class PaperIoEnv:
 
     def render(self):
         # Visualize the grid
-        img = np.zeros((self.grid_size, self.grid_size, 3), dtype=np.uint8)
+        cell_size = 10  # Size of each cell in pixels
+        img_size = self.grid_size * cell_size
+        img = np.zeros((img_size, img_size, 3), dtype=np.uint8)
 
         # Color map for players
         colors = [
@@ -202,26 +208,30 @@ class PaperIoEnv:
         for x in range(self.grid_size):
             for y in range(self.grid_size):
                 cell_value = self.grid[x, y]
+                top_left = (y * cell_size, x * cell_size)
+                bottom_right = ((y + 1) * cell_size, (x + 1) * cell_size)
                 if cell_value > 0:
                     # Territory
                     player_id = cell_value - 1
                     color = colors[player_id % len(colors)]
-                    img[x, y] = color
+                    cv2.rectangle(img, top_left, bottom_right, color, -1)
                 elif cell_value < 0:
                     # Trail
                     player_id = -cell_value - 1
                     color = colors[player_id % len(colors)]
-                    img[x, y] = [c // 2 for c in color]  # Darker color for trail
+                    color = [c // 2 for c in color]  # Darker color for trail
+                    cv2.rectangle(img, top_left, bottom_right, color, -1)
 
         # Draw players
         for i, player in enumerate(self.players):
             if not self.alive[i]:
                 continue
             x, y = player['position']
+            top_left = (y * cell_size, x * cell_size)
+            bottom_right = ((y + 1) * cell_size, (x + 1) * cell_size)
             color = [min(255, c + 100) for c in colors[i % len(colors)]]  # Brighter color for player
-            img[x, y] = color
+            cv2.rectangle(img, top_left, bottom_right, color, -1)
 
-        # Resize for better visibility
-        img = cv2.resize(img, (500, 500), interpolation=cv2.INTER_NEAREST)
+        # Display the image
         cv2.imshow('Paper.io', img)
         cv2.waitKey(1)
