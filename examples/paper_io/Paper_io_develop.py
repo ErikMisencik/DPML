@@ -39,7 +39,8 @@ class PaperIoEnv:
             self.players.append({
                 'position': position,
                 'id': player_id,
-                'trail': []
+                'trail': [],
+                'territory': 1  # Start with 1 territory (initial position)
             })
             self.grid[x, y] = player_id  # Mark initial player territory
 
@@ -72,7 +73,7 @@ class PaperIoEnv:
                     self.grid[new_x, new_y] = -player_id
                     player['trail'].append(new_position)
                 elif cell_value == player_id and player['trail']:
-                    self.convert_trail_to_territory(player_id)
+                    rewards[i] += self.convert_trail_to_territory(player_id)
             else:
                 if cell_value < 0:
                     owner_id = -cell_value
@@ -91,6 +92,9 @@ class PaperIoEnv:
         observations = [self.get_observation_for_player(i) for i in range(self.num_players)]
         if sum(self.alive) <= 1:
             done = True
+
+        # Print rewards collected by each player at the end of this step
+        # print(f"Rewards collected: {rewards}")
 
         return observations, rewards, done, {}
 
@@ -162,13 +166,18 @@ class PaperIoEnv:
         return self.grid.copy()
 
     def convert_trail_to_territory(self, player_id):
-        # Convert player's trail into permanent territory
+        # Convert player's trail into permanent territory and return reward for captured area
         player = self.players[player_id - 1]
+        captured_area = 0  # Initialize captured area size
         for cell in player['trail']:
             x, y = cell
             self.grid[x, y] = player_id
+            captured_area += 1  # Increment captured territory count
         self.capture_area(player_id)
         player['trail'] = []
+
+        # Reward based on how much area was captured
+        return captured_area
 
     def capture_area(self, player_id):
         # Implement area capture logic
@@ -199,3 +208,4 @@ class PaperIoEnv:
 
         enclosed_area = ~filled & mask
         self.grid[enclosed_area] = player_id
+
