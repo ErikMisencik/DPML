@@ -3,41 +3,47 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 
+from Paper_io_develop import PaperIoEnv
 
-from examples.paper_io.Paper_io_develop import PaperIoEnv
-from examples.paper_io.algorithm.Random.random_policy import RandomPolicy  # Import the Random Policy
-from examples.paper_io.algorithm.Greedy.greedy_policy import GreedyPolicy  # Import the Greedy Policy
+
+from examples.paper_io.algorithm.Greedy.greedy_policy import GreedyPolicy
+from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLearningAgent
+from examples.paper_io.algorithm.Random.random_policy import RandomPolicy
 
 
 # Create the environment
 env = PaperIoEnv()
 
-# Choose the policy (You can comment/uncomment the policy you want to use)
-
+# Choose the policy
 
 # policy = RandomPolicy(env)
 # policy_name = 'random_policy'
 
-policy = GreedyPolicy(env)
-policy_name = 'greedy_policy'
+# policy = GreedyPolicy(env)
+# policy_name = 'greedy_policy'
+
+agent = QLearningAgent(env)
+policy_name = 'q_learning'
+
 
 # Training variables
-num_episodes = 30  # Set the number of episodes (epochs)
-steps_per_episode = 10000  # Set the number of steps for each episode
+num_episodes = 200  # You may need more episodes for learning
+steps_per_episode = 1000  # Adjust as needed
 episode_rewards = []  # Store rewards per episode
 moving_avg_rewards = []  # Moving average of rewards
 episodes = []  # Store episode numbers for plotting
-window_size = 10  # Window size for moving average
+window_size = 20  # Window size for moving average
 
 # Initialize the fixed output format
 loading_bar_length = 20  # Length of the loading bar
 
 # Initialize model count based on policy name
-model_count = len([d for d in os.listdir('models') if policy_name in d])  # Count models matching the policy name
+models_dir = 'models'
+os.makedirs(models_dir, exist_ok=True)
+model_count = len([d for d in os.listdir(models_dir) if policy_name in d])
 model_folder_name = f"{policy_name}_{model_count + 1}"
 
 # Create directories for the new model
-models_dir = 'models'
 model_folder = os.path.join(models_dir, model_folder_name)
 trained_model_folder = os.path.join(model_folder, 'trained_model')
 plots_folder = os.path.join(model_folder, 'plots')
@@ -50,21 +56,42 @@ os.makedirs(plots_folder, exist_ok=True)
 print(f"{'Epoch':<6} {'Progress':<23}")
 print("=" * 30)
 
-# Train the model with a callback to collect data
+# Train the agent
 episode_num = 0
 
 while episode_num < num_episodes:
     obs = env.reset()
+
     episode_reward = 0
 
     # Initialize loading progress
     for step in range(steps_per_episode):
-        # Use the correct list of action spaces for each player
-        actions = [env.action_spaces[i].sample() for i in range(env.num_players)]
-        obs, rewards, done, _ = env.step(actions)
+        # Get actions from the agent
+        actions = agent.get_actions(obs)
+
+        # Record the current state for each player
+        states = []
+        for i in range(env.num_players):
+            if not env.alive[i]:
+                states.append(None)
+                continue
+            state = agent.get_state(obs, i)
+            states.append(state)
+
+        # Take a step in the environment
+        next_obs, rewards, done, _ = env.step(actions)
 
         # Update total reward for the episode
         episode_reward += sum(rewards)
+
+        # Record the next state for each player and update Q-values
+        for i in range(env.num_players):
+            if not env.alive[i]:
+                continue
+            next_state = agent.get_state(next_obs, i)
+            agent.update_q_values(states[i], actions[i], rewards[i], next_state, done, i)
+
+        obs = next_obs
 
         # Calculate and display loading progress
         if (step + 1) % (steps_per_episode // loading_bar_length) == 0:
@@ -94,6 +121,9 @@ while episode_num < num_episodes:
     else:
         moving_avg_rewards.append(np.mean(episode_rewards))
 
+    # Decay epsilon after each episode
+    agent.decay_epsilon()
+
     episode_num += 1
 
 # Plotting the training progress
@@ -110,6 +140,12 @@ plt.grid(True)
 plot_path = os.path.join(plots_folder, 'training_progress.png')
 plt.savefig(plot_path)
 print(f"Training progress graph saved at {plot_path}")
+
+
+# Save the Q-table after training
+q_table_path = os.path.join(trained_model_folder, 'q_table.pkl')
+agent.save_q_table(q_table_path)
+print(f"Q-table saved at {q_table_path}")
 
 # Show the plot
 plt.show()
