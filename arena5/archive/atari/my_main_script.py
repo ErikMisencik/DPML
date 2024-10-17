@@ -18,4 +18,4 @@ policy_types = {1:"ppo"}
 
 # Specify number of steps to run across all matches:
 steps_per_match = total_steps_to_match_steps(match_list, 5000000)
-arena.kickoff(match_list, policy_types, steps_per_match, render=False, scale=True)
+arena.kickoff(match_list, policy_types, steps_per_match, render=True, scale=True)

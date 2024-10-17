@@ -2,6 +2,7 @@
 from copy import deepcopy
 import itertools
 import numpy as np
+from arena5.algos.sac.sac import sac
 import torch
 from torch.optim import Adam
 import gym
