@@ -35,6 +35,33 @@
 - Players move, claim territory, and can be eliminated based on their actions and interactions with other players.
 - The game ends when only one player remains alive, or when a predefined condition is met.
 
+## Installation
+
+Create a conda environment
+
+```` sh
+conda create -n arena5 python=3.7 anaconda
+conda activate arena5
+pip install -e .
+pip install stable_baselines tensorflow==1.14.0
+conda install -c conda-forge mpi4py
+````
+
 ## Use for testing
 
 python test_render.py
+
+## Use for training
+
+python training.py
+
+## RL Policy - CheckList
+
+- Random Policy (Baseline - already done)
+- Greedy Policy (Simple improvement over random)
+- Q-Learning (Start with simple Q-tables and reward maximization)
+- SARSA (A more conservative version of Q-learning)
+- Monte Carlo Methods (For episodic learning and environments with long-term rewards)
+- Policy Iteration (For deterministic environments with well-defined policies)
+- Temporal Difference (TD) Learning (More dynamic and works well in continuous learning scenarios)
+- Actor-Critic (without neural networks) (When combining value functions with policy learning)
