@@ -32,7 +32,7 @@ class PaperIoEnv:
             while True:
                 x = np.random.randint(5, self.grid_size - 5)
                 y = np.random.randint(5, self.grid_size - 5)
-                if self.grid[x, y] == 0:
+                if self.grid[x, y] == 0 and self._within_arena(x, y):
                     break
             position = (x, y)
             player_id = i + 1
@@ -63,6 +63,9 @@ class PaperIoEnv:
 
             # Determine the new position based on action
             new_x, new_y = self._get_new_position(x, y, action)
+            if not self._within_arena(new_x, new_y):
+                # Prevent the player from moving outside the circular arena
+                new_x, new_y = x, y  # Stay in the current position
             new_position = (new_x, new_y)
             cell_value = self.grid[new_x, new_y]
 
@@ -93,9 +96,6 @@ class PaperIoEnv:
         if sum(self.alive) <= 1:
             done = True
 
-        # Print rewards collected by each player at the end of this step
-        # print(f"Rewards collected: {rewards}")
-
         return observations, rewards, done, {}
 
     def render(self):
@@ -105,7 +105,26 @@ class PaperIoEnv:
         img = np.zeros((img_size, img_size, 3), dtype=np.uint8)
 
         # Define player colors
-        colors = [(0, 255, 0), (255, 0, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
+        colors = [
+            (0, 255, 0),  # Green
+            (255, 0, 0),  # Blue
+            (0, 0, 255),  # Red
+            (255, 255, 0),  # Yellow
+            (255, 0, 255),  # Magenta
+            (0, 255, 255),  # Cyan
+        ]
+
+        # Define the center and radius of the circular arena
+        center = (img_size // 2, img_size // 2)
+        radius = img_size // 2 - 10  # Decrease the margin to make the arena larger
+
+        # Fill the circle with white color to represent the arena
+        cv2.circle(img, center, radius, (255, 255, 255), -1)  # White circular arena
+
+        # Add a 3D-like border around the circular arena
+        border_thickness = 10  # Thickness of the border for the 3D effect
+        cv2.circle(img, center, radius, (200, 200, 200), border_thickness)  # Light border (top-left)
+        cv2.circle(img, center, radius - border_thickness // 2, (100, 100, 100), border_thickness // 2)  # Darker border (bottom-right)
 
         # Draw the grid based on the player's territories and trails
         for x in range(self.grid_size):
@@ -113,16 +132,51 @@ class PaperIoEnv:
                 cell_value = self.grid[x, y]
                 top_left = (y * cell_size, x * cell_size)
                 bottom_right = ((y + 1) * cell_size, (x + 1) * cell_size)
-                if cell_value > 0:
-                    player_id = cell_value - 1
-                    color = colors[player_id % len(colors)]
-                    cv2.rectangle(img, top_left, bottom_right, color, -1)
-                elif cell_value < 0:
-                    player_id = -cell_value - 1
-                    color = [c // 2 for c in colors[player_id % len(colors)]]
-                    cv2.rectangle(img, top_left, bottom_right, color, -1)
 
-        # Draw players in their current position
+                # Get the center of the current cell
+                cell_center = ((top_left[0] + bottom_right[0]) // 2, (top_left[1] + bottom_right[1]) // 2)
+
+                # Only draw cells inside the circular arena
+                if np.sqrt((cell_center[0] - center[0]) ** 2 + (cell_center[1] - center[1]) ** 2) < radius:
+                    if cell_value > 0:
+                        # Territory: make less bright by blending more with white (75% original color, 25% white)
+                        player_id = cell_value - 1
+                        color = colors[player_id % len(colors)]
+                        faded_territory_color = [int(0.25 * 255 + 0.75 * c) for c in color]  # Less bright territory
+
+                        # Draw the main block for territory
+                        cv2.rectangle(img, top_left, bottom_right, faded_territory_color, -1)
+
+                        # Subtle highlight on the top-left for territory
+                        light_color = [min(255, int(c * 1.1)) for c in faded_territory_color]  # Slightly lighter
+                        cv2.line(img, top_left, (bottom_right[0], top_left[1]), light_color, 1)  # Top border
+                        cv2.line(img, top_left, (top_left[0], bottom_right[1]), light_color, 1)  # Left border
+
+                        # Subtle shadow on the bottom-right for territory
+                        shadow_color = [max(0, int(c * 0.9)) for c in faded_territory_color]  # Slightly darker
+                        cv2.line(img, bottom_right, (bottom_right[0], top_left[1]), shadow_color, 1)  # Bottom border
+                        cv2.line(img, bottom_right, (top_left[0], bottom_right[1]), shadow_color, 1)  # Right border
+
+                    elif cell_value < 0:
+                        # Trail: subtle 3D effect (slightly faded, with lighter shadows/highlights)
+                        player_id = -cell_value - 1
+                        color = colors[player_id % len(colors)]
+                        faded_color = [int(0.75 * 255 + 0.25 * c) for c in color]
+
+                        # Draw the main block for trail
+                        cv2.rectangle(img, top_left, bottom_right, faded_color, -1)
+
+                        # Subtle highlight on the top-left for trail
+                        light_color = [min(255, int(c * 1.05)) for c in faded_color]  # Very subtle highlight
+                        cv2.line(img, top_left, (bottom_right[0], top_left[1]), light_color, 1)  # Top border
+                        cv2.line(img, top_left, (top_left[0], bottom_right[1]), light_color, 1)  # Left border
+
+                        # Subtle shadow on the bottom-right for trail
+                        shadow_color = [max(0, int(c * 0.95)) for c in faded_color]  # Very subtle shadow
+                        cv2.line(img, bottom_right, (bottom_right[0], top_left[1]), shadow_color, 1)  # Bottom border
+                        cv2.line(img, bottom_right, (top_left[0], bottom_right[1]), shadow_color, 1)  # Right border
+
+        # Highlight players with a stronger 3D effect
         for i, player in enumerate(self.players):
             if not self.alive[i]:
                 continue
@@ -130,11 +184,24 @@ class PaperIoEnv:
             top_left = (y * cell_size, x * cell_size)
             bottom_right = ((y + 1) * cell_size, (x + 1) * cell_size)
             color = [min(255, c + 100) for c in colors[i % len(colors)]]
+
+            # Draw player with a stronger 3D effect
             cv2.rectangle(img, top_left, bottom_right, color, -1)
+
+            # Stronger highlight on the top-left to simulate light source for player
+            light_color = [min(255, int(c * 1.3)) for c in color]  # Stronger lighter color
+            cv2.line(img, top_left, (bottom_right[0], top_left[1]), light_color, 2)  # Top border
+            cv2.line(img, top_left, (top_left[0], bottom_right[1]), light_color, 2)  # Left border
+
+            # Stronger shadow on the bottom-right to simulate depth for player
+            shadow_color = [max(0, int(c * 0.6)) for c in color]  # Stronger darker color
+            cv2.line(img, bottom_right, (bottom_right[0], top_left[1]), shadow_color, 2)  # Bottom border
+            cv2.line(img, bottom_right, (top_left[0], bottom_right[1]), shadow_color, 2)  # Right border
 
         # Display the grid
         cv2.imshow(self.window_name, img)
         cv2.waitKey(1)
+
 
     def close(self):
         # Close the game window
@@ -223,3 +290,20 @@ class PaperIoEnv:
                 self.players[i]['territory'] -= territory_lost[i]
 
         return np.sum(enclosed_area)
+    
+    def _within_arena(self, x, y):
+        """
+        Checks if a given position (x, y) is within the circular arena.
+        """
+        cell_size = 15  # Each grid cell size in pixels
+        img_size = self.grid_size * cell_size
+        center = (img_size // 2, img_size // 2)
+        radius = img_size // 2 - 10  # Decrease the margin to make the arena larger
+
+        # Calculate the center of the current cell
+        cell_center_x = (y * cell_size) + (cell_size // 2)
+        cell_center_y = (x * cell_size) + (cell_size // 2)
+
+        # Check if the distance from the center is within the radius of the circle
+        distance = np.sqrt((cell_center_x - center[0]) ** 2 + (cell_center_y - center[1]) ** 2)
+        return distance <= radius
