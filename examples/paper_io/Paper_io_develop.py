@@ -32,7 +32,7 @@ class PaperIoEnv:
             while True:
                 x = np.random.randint(5, self.grid_size - 5)
                 y = np.random.randint(5, self.grid_size - 5)
-                if self.grid[x, y] == 0:
+                if self.grid[x, y] == 0 and self._within_arena(x, y):
                     break
             position = (x, y)
             player_id = i + 1
@@ -63,6 +63,9 @@ class PaperIoEnv:
 
             # Determine the new position based on action
             new_x, new_y = self._get_new_position(x, y, action)
+            if not self._within_arena(new_x, new_y):
+                # Prevent the player from moving outside the circular arena
+                new_x, new_y = x, y  # Stay in the current position
             new_position = (new_x, new_y)
             cell_value = self.grid[new_x, new_y]
 
@@ -93,9 +96,6 @@ class PaperIoEnv:
         if sum(self.alive) <= 1:
             done = True
 
-        # Print rewards collected by each player at the end of this step
-        # print(f"Rewards collected: {rewards}")
-
         return observations, rewards, done, {}
 
     def render(self):
@@ -105,7 +105,24 @@ class PaperIoEnv:
         img = np.zeros((img_size, img_size, 3), dtype=np.uint8)
 
         # Define player colors
-        colors = [(0, 255, 0), (255, 0, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
+        colors = [
+            (0, 255, 0),  # Green
+            (255, 0, 0),  # Blue
+            (0, 0, 255),  # Red
+            (255, 255, 0),  # Yellow
+            (255, 0, 255),  # Magenta
+            (0, 255, 255),  # Cyan
+        ]
+
+        # Define the center and radius of the circular arena
+        center = (img_size // 2, img_size // 2)
+        radius = img_size // 2 - 10  # Decrease the margin to make the arena larger
+
+        # Fill the circle with white color to represent the arena
+        cv2.circle(img, center, radius, (255, 255, 255), -1)  # White circular arena
+
+        # Draw the border of the circular arena
+        cv2.circle(img, center, radius, (0, 0, 0), 3)  # Black border around the circle
 
         # Draw the grid based on the player's territories and trails
         for x in range(self.grid_size):
@@ -113,16 +130,28 @@ class PaperIoEnv:
                 cell_value = self.grid[x, y]
                 top_left = (y * cell_size, x * cell_size)
                 bottom_right = ((y + 1) * cell_size, (x + 1) * cell_size)
-                if cell_value > 0:
-                    player_id = cell_value - 1
-                    color = colors[player_id % len(colors)]
-                    cv2.rectangle(img, top_left, bottom_right, color, -1)
-                elif cell_value < 0:
-                    player_id = -cell_value - 1
-                    color = [c // 2 for c in colors[player_id % len(colors)]]
-                    cv2.rectangle(img, top_left, bottom_right, color, -1)
 
-        # Draw players in their current position
+                # Get the center of the current cell
+                cell_center = ((top_left[0] + bottom_right[0]) // 2, (top_left[1] + bottom_right[1]) // 2)
+
+                # Only draw cells inside the circular arena
+                if np.sqrt((cell_center[0] - center[0]) ** 2 + (cell_center[1] - center[1]) ** 2) < radius:
+                    if cell_value > 0:
+                        # Territory: slightly faded color (blend original color with white to make it less intense)
+                        player_id = cell_value - 1
+                        color = colors[player_id % len(colors)]
+                        # Fade the territory color (e.g., 85% original color, 15% white)
+                        faded_territory_color = [int(0.15 * 255 + 0.85 * c) for c in color]
+                        cv2.rectangle(img, top_left, bottom_right, faded_territory_color, -1)
+                    elif cell_value < 0:
+                        # Trail: much more faded color (blend original color with white to fade it out)
+                        player_id = -cell_value - 1
+                        color = colors[player_id % len(colors)]
+                        # Faded color by blending with white (e.g., 75% white, 25% original color)
+                        faded_color = [int(0.75 * 255 + 0.25 * c) for c in color]
+                        cv2.rectangle(img, top_left, bottom_right, faded_color, -1)
+
+        # Highlight players with a bright color or halo
         for i, player in enumerate(self.players):
             if not self.alive[i]:
                 continue
@@ -131,10 +160,13 @@ class PaperIoEnv:
             bottom_right = ((y + 1) * cell_size, (x + 1) * cell_size)
             color = [min(255, c + 100) for c in colors[i % len(colors)]]
             cv2.rectangle(img, top_left, bottom_right, color, -1)
+            # Add a white border around the player to highlight their position
+            cv2.rectangle(img, top_left, bottom_right, (255, 255, 255), 2)
 
         # Display the grid
         cv2.imshow(self.window_name, img)
         cv2.waitKey(1)
+
 
     def close(self):
         # Close the game window
@@ -223,3 +255,20 @@ class PaperIoEnv:
                 self.players[i]['territory'] -= territory_lost[i]
 
         return np.sum(enclosed_area)
+    
+    def _within_arena(self, x, y):
+        """
+        Checks if a given position (x, y) is within the circular arena.
+        """
+        cell_size = 15  # Each grid cell size in pixels
+        img_size = self.grid_size * cell_size
+        center = (img_size // 2, img_size // 2)
+        radius = img_size // 2 - 10  # Decrease the margin to make the arena larger
+
+        # Calculate the center of the current cell
+        cell_center_x = (y * cell_size) + (cell_size // 2)
+        cell_center_y = (x * cell_size) + (cell_size // 2)
+
+        # Check if the distance from the center is within the radius of the circle
+        distance = np.sqrt((cell_center_x - center[0]) ** 2 + (cell_center_y - center[1]) ** 2)
+        return distance <= radius
