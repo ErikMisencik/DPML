@@ -1,8 +1,6 @@
-import cv2
-
 from examples.paper_io.Paper_io_develop import PaperIoEnv
-# from examples.paper_io.Paper_io import PaperIoEnv
-
+import pygame
+# Assuming your code is in a file named PaperIoEnv.py
 
 def main():
     env = PaperIoEnv(num_players=2)
@@ -15,16 +13,18 @@ def main():
             if env.alive[i]:
                 # Sample an action from the player's action space
                 actions.append(env.action_spaces[i].sample())
-              # actions.append(env.action_space.sample())
             else:
                 actions.append(None)  # Placeholder for eliminated players
 
         obs, rewards, done, info = env.step(actions)
         env.render()
 
-        cv2.waitKey(1)  # Add a short delay to allow the rendering window to update
+        # Add a short delay to allow the rendering window to update
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                done = True
 
-    cv2.destroyAllWindows()
+    env.close()
 
 if __name__ == "__main__":
     main()

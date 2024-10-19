@@ -1,4 +1,5 @@
 import numpy as np
+from examples.paper_io.utils.render import render_game
 import pygame
 from gym.spaces import Box, Discrete
 
@@ -12,7 +13,7 @@ class PaperIoEnv:
         # Initialize Pygame display
         self.window_size = self.grid_size * self.cell_size
         self.screen = pygame.display.set_mode((self.window_size, self.window_size))
-        pygame.display.set_caption("Paper.io with Pygame")
+        pygame.display.set_caption("Paper.io with Pygame")  # Correct function call
 
         # Initialize Pygame clock to control frame rate
         self.clock = pygame.time.Clock()
@@ -86,15 +87,15 @@ class PaperIoEnv:
                     self.grid[new_x, new_y] = -player_id
                     player['trail'].append(new_position)
                 elif cell_value == player_id and player['trail']:
-                    rewards[i] += self.convert_trail_to_territory(player_id)
+                    rewards[i] += self.convert_trail_to_territory(player_id, rewards)  # Pass rewards here
             else:
                 if cell_value < 0:
                     owner_id = -cell_value
                     if self.alive[owner_id - 1]:
                         self.alive[owner_id - 1] = False
                         eliminations.append(owner_id - 1)
-                        rewards[owner_id - 1] -= 1
-                        rewards[i] += 1
+                        rewards[owner_id - 1] -= 20  # Penalty for being eliminated
+                        rewards[i] += 10  # Reward for eliminating an opponent
                 player['position'] = new_position
                 self.grid[new_x, new_y] = -player_id
                 player['trail'].append(new_position)
@@ -109,84 +110,8 @@ class PaperIoEnv:
         return observations, rewards, done, {}
 
     def render(self):
-        # Fill background with white
-        self.screen.fill((230, 230, 230))  # Light grey background
-
-        # Define player colors
-        colors = [
-            (0, 255, 0),  # Green
-            (255, 0, 0),  # Blue
-            (0, 0, 255),  # Red
-            (255, 255, 0),  # Yellow
-            (255, 0, 255),  # Magenta
-            (0, 255, 255),  # Cyan
-        ]
-
-        # Draw the circular arena with a beveled effect for 3D
-        center = (self.window_size // 2, self.window_size // 2)
-        radius = self.window_size // 2 - 20
-
-        # Beveled border effect for the arena
-        pygame.draw.circle(self.screen, (200, 200, 200), center, radius + 20)  # Outer darker ring
-        pygame.draw.circle(self.screen, (255, 255, 255), center, radius)  # White inner circle (arena)
-
-        # Draw trails and territories on the arena surface
-        for x in range(self.grid_size):
-            for y in range(self.grid_size):
-                cell_value = self.grid[x, y]
-                top_left = (y * self.cell_size, x * self.cell_size)
-                rect = pygame.Rect(top_left[0], top_left[1], self.cell_size, self.cell_size)
-
-                if cell_value > 0:
-                    # Territory with subtle 3D effect
-                    player_id = cell_value - 1
-                    pygame.draw.rect(self.screen, colors[player_id], rect)
-
-                    # Add subtle 3D shading for territories
-                    light_color = [min(255, int(c * 1.05)) for c in colors[player_id]]
-                    shadow_color = [max(0, int(c * 0.9)) for c in colors[player_id]]
-                    pygame.draw.line(self.screen, light_color, rect.topleft, (rect.right, rect.top), 1)
-                    pygame.draw.line(self.screen, light_color, rect.topleft, (rect.left, rect.bottom), 1)
-                    pygame.draw.line(self.screen, shadow_color, rect.bottomright, (rect.right, rect.top), 1)
-                    pygame.draw.line(self.screen, shadow_color, rect.bottomright, (rect.left, rect.bottom), 1)
-
-                elif cell_value < 0:
-                    # Trail with subtle 3D effect
-                    player_id = -cell_value - 1
-                    faded_color = [int(0.5 * 255 + 0.5 * c) for c in colors[player_id]]
-                    pygame.draw.rect(self.screen, faded_color, rect)
-
-                    # Add subtle 3D shading for trails
-                    light_color = [min(255, int(c * 1.05)) for c in faded_color]
-                    shadow_color = [max(0, int(c * 0.9)) for c in faded_color]
-                    pygame.draw.line(self.screen, light_color, rect.topleft, (rect.right, rect.top), 1)
-                    pygame.draw.line(self.screen, light_color, rect.topleft, (rect.left, rect.bottom), 1)
-                    pygame.draw.line(self.screen, shadow_color, rect.bottomright, (rect.right, rect.top), 1)
-                    pygame.draw.line(self.screen, shadow_color, rect.bottomright, (rect.left, rect.bottom), 1)
-
-        # Highlight players with a stronger 3D effect
-        for i, player in enumerate(self.players):
-            if not self.alive[i]:
-                continue
-            x, y = player['position']
-            rect = pygame.Rect(y * self.cell_size, x * self.cell_size, self.cell_size, self.cell_size)
-            color = [min(255, c + 100) for c in colors[i % len(colors)]]
-
-            # Draw player with a stronger 3D effect
-            pygame.draw.rect(self.screen, color, rect)
-
-            # Stronger highlight on the top-left to simulate light source for player
-            light_color = [min(255, int(c * 1.3)) for c in color]
-            pygame.draw.line(self.screen, light_color, rect.topleft, (rect.right, rect.top), 2)
-            pygame.draw.line(self.screen, light_color, rect.topleft, (rect.left, rect.bottom), 2)
-
-            # Stronger shadow on the bottom-right to simulate depth for player
-            shadow_color = [max(0, int(c * 0.6)) for c in color]
-            pygame.draw.line(self.screen, shadow_color, rect.bottomright, (rect.right, rect.top), 2)
-            pygame.draw.line(self.screen, shadow_color, rect.bottomright, (rect.left, rect.bottom), 2)
-
-        # Update display
-        pygame.display.flip()
+        # Use external utility function to render the game
+        render_game(self.screen, self.grid, self.players, self.alive, self.cell_size, self.window_size, self.num_players)
 
         # Limit the frame rate to 30 FPS
         self.clock.tick(30)
@@ -219,7 +144,7 @@ class PaperIoEnv:
         # Return the current observation (grid state) for a player
         return self.grid.copy()
 
-    def convert_trail_to_territory(self, player_id):
+    def convert_trail_to_territory(self, player_id, rewards):
         # Convert player's trail into permanent territory and return reward for captured area
         player = self.players[player_id - 1]
         captured_area = 0  # Initialize captured area size
@@ -227,13 +152,13 @@ class PaperIoEnv:
             x, y = cell
             self.grid[x, y] = player_id
             captured_area += 1  # Increment captured territory count
-        captured_area += self.capture_area(player_id)
+        captured_area += self.capture_area(player_id, rewards)  # Pass rewards to capture_area
         player['trail'] = []
 
         # Reward based on how much area was captured
         return captured_area
 
-    def capture_area(self, player_id):
+    def capture_area(self, player_id, rewards):
         # Implement area capture logic and track territories lost by other players
         player_cells = (self.grid == player_id) | (self.grid == -player_id)
         mask = ~player_cells
@@ -275,6 +200,7 @@ class PaperIoEnv:
         for i in range(self.num_players):
             if i != player_id - 1 and self.alive[i]:
                 self.players[i]['territory'] -= territory_lost[i]
+                rewards[i] -= territory_lost[i]  # Penalty for losing territory
 
         return np.sum(enclosed_area)
 
