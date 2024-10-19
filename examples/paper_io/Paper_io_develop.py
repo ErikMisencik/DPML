@@ -4,7 +4,7 @@ from gym.spaces import Box, Discrete
 
 class PaperIoEnv:
     def __init__(self, grid_size=50, num_players=2):
-       # Initialize grid size and number of players
+        # Initialize grid size and number of players
         self.grid_size = grid_size
         self.num_players = num_players
         self.cell_size = 15  # Each grid cell size in pixels
@@ -15,7 +15,7 @@ class PaperIoEnv:
         pygame.display.set_caption("Paper.io with Pygame")
 
         # Initialize Pygame clock to control frame rate
-        self.clock = pygame.time.Clock()  # Add this line
+        self.clock = pygame.time.Clock()
 
         # Other initializations
         self.reset()
@@ -31,8 +31,6 @@ class PaperIoEnv:
             for _ in range(self.num_players)
         ]
         self.action_spaces = [Discrete(4) for _ in range(self.num_players)]  # Up, Down, Left, Right
-
-        # self.clock = pygame.time.Clock()
 
     def reset(self):
         # Reset game state and players' positions
@@ -112,7 +110,7 @@ class PaperIoEnv:
 
     def render(self):
         # Fill background with white
-        self.screen.fill((255, 255, 255))
+        self.screen.fill((230, 230, 230))  # Light grey background
 
         # Define player colors
         colors = [
@@ -124,15 +122,13 @@ class PaperIoEnv:
             (0, 255, 255),  # Cyan
         ]
 
-        # Draw the circular arena
+        # Draw the circular arena with a beveled effect for 3D
         center = (self.window_size // 2, self.window_size // 2)
-        radius = self.window_size // 2 - 10
+        radius = self.window_size // 2 - 20
 
-        # Create a transparent surface for drawing elements with alpha (transparency)
-        arena_surface = pygame.Surface((self.window_size, self.window_size), pygame.SRCALPHA)
-
-        # Draw a white circular arena
-        pygame.draw.circle(arena_surface, (255, 255, 255), center, radius)
+        # Beveled border effect for the arena
+        pygame.draw.circle(self.screen, (200, 200, 200), center, radius + 20)  # Outer darker ring
+        pygame.draw.circle(self.screen, (255, 255, 255), center, radius)  # White inner circle (arena)
 
         # Draw trails and territories on the arena surface
         for x in range(self.grid_size):
@@ -142,39 +138,52 @@ class PaperIoEnv:
                 rect = pygame.Rect(top_left[0], top_left[1], self.cell_size, self.cell_size)
 
                 if cell_value > 0:
-                    # Territory
+                    # Territory with subtle 3D effect
                     player_id = cell_value - 1
-                    pygame.draw.rect(arena_surface, colors[player_id], rect)
+                    pygame.draw.rect(self.screen, colors[player_id], rect)
+
+                    # Add subtle 3D shading for territories
+                    light_color = [min(255, int(c * 1.05)) for c in colors[player_id]]
+                    shadow_color = [max(0, int(c * 0.9)) for c in colors[player_id]]
+                    pygame.draw.line(self.screen, light_color, rect.topleft, (rect.right, rect.top), 1)
+                    pygame.draw.line(self.screen, light_color, rect.topleft, (rect.left, rect.bottom), 1)
+                    pygame.draw.line(self.screen, shadow_color, rect.bottomright, (rect.right, rect.top), 1)
+                    pygame.draw.line(self.screen, shadow_color, rect.bottomright, (rect.left, rect.bottom), 1)
+
                 elif cell_value < 0:
-                    # Trail
+                    # Trail with subtle 3D effect
                     player_id = -cell_value - 1
                     faded_color = [int(0.5 * 255 + 0.5 * c) for c in colors[player_id]]
-                    pygame.draw.rect(arena_surface, faded_color, rect)
+                    pygame.draw.rect(self.screen, faded_color, rect)
 
-        # Draw the arena with transparency
-        self.screen.blit(arena_surface, (0, 0))
+                    # Add subtle 3D shading for trails
+                    light_color = [min(255, int(c * 1.05)) for c in faded_color]
+                    shadow_color = [max(0, int(c * 0.9)) for c in faded_color]
+                    pygame.draw.line(self.screen, light_color, rect.topleft, (rect.right, rect.top), 1)
+                    pygame.draw.line(self.screen, light_color, rect.topleft, (rect.left, rect.bottom), 1)
+                    pygame.draw.line(self.screen, shadow_color, rect.bottomright, (rect.right, rect.top), 1)
+                    pygame.draw.line(self.screen, shadow_color, rect.bottomright, (rect.left, rect.bottom), 1)
 
-       # Highlight players with a stronger 3D effect
+        # Highlight players with a stronger 3D effect
         for i, player in enumerate(self.players):
-            if not self.alive[i]:  # Check if the player is alive using self.alive list
+            if not self.alive[i]:
                 continue
             x, y = player['position']
-            top_left = (y * self.cell_size, x * self.cell_size)
-            bottom_right = ((y + 1) * self.cell_size, (x + 1) * self.cell_size)
+            rect = pygame.Rect(y * self.cell_size, x * self.cell_size, self.cell_size, self.cell_size)
             color = [min(255, c + 100) for c in colors[i % len(colors)]]
 
             # Draw player with a stronger 3D effect
-            pygame.draw.rect(self.screen, color, pygame.Rect(top_left[0], top_left[1], self.cell_size, self.cell_size))
+            pygame.draw.rect(self.screen, color, rect)
 
             # Stronger highlight on the top-left to simulate light source for player
-            light_color = [min(255, int(c * 1.3)) for c in color]  # Stronger lighter color
-            pygame.draw.line(self.screen, light_color, top_left, (bottom_right[0], top_left[1]), 2)  # Top border
-            pygame.draw.line(self.screen, light_color, top_left, (top_left[0], bottom_right[1]), 2)  # Left border
+            light_color = [min(255, int(c * 1.3)) for c in color]
+            pygame.draw.line(self.screen, light_color, rect.topleft, (rect.right, rect.top), 2)
+            pygame.draw.line(self.screen, light_color, rect.topleft, (rect.left, rect.bottom), 2)
 
             # Stronger shadow on the bottom-right to simulate depth for player
-            shadow_color = [max(0, int(c * 0.6)) for c in color]  # Stronger darker color
-            pygame.draw.line(self.screen, shadow_color, bottom_right, (bottom_right[0], top_left[1]), 2)  # Bottom border
-            pygame.draw.line(self.screen, shadow_color, bottom_right, (top_left[0], bottom_right[1]), 2)  # Right border
+            shadow_color = [max(0, int(c * 0.6)) for c in color]
+            pygame.draw.line(self.screen, shadow_color, rect.bottomright, (rect.right, rect.top), 2)
+            pygame.draw.line(self.screen, shadow_color, rect.bottomright, (rect.left, rect.bottom), 2)
 
         # Update display
         pygame.display.flip()
@@ -275,7 +284,7 @@ class PaperIoEnv:
         """
         cell_size = self.cell_size
         center = (self.grid_size * cell_size // 2, self.grid_size * cell_size // 2)
-        radius = self.grid_size * cell_size // 2 - 10
+        radius = self.grid_size * cell_size // 2 - 20
 
         # Calculate the center of the current cell
         cell_center_x = (y * cell_size) + (cell_size // 2)
