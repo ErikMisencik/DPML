@@ -91,8 +91,8 @@
 - **RandomPolicy** is also mentioned but commented out.
 
 ## Training Parameters:
-- **Number of Episodes**: 30
-- **Steps per Episode**: 10,000
+- **Number of Episodes**: EDIT LATER
+- **Steps per Episode**: EDIT LATER
 - **Rewards Tracking**: Keeps track of total rewards per episode and calculates a moving average.
 
 ## Directories Setup:
