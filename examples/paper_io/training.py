@@ -2,20 +2,20 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
+import pygame  # Import pygame for rendering only if necessary
 
 from Paper_io_develop import PaperIoEnv
-
-
 from examples.paper_io.algorithm.Greedy.greedy_policy import GreedyPolicy
 from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLearningAgent
 from examples.paper_io.algorithm.Random.random_policy import RandomPolicy
 
 
+# Set the flag for rendering the environment
+render_game = False  # Set to True if you want to render the game during training
 # Create the environment
-env = PaperIoEnv()
+env = PaperIoEnv(render=render_game)
 
 # Choose the policy
-
 # policy = RandomPolicy(env)
 # policy_name = 'random_policy'
 
@@ -31,6 +31,8 @@ num_episodes = 200  # You may need more episodes for learning
 steps_per_episode = 1000  # Adjust as needed
 episode_rewards = []  # Store rewards per episode
 moving_avg_rewards = []  # Moving average of rewards
+steps_per_episode_list = []  # Store steps per episode
+epsilon_values = []  # Store epsilon values per episode
 episodes = []  # Store episode numbers for plotting
 window_size = 20  # Window size for moving average
 
@@ -61,11 +63,14 @@ episode_num = 0
 
 while episode_num < num_episodes:
     obs = env.reset()
-
     episode_reward = 0
 
     # Initialize loading progress
     for step in range(steps_per_episode):
+        # Optionally render the game if the flag is True
+        if render_game:
+            env.render()  # Call the environment's render method
+
         # Get actions from the agent
         actions = agent.get_actions(obs)
 
@@ -113,6 +118,10 @@ while episode_num < num_episodes:
     # Store rewards and episode data after finishing the episode
     episode_rewards.append(episode_reward)
     episodes.append(episode_num)
+    steps_per_episode_list.append(step + 1)  # Track the number of steps taken
+
+    # Track epsilon value
+    epsilon_values.append(agent.epsilon)
 
     # Calculate moving average reward
     if len(episode_rewards) >= window_size:
@@ -126,7 +135,7 @@ while episode_num < num_episodes:
 
     episode_num += 1
 
-# Plotting the training progress
+# Plotting the training progress (Episode Rewards)
 plt.figure(figsize=(10, 5))
 plt.plot(episodes, episode_rewards, label='Episode Reward')
 plt.plot(episodes, moving_avg_rewards, label=f'Moving Average Reward (window={window_size})', color='orange')
@@ -141,13 +150,44 @@ plot_path = os.path.join(plots_folder, 'training_progress.png')
 plt.savefig(plot_path)
 print(f"Training progress graph saved at {plot_path}")
 
+# Plotting Steps Per Episode
+plt.figure(figsize=(10, 5))
+plt.plot(episodes, steps_per_episode_list, label='Steps Per Episode', color='green')
+plt.xlabel('Episodes')
+plt.ylabel('Steps')
+plt.title('Steps Taken Per Episode')
+plt.legend()
+plt.grid(True)
+
+# Save the plot to a file in the plots folder
+plot_path_steps = os.path.join(plots_folder, 'steps_per_episode.png')
+plt.savefig(plot_path_steps)
+print(f"Steps per episode graph saved at {plot_path_steps}")
+
+# Plotting Epsilon Decay
+plt.figure(figsize=(10, 5))
+plt.plot(episodes, epsilon_values, label='Epsilon Decay', color='purple')
+plt.xlabel('Episodes')
+plt.ylabel('Epsilon Value')
+plt.title('Epsilon Decay Over Time')
+plt.legend()
+plt.grid(True)
+
+# Save the plot to a file in the plots folder
+plot_path_epsilon = os.path.join(plots_folder, 'epsilon_decay.png')
+plt.savefig(plot_path_epsilon)
+print(f"Epsilon decay graph saved at {plot_path_epsilon}")
 
 # Save the Q-table after training
 q_table_path = os.path.join(trained_model_folder, 'q_table.pkl')
 agent.save_q_table(q_table_path)
 print(f"Q-table saved at {q_table_path}")
 
-# Show the plot
+# Show the plots
 plt.show()
+
+# Cleanup pygame if rendering was enabled
+if render_game:
+    pygame.quit()  # Ensure pygame quits to close the window properly
 
 print("Training was Completed.")

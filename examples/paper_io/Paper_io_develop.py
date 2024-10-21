@@ -4,19 +4,22 @@ import pygame
 from gym.spaces import Box, Discrete
 
 class PaperIoEnv:
-    def __init__(self, grid_size=50, num_players=2):
+    def __init__(self, grid_size=50, num_players=2, render=False):
         # Initialize grid size and number of players
         self.grid_size = grid_size
         self.num_players = num_players
         self.cell_size = 15  # Each grid cell size in pixels
 
-        # Initialize Pygame display
-        self.window_size = self.grid_size * self.cell_size
-        self.screen = pygame.display.set_mode((self.window_size, self.window_size))
-        pygame.display.set_caption("Paper.io with Pygame")  # Correct function call
+        self.window_size = self.grid_size * self.cell_size         # Always set window size
+        self.render_game = render  # Use the flag to control rendering
 
-        # Initialize Pygame clock to control frame rate
-        self.clock = pygame.time.Clock()
+        # Initialize Pygame display only if rendering is enabled
+        self.screen = None
+        if self.render_game:
+            pygame.init()
+            self.screen = pygame.display.set_mode((self.window_size, self.window_size))
+            pygame.display.set_caption("Paper.io with Pygame")  # Correct function call
+            self.clock = pygame.time.Clock()
 
         # Other initializations
         self.reset()
@@ -110,14 +113,16 @@ class PaperIoEnv:
         return observations, rewards, done, {}
 
     def render(self):
-        # Use external utility function to render the game
-        render_game(self.screen, self.grid, self.players, self.alive, self.cell_size, self.window_size, self.num_players)
-
-        # Limit the frame rate to 30 FPS
-        self.clock.tick(30)
+        if self.render_game and self.screen:
+            # Use external utility function to render the game
+            render_game(self.screen, self.grid, self.players, self.alive, self.cell_size, self.window_size, self.num_players)
+            pygame.display.flip()  # Update the pygame display
+            # Limit the frame rate to 30 FPS
+            self.clock.tick(30)
 
     def close(self):
-        pygame.quit()
+        if self.render_game:
+            pygame.quit()
 
     def _get_new_position(self, x, y, action):
         # Helper function to calculate new position based on action
