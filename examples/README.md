@@ -115,3 +115,25 @@
 - Updates the rewards list and calculates the moving average.
 - Displays the progress and saves the training graph.
 
+# Reward System for Paper.io Reinforcement Learning Environment
+
+- **Trail Extension Reward**:  
+  +1 for every 3 cells added to the trail. Encourages agents to create longer trails before converting them into territory.
+
+- **Territory Conversion Reward**:  
+  Reward proportional to the number of cells converted into territory. Encourages agents to secure new territory.
+
+- **Territory Maintenance Reward**:  
+  +2 for each cell in the agent's territory. Promotes maintaining and defending existing territory.
+
+- **Survival Reward**:  
+  +1 for every 50 steps survived. Encourages agents to balance risk-taking and survival.
+
+- **Opponent Elimination Reward**:  
+  +5 for eliminating an opponent. Incentivizes aggressive strategies by rewarding successful eliminations.
+
+- **Elimination Penalty**:  
+  -10 for being eliminated. Penalizes agents for getting eliminated, discouraging overly risky behavior.
+
+- **Penalty for Losing Territory**:  
+  Agents lose points equivalent to the number of cells lost to an opponent. Encourages active defense of territory.
