@@ -63,7 +63,7 @@ class PaperIoEnv:
         return observations
 
     def step(self, actions):
-        # Process actions for each player
+    # Process actions for each player
         rewards = [0] * self.num_players
         done = False
         eliminations = []
@@ -89,22 +89,35 @@ class PaperIoEnv:
                 if cell_value == 0 or cell_value == -player_id:
                     self.grid[new_x, new_y] = -player_id
                     player['trail'].append(new_position)
+
+                    # Reward for extending the trail
+                    if len(player['trail']) % 3 == 0:
+                        rewards[i] += 1  # Reward for extending the trail every 3 cells
+
                 elif cell_value == player_id and player['trail']:
-                    rewards[i] += self.convert_trail_to_territory(player_id, rewards)  # Pass rewards here
+                     rewards[i] += self.convert_trail_to_territory(player_id, rewards)  # Reward for converting trail to territory
+
+                     # Reward for the size of territory
+                     rewards[i] += self.players[i]['territory'] * 2  # Reward for maintaining territory
             else:
                 if cell_value < 0:
                     owner_id = -cell_value
                     if self.alive[owner_id - 1]:
                         self.alive[owner_id - 1] = False
                         eliminations.append(owner_id - 1)
-                        rewards[owner_id - 1] -= 20  # Penalty for being eliminated
-                        rewards[i] += 10  # Reward for eliminating an opponent
+                        rewards[owner_id - 1] -= 10  # Reduced penalty for being eliminated
+                        rewards[i] += 5  # Reduced reward for eliminating an opponent
                 player['position'] = new_position
                 self.grid[new_x, new_y] = -player_id
                 player['trail'].append(new_position)
 
         for idx in eliminations:
             self._process_elimination(idx)
+
+        # Reward for surviving a step
+        for i in range(self.num_players):
+            if self.alive[i]:
+                rewards[i] += 1  # Reward for survival
 
         observations = [self.get_observation_for_player(i) for i in range(self.num_players)]
         if sum(self.alive) <= 1:

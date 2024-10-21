@@ -5,9 +5,7 @@ import sys
 import pygame  # Import pygame for rendering only if necessary
 
 from Paper_io_develop import PaperIoEnv
-from examples.paper_io.algorithm.Greedy.greedy_policy import GreedyPolicy
 from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLearningAgent
-from examples.paper_io.algorithm.Random.random_policy import RandomPolicy
 
 
 # Set the flag for rendering the environment
@@ -16,25 +14,24 @@ render_game = False  # Set to True if you want to render the game during trainin
 env = PaperIoEnv(render=render_game)
 
 # Choose the policy
-# policy = RandomPolicy(env)
-# policy_name = 'random_policy'
-
-# policy = GreedyPolicy(env)
-# policy_name = 'greedy_policy'
-
 agent = QLearningAgent(env)
 policy_name = 'q_learning'
 
-
 # Training variables
-num_episodes = 200  # You may need more episodes for learning
-steps_per_episode = 1000  # Adjust as needed
+num_episodes = 5000  # You may need more episodes for learning
+steps_per_episode = 750  # Adjust as needed
 episode_rewards = []  # Store rewards per episode
 moving_avg_rewards = []  # Moving average of rewards
 steps_per_episode_list = []  # Store steps per episode
 epsilon_values = []  # Store epsilon values per episode
-episodes = []  # Store episode numbers for plotting
-window_size = 20  # Window size for moving average
+episodes = []  # Store episode numbers for plotting 
+win_loss_rates = []  # Track win/loss rate (1 for win, 0 for loss)
+
+# Win/loss tracking for two agents
+agent_wins = 0
+agent_losses = 0
+
+window_size = 50  # Increased window size for smoothing graphs
 
 # Initialize the fixed output format
 loading_bar_length = 20  # Length of the loading bar
@@ -64,6 +61,7 @@ episode_num = 0
 while episode_num < num_episodes:
     obs = env.reset()
     episode_reward = 0
+    agent_alive_at_end = False  # Track if agent survives at the end
 
     # Initialize loading progress
     for step in range(steps_per_episode):
@@ -107,6 +105,7 @@ while episode_num < num_episodes:
 
         # If the environment signals the end of the episode, break out of the loop
         if done:
+            agent_alive_at_end = env.alive[0]  # Assuming agent 0 is the one being trained
             break
 
     # Finish the loading bar at the end of the episode
@@ -114,6 +113,14 @@ while episode_num < num_episodes:
     progress_percentage = 100
     sys.stdout.write(f"\rEpoch {episode_num + 1:<5} {loading_bar} {progress_percentage}%\n")
     sys.stdout.flush()
+
+    # Track win/loss
+    if agent_alive_at_end:
+        agent_wins += 1
+        win_loss_rates.append(1)  # Win
+    else:
+        agent_losses += 1
+        win_loss_rates.append(0)  # Loss
 
     # Store rewards and episode data after finishing the episode
     episode_rewards.append(episode_reward)
@@ -137,8 +144,8 @@ while episode_num < num_episodes:
 
 # Plotting the training progress (Episode Rewards)
 plt.figure(figsize=(10, 5))
-plt.plot(episodes, episode_rewards, label='Episode Reward')
-plt.plot(episodes, moving_avg_rewards, label=f'Moving Average Reward (window={window_size})', color='orange')
+plt.plot(episodes, episode_rewards, label='Episode Reward', linewidth=0.75)
+plt.plot(episodes, moving_avg_rewards, label=f'Moving Average Reward (window={window_size})', color='orange', linewidth=2)
 plt.xlabel('Episodes')
 plt.ylabel('Total Reward')
 plt.title('Training Progress: Reward over Episodes')
@@ -152,7 +159,7 @@ print(f"Training progress graph saved at {plot_path}")
 
 # Plotting Steps Per Episode
 plt.figure(figsize=(10, 5))
-plt.plot(episodes, steps_per_episode_list, label='Steps Per Episode', color='green')
+plt.plot(episodes, steps_per_episode_list, label='Steps Per Episode', color='green', linewidth=0.75)
 plt.xlabel('Episodes')
 plt.ylabel('Steps')
 plt.title('Steps Taken Per Episode')
@@ -166,7 +173,7 @@ print(f"Steps per episode graph saved at {plot_path_steps}")
 
 # Plotting Epsilon Decay
 plt.figure(figsize=(10, 5))
-plt.plot(episodes, epsilon_values, label='Epsilon Decay', color='purple')
+plt.plot(episodes, epsilon_values, label='Epsilon Decay', color='purple', linewidth=0.75)
 plt.xlabel('Episodes')
 plt.ylabel('Epsilon Value')
 plt.title('Epsilon Decay Over Time')
@@ -177,6 +184,34 @@ plt.grid(True)
 plot_path_epsilon = os.path.join(plots_folder, 'epsilon_decay.png')
 plt.savefig(plot_path_epsilon)
 print(f"Epsilon decay graph saved at {plot_path_epsilon}")
+
+# Plotting the TD Error over Time
+plt.figure(figsize=(10, 5))
+plt.plot(range(len(agent.td_errors)), agent.td_errors, label='TD Error', linewidth=0.75)
+plt.xlabel('Steps')
+plt.ylabel('TD Error')
+plt.title('TD Error over Training')
+plt.legend()
+plt.grid(True)
+
+# Save the TD error plot to a file in the plots folder
+plot_path_td_error = os.path.join(plots_folder, 'td_error.png')
+plt.savefig(plot_path_td_error)
+print(f"TD error graph saved at {plot_path_td_error}")
+
+# Plotting Win/Loss Rate
+plt.figure(figsize=(10, 5))
+plt.plot(episodes, win_loss_rates, label='Win/Loss Rate', color='blue', linewidth=0.75)
+plt.xlabel('Episodes')
+plt.ylabel('Win/Loss (1=Win, 0=Loss)')
+plt.title('Win/Loss Rate Over Episodes')
+plt.legend()
+plt.grid(True)
+
+# Save the win/loss plot to a file in the plots folder
+plot_path_win_loss = os.path.join(plots_folder, 'win_loss_rate.png')
+plt.savefig(plot_path_win_loss)
+print(f"Win/Loss rate graph saved at {plot_path_win_loss}")
 
 # Save the Q-table after training
 q_table_path = os.path.join(trained_model_folder, 'q_table.pkl')

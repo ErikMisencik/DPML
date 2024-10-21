@@ -1,38 +1,33 @@
-import pickle
 import numpy as np
 import random
+import pickle
 
 class QLearningAgent:
     def __init__(self, env, learning_rate=0.005, discount_factor=0.99,
-                 epsilon=1.0, epsilon_decay=0.996, min_epsilon=0.1):
+                 epsilon=1.0, epsilon_decay=0.9995, min_epsilon=0.1):
         self.env = env
         self.alpha = learning_rate        # Learning rate
         self.gamma = discount_factor      # Discount factor
         self.epsilon = epsilon            # Exploration rate
         self.epsilon_decay = epsilon_decay
         self.min_epsilon = min_epsilon
-        self.q_table = {}                 # Q-table initialized as an empty dictionary
+        self.q_table = {}  # Initialize the Q-table as a dictionary
+        self.td_errors = []  # To store TD errors
 
     def get_state(self, observation, player_idx):
-        # Extract features to create a state representation
+        """
+        Represent the state based on observation. This can be customized 
+        based on the game's features.
+        """
         grid = observation[player_idx]
-        # print(f"Debug: Type of grid: {type(grid)}, shape: {grid.shape}")
         player = self.env.players[player_idx]
         x, y = player['position']
 
-        # Check if the player is on their territory or trail
         cell_value = grid[x, y]
-        if cell_value == player['id']:
-            position_status = 'on_territory'
-        elif cell_value == -player['id']:
-            position_status = 'on_trail'
-        else:
-            position_status = 'in_neutral'
-
-        # Trail length
+        position_status = 'on_territory' if cell_value == player['id'] else 'on_trail' if cell_value == -player['id'] else 'in_neutral'
         trail_length = len(player['trail'])
 
-        # Find the nearest enemy player
+        # Add any other important features to represent the state
         nearest_enemy_distance = self._get_nearest_enemy_distance(player_idx)
         nearest_enemy_direction = self._get_nearest_enemy_direction(player_idx)
 
@@ -49,38 +44,39 @@ class QLearningAgent:
         actions = []
         for i in range(self.env.num_players):
             if not self.env.alive[i]:
-                actions.append(None)  # No action for dead players
+                actions.append(None)  # Skip dead players
                 continue
 
             state = self.get_state(observation, i)
-
+            
             # Epsilon-greedy action selection
             if random.uniform(0, 1) < self.epsilon:
-                # Explore: choose a random action
-                action = self.env.action_spaces[i].sample()
+                action = self.env.action_spaces[i].sample()  # Explore: random action
             else:
-                # Exploit: choose the best known action
                 num_actions = self.env.action_spaces[i].n
                 q_values = [self.q_table.get((state, a), 0) for a in range(num_actions)]
                 max_q = max(q_values)
                 max_actions = [a for a, q in enumerate(q_values) if q == max_q]
-                action = random.choice(max_actions)  # Break ties randomly
+                action = random.choice(max_actions)  # Exploit: choose best action
 
             actions.append(action)
         return actions
 
     def update_q_values(self, state, action, reward, next_state, done, player_idx):
-        current_q = self.q_table.get((state, action), 0)
+        current_q = self.q_table.get((state, action), 0)  # Current Q-value
 
         if done:
-            max_future_q = 0
+            max_future_q = 0  # No future Q-values if the episode is done
         else:
             num_actions = self.env.action_spaces[player_idx].n
-            # Get the max Q value for the next state
             max_future_q = max([self.q_table.get((next_state, a), 0) for a in range(num_actions)])
 
-        # Q-Learning formula
-        new_q = current_q + self.alpha * (reward + self.gamma * max_future_q - current_q)
+        # TD error (Bellman Equation)
+        td_error = reward + self.gamma * max_future_q - current_q
+        self.td_errors.append(abs(td_error))  # Store the TD error for analysis
+
+        # Update Q-value using the Bellman equation
+        new_q = current_q + self.alpha * td_error
         self.q_table[(state, action)] = new_q
 
     def decay_epsilon(self):
@@ -89,6 +85,7 @@ class QLearningAgent:
             self.epsilon *= self.epsilon_decay
 
     def _get_nearest_enemy_distance(self, player_idx):
+        # Compute Manhattan distance to the nearest enemy
         player = self.env.players[player_idx]
         x1, y1 = player['position']
         min_distance = self.env.grid_size * 2  # Initialize with a large number
@@ -102,6 +99,7 @@ class QLearningAgent:
         return min_distance
 
     def _get_nearest_enemy_direction(self, player_idx):
+        # Compute the direction of the nearest enemy (up, down, left, right)
         player = self.env.players[player_idx]
         x1, y1 = player['position']
         min_distance = self.env.grid_size * 2
@@ -113,7 +111,7 @@ class QLearningAgent:
                 distance = abs(x1 - x2) + abs(y1 - y2)
                 if distance < min_distance:
                     min_distance = distance
-                    # Determine direction
+                    # Determine the direction based on position
                     if x2 > x1:
                         direction = 'down'
                     elif x2 < x1:
@@ -123,7 +121,7 @@ class QLearningAgent:
                     elif y2 < y1:
                         direction = 'left'
         return direction
-    
+
     def save_q_table(self, filepath):
         # Save the Q-table to a file using pickle
         with open(filepath, 'wb') as f:
