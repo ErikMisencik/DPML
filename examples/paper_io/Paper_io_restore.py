@@ -1,13 +1,27 @@
 import numpy as np
-import cv2
+from examples.paper_io.utils.render import render_game
+import pygame
 from gym.spaces import Box, Discrete
 
 class PaperIoEnv:
-    def __init__(self, grid_size=50, num_players=2):
+    def __init__(self, grid_size=50, num_players=2, render=False):
         # Initialize grid size and number of players
         self.grid_size = grid_size
         self.num_players = num_players
-        self.window_name = "Paper.io"  # Game window name for OpenCV
+        self.cell_size = 15  # Each grid cell size in pixels
+
+        self.window_size = self.grid_size * self.cell_size         # Always set window size
+        self.render_game = render  # Use the flag to control rendering
+
+        # Initialize Pygame display only if rendering is enabled
+        self.screen = None
+        if self.render_game:
+            pygame.init()
+            self.screen = pygame.display.set_mode((self.window_size, self.window_size))
+            pygame.display.set_caption("Paper.io with Pygame")  # Correct function call
+            self.clock = pygame.time.Clock()
+
+        # Other initializations
         self.reset()
 
         # Define observation and action spaces for each player
@@ -49,7 +63,7 @@ class PaperIoEnv:
         return observations
 
     def step(self, actions):
-        # Process actions for each player
+    # Process actions for each player
         rewards = [0] * self.num_players
         done = False
         eliminations = []
@@ -75,22 +89,35 @@ class PaperIoEnv:
                 if cell_value == 0 or cell_value == -player_id:
                     self.grid[new_x, new_y] = -player_id
                     player['trail'].append(new_position)
+
+                    # Reward for extending the trail
+                    if len(player['trail']) % 3 == 0:
+                        rewards[i] += 1  # Reward for extending the trail every 3 cells
+
                 elif cell_value == player_id and player['trail']:
-                    rewards[i] += self.convert_trail_to_territory(player_id)
+                     rewards[i] += self.convert_trail_to_territory(player_id, rewards)  # Reward for converting trail to territory
+
+                     # Reward for the size of territory
+                     rewards[i] += self.players[i]['territory'] * 2  # Reward for maintaining territory
             else:
                 if cell_value < 0:
                     owner_id = -cell_value
                     if self.alive[owner_id - 1]:
                         self.alive[owner_id - 1] = False
                         eliminations.append(owner_id - 1)
-                        rewards[owner_id - 1] -= 1
-                        rewards[i] += 1
+                        rewards[owner_id - 1] -= 10  # Reduced penalty for being eliminated
+                        rewards[i] += 5  # Reduced reward for eliminating an opponent
                 player['position'] = new_position
                 self.grid[new_x, new_y] = -player_id
                 player['trail'].append(new_position)
 
         for idx in eliminations:
             self._process_elimination(idx)
+
+        # Reward for surviving a step
+        for i in range(self.num_players):
+            if self.alive[i]:
+                rewards[i] += 1  # Reward for survival
 
         observations = [self.get_observation_for_player(i) for i in range(self.num_players)]
         if sum(self.alive) <= 1:
@@ -99,113 +126,16 @@ class PaperIoEnv:
         return observations, rewards, done, {}
 
     def render(self):
-        # Render the game grid visually using OpenCV
-        cell_size = 15  # Each grid cell size in pixels
-        img_size = self.grid_size * cell_size
-        img = np.zeros((img_size, img_size, 3), dtype=np.uint8)
-
-        # Define player colors
-        colors = [
-            (0, 255, 0),  # Green
-            (255, 0, 0),  # Blue
-            (0, 0, 255),  # Red
-            (255, 255, 0),  # Yellow
-            (255, 0, 255),  # Magenta
-            (0, 255, 255),  # Cyan
-        ]
-
-        # Define the center and radius of the circular arena
-        center = (img_size // 2, img_size // 2)
-        radius = img_size // 2 - 10  # Decrease the margin to make the arena larger
-
-        # Fill the circle with white color to represent the arena
-        cv2.circle(img, center, radius, (255, 255, 255), -1)  # White circular arena
-
-        # Add a 3D-like border around the circular arena
-        border_thickness = 10  # Thickness of the border for the 3D effect
-        cv2.circle(img, center, radius, (200, 200, 200), border_thickness)  # Light border (top-left)
-        cv2.circle(img, center, radius - border_thickness // 2, (100, 100, 100), border_thickness // 2)  # Darker border (bottom-right)
-
-        # Draw the grid based on the player's territories and trails
-        for x in range(self.grid_size):
-            for y in range(self.grid_size):
-                cell_value = self.grid[x, y]
-                top_left = (y * cell_size, x * cell_size)
-                bottom_right = ((y + 1) * cell_size, (x + 1) * cell_size)
-
-                # Get the center of the current cell
-                cell_center = ((top_left[0] + bottom_right[0]) // 2, (top_left[1] + bottom_right[1]) // 2)
-
-                # Only draw cells inside the circular arena
-                if np.sqrt((cell_center[0] - center[0]) ** 2 + (cell_center[1] - center[1]) ** 2) < radius:
-                    if cell_value > 0:
-                        # Territory: make less bright by blending more with white (75% original color, 25% white)
-                        player_id = cell_value - 1
-                        color = colors[player_id % len(colors)]
-                        faded_territory_color = [int(0.25 * 255 + 0.75 * c) for c in color]  # Less bright territory
-
-                        # Draw the main block for territory
-                        cv2.rectangle(img, top_left, bottom_right, faded_territory_color, -1)
-
-                        # Subtle highlight on the top-left for territory
-                        light_color = [min(255, int(c * 1.1)) for c in faded_territory_color]  # Slightly lighter
-                        cv2.line(img, top_left, (bottom_right[0], top_left[1]), light_color, 1)  # Top border
-                        cv2.line(img, top_left, (top_left[0], bottom_right[1]), light_color, 1)  # Left border
-
-                        # Subtle shadow on the bottom-right for territory
-                        shadow_color = [max(0, int(c * 0.9)) for c in faded_territory_color]  # Slightly darker
-                        cv2.line(img, bottom_right, (bottom_right[0], top_left[1]), shadow_color, 1)  # Bottom border
-                        cv2.line(img, bottom_right, (top_left[0], bottom_right[1]), shadow_color, 1)  # Right border
-
-                    elif cell_value < 0:
-                        # Trail: subtle 3D effect (slightly faded, with lighter shadows/highlights)
-                        player_id = -cell_value - 1
-                        color = colors[player_id % len(colors)]
-                        faded_color = [int(0.75 * 255 + 0.25 * c) for c in color]
-
-                        # Draw the main block for trail
-                        cv2.rectangle(img, top_left, bottom_right, faded_color, -1)
-
-                        # Subtle highlight on the top-left for trail
-                        light_color = [min(255, int(c * 1.05)) for c in faded_color]  # Very subtle highlight
-                        cv2.line(img, top_left, (bottom_right[0], top_left[1]), light_color, 1)  # Top border
-                        cv2.line(img, top_left, (top_left[0], bottom_right[1]), light_color, 1)  # Left border
-
-                        # Subtle shadow on the bottom-right for trail
-                        shadow_color = [max(0, int(c * 0.95)) for c in faded_color]  # Very subtle shadow
-                        cv2.line(img, bottom_right, (bottom_right[0], top_left[1]), shadow_color, 1)  # Bottom border
-                        cv2.line(img, bottom_right, (top_left[0], bottom_right[1]), shadow_color, 1)  # Right border
-
-        # Highlight players with a stronger 3D effect
-        for i, player in enumerate(self.players):
-            if not self.alive[i]:
-                continue
-            x, y = player['position']
-            top_left = (y * cell_size, x * cell_size)
-            bottom_right = ((y + 1) * cell_size, (x + 1) * cell_size)
-            color = [min(255, c + 100) for c in colors[i % len(colors)]]
-
-            # Draw player with a stronger 3D effect
-            cv2.rectangle(img, top_left, bottom_right, color, -1)
-
-            # Stronger highlight on the top-left to simulate light source for player
-            light_color = [min(255, int(c * 1.3)) for c in color]  # Stronger lighter color
-            cv2.line(img, top_left, (bottom_right[0], top_left[1]), light_color, 2)  # Top border
-            cv2.line(img, top_left, (top_left[0], bottom_right[1]), light_color, 2)  # Left border
-
-            # Stronger shadow on the bottom-right to simulate depth for player
-            shadow_color = [max(0, int(c * 0.6)) for c in color]  # Stronger darker color
-            cv2.line(img, bottom_right, (bottom_right[0], top_left[1]), shadow_color, 2)  # Bottom border
-            cv2.line(img, bottom_right, (top_left[0], bottom_right[1]), shadow_color, 2)  # Right border
-
-        # Display the grid
-        cv2.imshow(self.window_name, img)
-        cv2.waitKey(1)
-
+        if self.render_game and self.screen:
+            # Use external utility function to render the game
+            render_game(self.screen, self.grid, self.players, self.alive, self.cell_size, self.window_size, self.num_players)
+            pygame.display.flip()  # Update the pygame display
+            # Limit the frame rate to 30 FPS
+            self.clock.tick(30)
 
     def close(self):
-        # Close the game window
-        cv2.destroyAllWindows()
+        if self.render_game:
+            pygame.quit()
 
     def _get_new_position(self, x, y, action):
         # Helper function to calculate new position based on action
@@ -232,7 +162,7 @@ class PaperIoEnv:
         # Return the current observation (grid state) for a player
         return self.grid.copy()
 
-    def convert_trail_to_territory(self, player_id):
+    def convert_trail_to_territory(self, player_id, rewards):
         # Convert player's trail into permanent territory and return reward for captured area
         player = self.players[player_id - 1]
         captured_area = 0  # Initialize captured area size
@@ -240,13 +170,13 @@ class PaperIoEnv:
             x, y = cell
             self.grid[x, y] = player_id
             captured_area += 1  # Increment captured territory count
-        captured_area += self.capture_area(player_id)
+        captured_area += self.capture_area(player_id, rewards)  # Pass rewards to capture_area
         player['trail'] = []
 
         # Reward based on how much area was captured
         return captured_area
 
-    def capture_area(self, player_id):
+    def capture_area(self, player_id, rewards):
         # Implement area capture logic and track territories lost by other players
         player_cells = (self.grid == player_id) | (self.grid == -player_id)
         mask = ~player_cells
@@ -288,17 +218,17 @@ class PaperIoEnv:
         for i in range(self.num_players):
             if i != player_id - 1 and self.alive[i]:
                 self.players[i]['territory'] -= territory_lost[i]
+                rewards[i] -= territory_lost[i]  # Penalty for losing territory
 
         return np.sum(enclosed_area)
-    
+
     def _within_arena(self, x, y):
         """
         Checks if a given position (x, y) is within the circular arena.
         """
-        cell_size = 15  # Each grid cell size in pixels
-        img_size = self.grid_size * cell_size
-        center = (img_size // 2, img_size // 2)
-        radius = img_size // 2 - 10  # Decrease the margin to make the arena larger
+        cell_size = self.cell_size
+        center = (self.grid_size * cell_size // 2, self.grid_size * cell_size // 2)
+        radius = self.grid_size * cell_size // 2 - 20
 
         # Calculate the center of the current cell
         cell_center_x = (y * cell_size) + (cell_size // 2)

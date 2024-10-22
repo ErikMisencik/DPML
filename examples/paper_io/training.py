@@ -9,7 +9,7 @@ from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLearningAg
 
 
 # Set the flag for rendering the environment
-render_game = False  # Set to True if you want to render the game during training
+render_game = True  # Set to True if you want to render the game during training
 # Create the environment
 env = PaperIoEnv(render=render_game)
 

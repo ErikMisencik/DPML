@@ -1,3 +1,4 @@
+import random
 import numpy as np
 from examples.paper_io.utils.render import render_game
 import pygame
@@ -5,42 +6,38 @@ from gym.spaces import Box, Discrete
 
 class PaperIoEnv:
     def __init__(self, grid_size=50, num_players=2, render=False):
-        # Initialize grid size and number of players
+        # Initialization stays the same
         self.grid_size = grid_size
         self.num_players = num_players
-        self.cell_size = 15  # Each grid cell size in pixels
-
-        self.window_size = self.grid_size * self.cell_size         # Always set window size
-        self.render_game = render  # Use the flag to control rendering
-
-        # Initialize Pygame display only if rendering is enabled
+        self.cell_size = 15  
+        self.window_size = self.grid_size * self.cell_size 
+        self.render_game = render  
         self.screen = None
         if self.render_game:
             pygame.init()
             self.screen = pygame.display.set_mode((self.window_size, self.window_size))
-            pygame.display.set_caption("Paper.io with Pygame")  # Correct function call
+            pygame.display.set_caption("Paper.io with Pygame")
             self.clock = pygame.time.Clock()
 
-        # Other initializations
+        # Initialize players' directions
+        self.directions = [(0, 1)] * self.num_players  # Default to moving right
         self.reset()
 
-        # Define observation and action spaces for each player
+        # Observation space remains the same
         self.observation_spaces = [
-            Box(
-                low=-self.num_players,
-                high=self.num_players,
-                shape=(self.grid_size, self.grid_size),
-                dtype=np.int8
-            )
+            Box(low=-self.num_players, high=self.num_players, shape=(self.grid_size, self.grid_size), dtype=np.int8)
             for _ in range(self.num_players)
         ]
-        self.action_spaces = [Discrete(4) for _ in range(self.num_players)]  # Up, Down, Left, Right
+
+        # Action space is now 3: 0 - turn left, 1 - turn right, 2 - go straight
+        self.action_spaces = [Discrete(3) for _ in range(self.num_players)]
 
     def reset(self):
         # Reset game state and players' positions
         self.grid = np.zeros((self.grid_size, self.grid_size), dtype=np.int8)
         self.players = []
         self.alive = [True] * self.num_players
+        self.directions = [self._random_direction() for _ in range(self.num_players)]  # Random starting directions
 
         for i in range(self.num_players):
             while True:
@@ -63,50 +60,54 @@ class PaperIoEnv:
         return observations
 
     def step(self, actions):
-    # Process actions for each player
         rewards = [0] * self.num_players
         done = False
         eliminations = []
 
         for i, action in enumerate(actions):
             if not self.alive[i]:
-                continue  # Skip eliminated players
+                continue
             player = self.players[i]
             x, y = player['position']
             player_id = player['id']
 
-            # Determine the new position based on action
-            new_x, new_y = self._get_new_position(x, y, action)
+            # Update direction based on action (turn left, turn right, or go straight)
+            if action == 0:  # Turn left
+                self.directions[i] = self._turn_left(self.directions[i])
+            elif action == 1:  # Turn right
+                self.directions[i] = self._turn_right(self.directions[i])
+
+            # Move forward in the current direction
+            dx, dy = self.directions[i]
+            new_x, new_y = x + dx, y + dy
+
             if not self._within_arena(new_x, new_y):
-                # Prevent the player from moving outside the circular arena
                 new_x, new_y = x, y  # Stay in the current position
+
             new_position = (new_x, new_y)
             cell_value = self.grid[new_x, new_y]
 
-            # Handle collisions and territory control
+            # Handle collisions and territory control (same logic as before)
             if cell_value == 0 or cell_value == player_id or cell_value == -player_id:
                 player['position'] = new_position
                 if cell_value == 0 or cell_value == -player_id:
                     self.grid[new_x, new_y] = -player_id
                     player['trail'].append(new_position)
 
-                    # Reward for extending the trail
                     if len(player['trail']) % 3 == 0:
-                        rewards[i] += 1  # Reward for extending the trail every 3 cells
+                        rewards[i] += 1
 
                 elif cell_value == player_id and player['trail']:
-                     rewards[i] += self.convert_trail_to_territory(player_id, rewards)  # Reward for converting trail to territory
-
-                     # Reward for the size of territory
-                     rewards[i] += self.players[i]['territory'] * 2  # Reward for maintaining territory
+                    rewards[i] += self.convert_trail_to_territory(player_id, rewards)
+                    rewards[i] += self.players[i]['territory'] * 2
             else:
                 if cell_value < 0:
                     owner_id = -cell_value
                     if self.alive[owner_id - 1]:
                         self.alive[owner_id - 1] = False
                         eliminations.append(owner_id - 1)
-                        rewards[owner_id - 1] -= 10  # Reduced penalty for being eliminated
-                        rewards[i] += 5  # Reduced reward for eliminating an opponent
+                        rewards[owner_id - 1] -= 10
+                        rewards[i] += 5
                 player['position'] = new_position
                 self.grid[new_x, new_y] = -player_id
                 player['trail'].append(new_position)
@@ -114,10 +115,9 @@ class PaperIoEnv:
         for idx in eliminations:
             self._process_elimination(idx)
 
-        # Reward for surviving a step
         for i in range(self.num_players):
             if self.alive[i]:
-                rewards[i] += 1  # Reward for survival
+                rewards[i] += 1
 
         observations = [self.get_observation_for_player(i) for i in range(self.num_players)]
         if sum(self.alive) <= 1:
@@ -133,21 +133,28 @@ class PaperIoEnv:
             # Limit the frame rate to 30 FPS
             self.clock.tick(30)
 
+    def _turn_left(self, direction):
+        # Rotate direction 90 degrees counterclockwise
+        dx, dy = direction
+        return (-dy, dx)
+
+    def _turn_right(self, direction):
+        # Rotate direction 90 degrees clockwise
+        dx, dy = direction
+        return (dy, -dx)
+    
+    def _random_direction(self):
+        # Randomly choose one of four directions: (Up, Down, Left, Right)
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Up, Down, Left, Right
+        return random.choice(directions)
+
+    def _get_new_position(self, x, y, action):
+        # This method is now obsolete but kept for legacy reference
+        return x, y
+    
     def close(self):
         if self.render_game:
             pygame.quit()
-
-    def _get_new_position(self, x, y, action):
-        # Helper function to calculate new position based on action
-        if action == 0 and x > 0:
-            return x - 1, y  # Move Up
-        if action == 1 and x < self.grid_size - 1:
-            return x + 1, y  # Move Down
-        if action == 2 and y > 0:
-            return x, y - 1  # Move Left
-        if action == 3 and y < self.grid_size - 1:
-            return x, y + 1  # Move Right
-        return x, y  # No movement
 
     def _process_elimination(self, idx):
         # Handle player elimination by removing their trail and territory
