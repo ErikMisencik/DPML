@@ -1,4 +1,5 @@
 import os
+import matplotlib.ticker as mticker  # For better tick formatting
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
@@ -18,7 +19,7 @@ agent = QLearningAgent(env)
 policy_name = 'q_learning'
 
 # Training variables
-num_episodes = 10000  # You may need more episodes for learning
+num_episodes = 15000  # You may need more episodes for learning
 steps_per_episode = 300  # Adjust as needed
 episode_rewards = []  # Store rewards per episode
 moving_avg_rewards = []  # Moving average of rewards
@@ -36,11 +37,26 @@ window_size = 50  # Increased window size for smoothing graphs
 # Initialize the fixed output format
 loading_bar_length = 20  # Length of the loading bar
 
+# Function to find the next available folder index
+def get_next_model_index(models_dir, policy_name):
+    existing_folders = [d for d in os.listdir(models_dir) if policy_name in d]
+    if existing_folders:
+        # Extract numeric index from folder names and find the max
+        indices = [int(folder.split('_')[-1]) for folder in existing_folders if folder.split('_')[-1].isdigit()]
+        if indices:
+            return max(indices) + 1
+        else:
+            return 1  # Default to 1 if no numeric index is found
+    else:
+        return 1
+
 # Initialize model count based on policy name
 models_dir = 'models'
 os.makedirs(models_dir, exist_ok=True)
-model_count = len([d for d in os.listdir(models_dir) if policy_name in d])
-model_folder_name = f"{policy_name}_{model_count + 1}"
+
+# Dynamically determine the next folder name
+model_count = get_next_model_index(models_dir, policy_name)
+model_folder_name = f"{policy_name}_{model_count}"
 
 # Create directories for the new model
 model_folder = os.path.join(models_dir, model_folder_name)
@@ -50,6 +66,27 @@ plots_folder = os.path.join(model_folder, 'plots')
 # Create directories if they don't exist
 os.makedirs(trained_model_folder, exist_ok=True)
 os.makedirs(plots_folder, exist_ok=True)
+
+# File to save training details
+training_info_file = os.path.join(model_folder, 'training_info.txt')
+
+# Function to save training information
+def save_training_info(file_path, num_episodes, steps_per_episode, agent):
+    with open(file_path, 'w') as f:
+        f.write(f"Q-Learning Training Information\n")
+        f.write(f"Policy Name: {policy_name}\n")
+        f.write(f"Number of Episodes: {num_episodes}\n")
+        f.write(f"Steps per Episode: {steps_per_episode}\n")
+        f.write(f"Learning Rate: {agent.learning_rate}\n")
+        f.write(f"Discount Factor: {agent.discount_factor}\n")
+        f.write(f"Initial Epsilon: {1.0}\n")
+        f.write(f"Final Epsilon: {agent.epsilon}\n")
+        f.write(f"Epsilon Decay Rate: {agent.epsilon_decay}\n")
+        f.write(f"Minimum Epsilon: {agent.min_epsilon}\n")
+        f.write(f"Total Wins: {agent_wins}\n")
+        f.write(f"Total Losses: {agent_losses}\n")
+        f.write(f"Final Q-Table Path: {q_table_path}\n")
+    print(f"Training information saved at {file_path}")
 
 # Print the initial header
 print(f"{'Epoch':<6} {'Progress':<23}")
@@ -217,6 +254,9 @@ print(f"Win/Loss rate graph saved at {plot_path_win_loss}")
 q_table_path = os.path.join(trained_model_folder, 'q_table.pkl')
 agent.save_q_table(q_table_path)
 print(f"Q-table saved at {q_table_path}")
+
+# Save the training information at the end of training
+save_training_info(training_info_file, num_episodes, steps_per_episode, agent)
 
 # Show the plots
 plt.show()

@@ -92,7 +92,7 @@ class PaperIoEnv:
                 # Self-elimination: mark the player as eliminated and apply a negative reward
                 self.alive[i] = False
                 eliminations.append(i)
-                rewards[i] -= 10  # Penalty for self-elimination
+                rewards[i] -= 15  # Penalty for self-elimination
                 continue  # Skip further processing for this player
 
             # Handle collisions and territory control (same logic as before)
@@ -103,11 +103,11 @@ class PaperIoEnv:
                     player['trail'].append(new_position)
 
                     if len(player['trail']) % 3 == 0:
-                        rewards[i] += 1
+                        rewards[i] += 3
 
                 elif cell_value == player_id and player['trail']:
                     rewards[i] += self.convert_trail_to_territory(player_id, rewards)
-                    rewards[i] += self.players[i]['territory'] * 2
+                    rewards[i] += self.players[i]['territory']
             else:
                 if cell_value < 0:
                     owner_id = -cell_value
@@ -115,7 +115,7 @@ class PaperIoEnv:
                         self.alive[owner_id - 1] = False
                         eliminations.append(owner_id - 1)
                         rewards[owner_id - 1] -= 10
-                        rewards[i] += 10
+                        rewards[i] += 10 
                 player['position'] = new_position
                 self.grid[new_x, new_y] = -player_id
                 player['trail'].append(new_position)
@@ -192,7 +192,7 @@ class PaperIoEnv:
         player['trail'] = []
 
         # Reward based on how much area was captured
-        return captured_area * 3 
+        return captured_area * 3.5 
 
     def capture_area(self, player_id, rewards):
         # Implement area capture logic and track territories lost by other players

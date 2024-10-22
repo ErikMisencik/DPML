@@ -3,11 +3,11 @@ import random
 import pickle
 
 class QLearningAgent:
-    def __init__(self, env, learning_rate=0.005, discount_factor=0.99,
-                 epsilon=1.0, epsilon_decay=0.9995, min_epsilon=0.1):
+    def __init__(self, env, learning_rate=0.004, discount_factor=0.99,
+                 epsilon=1.0, epsilon_decay=0.9993, min_epsilon=0.1):
         self.env = env
-        self.alpha = learning_rate        # Learning rate
-        self.gamma = discount_factor      # Discount factor
+        self.learning_rate = learning_rate        # Learning rate
+        self.discount_factor = discount_factor      # Discount factor
         self.epsilon = epsilon            # Exploration rate
         self.epsilon_decay = epsilon_decay
         self.min_epsilon = min_epsilon
@@ -72,11 +72,11 @@ class QLearningAgent:
             max_future_q = max([self.q_table.get((next_state, a), 0) for a in range(num_actions)])
 
         # TD error (Bellman Equation)
-        td_error = reward + self.gamma * max_future_q - current_q
+        td_error = reward + self.discount_factor * max_future_q - current_q
         self.td_errors.append(abs(td_error))  # Store the TD error for analysis
 
         # Update Q-value using the Bellman equation
-        new_q = current_q + self.alpha * td_error
+        new_q = current_q + self.learning_rate * td_error
         self.q_table[(state, action)] = new_q
 
     def decay_epsilon(self):
