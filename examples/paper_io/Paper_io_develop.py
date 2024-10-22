@@ -66,7 +66,7 @@ class PaperIoEnv:
 
         for i, action in enumerate(actions):
             if not self.alive[i]:
-                continue
+                continue  # Skip eliminated players
             player = self.players[i]
             x, y = player['position']
             player_id = player['id']
@@ -86,6 +86,14 @@ class PaperIoEnv:
 
             new_position = (new_x, new_y)
             cell_value = self.grid[new_x, new_y]
+
+            # Check for self-collision (stepping on own trail)
+            if new_position in player['trail']:
+                # Self-elimination: mark the player as eliminated and apply a negative reward
+                self.alive[i] = False
+                eliminations.append(i)
+                rewards[i] -= 10  # Penalty for self-elimination
+                continue  # Skip further processing for this player
 
             # Handle collisions and territory control (same logic as before)
             if cell_value == 0 or cell_value == player_id or cell_value == -player_id:
@@ -107,23 +115,26 @@ class PaperIoEnv:
                         self.alive[owner_id - 1] = False
                         eliminations.append(owner_id - 1)
                         rewards[owner_id - 1] -= 10
-                        rewards[i] += 5
+                        rewards[i] += 10
                 player['position'] = new_position
                 self.grid[new_x, new_y] = -player_id
                 player['trail'].append(new_position)
 
+        # Process eliminations
         for idx in eliminations:
             self._process_elimination(idx)
 
-        for i in range(self.num_players):
-            if self.alive[i]:
-                rewards[i] += 1
+        # # Reward for surviving a step
+        # for i in range(self.num_players):
+        #     if self.alive[i]:
+        #         rewards[i] += 1  # Reward for survival
 
         observations = [self.get_observation_for_player(i) for i in range(self.num_players)]
         if sum(self.alive) <= 1:
             done = True
 
         return observations, rewards, done, {}
+
 
     def render(self):
         if self.render_game and self.screen:
@@ -181,7 +192,7 @@ class PaperIoEnv:
         player['trail'] = []
 
         # Reward based on how much area was captured
-        return captured_area
+        return captured_area * 3
 
     def capture_area(self, player_id, rewards):
         # Implement area capture logic and track territories lost by other players

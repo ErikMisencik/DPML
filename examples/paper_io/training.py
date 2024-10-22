@@ -9,7 +9,7 @@ from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLearningAg
 
 
 # Set the flag for rendering the environment
-render_game = True  # Set to True if you want to render the game during training
+render_game = False  # Set to True if you want to render the game during training
 # Create the environment
 env = PaperIoEnv(render=render_game)
 
@@ -18,8 +18,8 @@ agent = QLearningAgent(env)
 policy_name = 'q_learning'
 
 # Training variables
-num_episodes = 5000  # You may need more episodes for learning
-steps_per_episode = 750  # Adjust as needed
+num_episodes = 10000  # You may need more episodes for learning
+steps_per_episode = 300  # Adjust as needed
 episode_rewards = []  # Store rewards per episode
 moving_avg_rewards = []  # Moving average of rewards
 steps_per_episode_list = []  # Store steps per episode
