@@ -192,7 +192,7 @@ class PaperIoEnv:
         player['trail'] = []
 
         # Reward based on how much area was captured
-        return captured_area * 3
+        return captured_area * 3 
 
     def capture_area(self, player_id, rewards):
         # Implement area capture logic and track territories lost by other players
