@@ -7,6 +7,7 @@ from gym.spaces import Box, Discrete
 class PaperIoEnv:
     def __init__(self, grid_size=50, num_players=2, render=False):
         # Initialization stays the same
+        self.steps_taken = 0  # Initialize steps
         self.grid_size = grid_size
         self.num_players = num_players
         self.cell_size = 15  
@@ -38,6 +39,7 @@ class PaperIoEnv:
         self.players = []
         self.alive = [True] * self.num_players
         self.directions = [self._random_direction() for _ in range(self.num_players)]  # Random starting directions
+        self.steps_taken = 0
 
         for i in range(self.num_players):
             while True:
@@ -51,9 +53,9 @@ class PaperIoEnv:
                 'position': position,
                 'id': player_id,
                 'trail': [],
-                'territory': 1  # Start with 1 territory (initial position)
+                'territory': 4  # Start with 1 territory (initial position)
             })
-            self.grid[x, y] = player_id  # Mark initial player territory
+            self.grid[x:x+2, y:y+2] = player_id  # Mark 4 cells as the player's territory
 
         # Return initial observations for each player
         observations = [self.get_observation_for_player(i) for i in range(self.num_players)]
@@ -63,6 +65,7 @@ class PaperIoEnv:
         rewards = [0] * self.num_players
         done = False
         eliminations = []
+        self.steps_taken += 1
 
         for i, action in enumerate(actions):
             if not self.alive[i]:
@@ -92,7 +95,7 @@ class PaperIoEnv:
                 # Self-elimination: mark the player as eliminated and apply a negative reward
                 self.alive[i] = False
                 eliminations.append(i)
-                rewards[i] -= 15  # Penalty for self-elimination
+                rewards[i] -= 100  # Penalty for self-elimination
                 continue  # Skip further processing for this player
 
             # Handle collisions and territory control (same logic as before)
@@ -102,19 +105,20 @@ class PaperIoEnv:
                     self.grid[new_x, new_y] = -player_id
                     player['trail'].append(new_position)
 
-                    if len(player['trail']) % 3 == 0:
-                        rewards[i] += 3
+                    # Adjust reward scaling based on trail length
+                    if len(player['trail']) % 5 == 0:  # Reward increases every 5 steps in the trail
+                        rewards[i] += min(len(player['trail']) // 5 * 3, 12)  # Scale reward with trail length
 
                 elif cell_value == player_id and player['trail']:
                     rewards[i] += self.convert_trail_to_territory(player_id, rewards)
-                    rewards[i] += self.players[i]['territory']
+                    rewards[i] += self.players[i]['territory'] + 10  # Bonus for successful territory conversion
             else:
                 if cell_value < 0:
                     owner_id = -cell_value
                     if self.alive[owner_id - 1]:
                         self.alive[owner_id - 1] = False
                         eliminations.append(owner_id - 1)
-                        rewards[owner_id - 1] -= 10
+                        rewards[owner_id - 1] -= 20
                         rewards[i] += 10 
                 player['position'] = new_position
                 self.grid[new_x, new_y] = -player_id
@@ -139,7 +143,7 @@ class PaperIoEnv:
     def render(self):
         if self.render_game and self.screen:
             # Use external utility function to render the game
-            render_game(self.screen, self.grid, self.players, self.alive, self.cell_size, self.window_size, self.num_players)
+            render_game(self.screen, self.grid, self.players, self.alive, self.cell_size, self.window_size, self.num_players, self.steps_taken)
             pygame.display.flip()  # Update the pygame display
             # Limit the frame rate to 30 FPS
             self.clock.tick(30)

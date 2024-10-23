@@ -1,4 +1,5 @@
 import os
+from time import sleep
 import matplotlib.ticker as mticker  # For better tick formatting
 import matplotlib.pyplot as plt
 import numpy as np
@@ -6,6 +7,7 @@ import sys
 import pygame  # Import pygame for rendering only if necessary
 
 from Paper_io_develop import PaperIoEnv
+# from Paper_io_noSE import PaperIoEnv
 from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLearningAgent
 
 
@@ -19,7 +21,7 @@ agent = QLearningAgent(env)
 policy_name = 'q_learning'
 
 # Training variables
-num_episodes = 15000  # You may need more episodes for learning
+num_episodes = 10000  # You may need more episodes for learning
 steps_per_episode = 300  # Adjust as needed
 episode_rewards = []  # Store rewards per episode
 moving_avg_rewards = []  # Moving average of rewards
@@ -120,7 +122,7 @@ while episode_num < num_episodes:
 
         # Take a step in the environment
         next_obs, rewards, done, _ = env.step(actions)
-
+        # sleep(0.2)
         # Update total reward for the episode
         episode_reward += sum(rewards)
 
@@ -196,7 +198,7 @@ print(f"Training progress graph saved at {plot_path}")
 
 # Plotting Steps Per Episode
 plt.figure(figsize=(10, 5))
-plt.plot(episodes, steps_per_episode_list, label='Steps Per Episode', color='green', linewidth=0.75)
+plt.scatter(episodes, steps_per_episode_list, label='Steps Per Episode', color='green', s=3)  # s=1 for small dots
 plt.xlabel('Episodes')
 plt.ylabel('Steps')
 plt.title('Steps Taken Per Episode')

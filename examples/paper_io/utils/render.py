@@ -1,7 +1,12 @@
 import pygame
 import numpy as np
 
-def render_game(screen, grid, players, alive, cell_size, window_size, num_players):
+def render_game(screen, grid, players, alive, cell_size, window_size, num_players, steps):
+    
+    # Initialize pygame fonts
+    pygame.font.init()
+    font = pygame.font.SysFont(None, 35)  # Font definition inside the function
+
     # Fill background with white
     screen.fill((230, 230, 230))  # Light grey background
 
@@ -78,5 +83,8 @@ def render_game(screen, grid, players, alive, cell_size, window_size, num_player
         pygame.draw.line(screen, shadow_color, rect.bottomright, (rect.right, rect.top), 2)
         pygame.draw.line(screen, shadow_color, rect.bottomright, (rect.left, rect.bottom), 2)
 
+    # Display the number of steps in the top-left corner
+    step_text = font.render(f'Steps: {steps}', True, (0, 0, 0))  # Black text
+    screen.blit(step_text, (10, 10))  # Render in the top-left corner
     # Update display
     pygame.display.flip()
