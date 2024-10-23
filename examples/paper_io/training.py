@@ -20,7 +20,7 @@ agent = QLearningAgent(env)
 policy_name = 'q_learning'
 
 # Training variables
-num_episodes = 15000  # You may need more episodes for learning
+num_episodes = 50000  # You may need more episodes for learning
 steps_per_episode = 300  # Adjust as needed
 episode_rewards = []  # Store rewards per episode
 moving_avg_rewards = []  # Moving average of rewards
