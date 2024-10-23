@@ -10,7 +10,6 @@ from Paper_io_develop import PaperIoEnv
 # from Paper_io_noSE import PaperIoEnv
 from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLearningAgent
 
-
 # Set the flag for rendering the environment
 render_game = False  # Set to True if you want to render the game during training
 # Create the environment
@@ -21,7 +20,7 @@ agent = QLearningAgent(env)
 policy_name = 'q_learning'
 
 # Training variables
-num_episodes = 10000  # You may need more episodes for learning
+num_episodes = 5000  # You may need more episodes for learning
 steps_per_episode = 300  # Adjust as needed
 episode_rewards = []  # Store rewards per episode
 moving_avg_rewards = []  # Moving average of rewards
@@ -73,7 +72,7 @@ os.makedirs(plots_folder, exist_ok=True)
 training_info_file = os.path.join(model_folder, 'training_info.txt')
 
 # Function to save training information
-def save_training_info(file_path, num_episodes, steps_per_episode, agent):
+def save_training_info(file_path, num_episodes, steps_per_episode, agent, reward_config):
     with open(file_path, 'w') as f:
         f.write(f"Q-Learning Training Information\n")
         f.write(f"Policy Name: {policy_name}\n")
@@ -88,6 +87,15 @@ def save_training_info(file_path, num_episodes, steps_per_episode, agent):
         f.write(f"Total Wins: {agent_wins}\n")
         f.write(f"Total Losses: {agent_losses}\n")
         f.write(f"Final Q-Table Path: {q_table_path}\n")
+        # Writing reward information
+        f.write("\nReward Information:\n")
+        f.write(f"Penalty for Self-Elimination: {env.reward_config['self_elimination_penalty']}\n")
+        f.write(f"Reward for Trail Creation (Per 5 Steps): {env.reward_config['trail_reward']}\n")
+        f.write(f"Max Trail Reward: {env.reward_config['max_trail_reward']}\n")
+        f.write(f"Territory Conversion Multiplier: {env.reward_config['territory_conversion_multiplier']}\n")
+        f.write(f"Opponent Elimination Reward: {env.reward_config['opponent_elimination_reward']}\n")
+        f.write(f"Opponent Elimination Penalty: {env.reward_config['opponent_elimination_penalty']}\n")
+
     print(f"Training information saved at {file_path}")
 
 # Print the initial header
@@ -258,7 +266,7 @@ agent.save_q_table(q_table_path)
 print(f"Q-table saved at {q_table_path}")
 
 # Save the training information at the end of training
-save_training_info(training_info_file, num_episodes, steps_per_episode, agent)
+save_training_info(training_info_file, num_episodes, steps_per_episode, agent, env.reward_config)
 
 # Show the plots
 plt.show()
