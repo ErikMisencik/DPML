@@ -4,6 +4,7 @@ import matplotlib.ticker as mticker  # For better tick formatting
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
+from examples.paper_io.utils.plots import plot_epsilon_decay, plot_steps_per_episode, plot_td_error, plot_training_progress, plot_win_loss_pie
 import pygame  # Import pygame for rendering only if necessary
 
 from Paper_io_develop import PaperIoEnv
@@ -20,7 +21,7 @@ agent = QLearningAgent(env)
 policy_name = 'q_learning'
 
 # Training variables
-num_episodes = 50000  # You may need more episodes for learning
+num_episodes = 5000  # You may need more episodes for learning
 steps_per_episode = 300  # Adjust as needed
 episode_rewards = []  # Store rewards per episode
 moving_avg_rewards = []  # Moving average of rewards
@@ -189,76 +190,11 @@ while episode_num < num_episodes:
 
     episode_num += 1
 
-# Plotting the training progress (Episode Rewards)
-plt.figure(figsize=(10, 5))
-plt.plot(episodes, episode_rewards, label='Episode Reward', linewidth=0.75)
-plt.plot(episodes, moving_avg_rewards, label=f'Moving Average Reward (window={window_size})', color='orange', linewidth=2)
-plt.xlabel('Episodes')
-plt.ylabel('Total Reward')
-plt.title('Training Progress: Reward over Episodes')
-plt.legend()
-plt.grid(True)
-
-# Save the plot to a file in the plots folder
-plot_path = os.path.join(plots_folder, 'training_progress.png')
-plt.savefig(plot_path)
-print(f"Training progress graph saved at {plot_path}")
-
-# Plotting Steps Per Episode
-plt.figure(figsize=(10, 5))
-plt.scatter(episodes, steps_per_episode_list, label='Steps Per Episode', color='green', s=3)  # s=1 for small dots
-plt.xlabel('Episodes')
-plt.ylabel('Steps')
-plt.title('Steps Taken Per Episode')
-plt.legend()
-plt.grid(True)
-
-# Save the plot to a file in the plots folder
-plot_path_steps = os.path.join(plots_folder, 'steps_per_episode.png')
-plt.savefig(plot_path_steps)
-print(f"Steps per episode graph saved at {plot_path_steps}")
-
-# Plotting Epsilon Decay
-plt.figure(figsize=(10, 5))
-plt.plot(episodes, epsilon_values, label='Epsilon Decay', color='purple', linewidth=0.75)
-plt.xlabel('Episodes')
-plt.ylabel('Epsilon Value')
-plt.title('Epsilon Decay Over Time')
-plt.legend()
-plt.grid(True)
-
-# Save the plot to a file in the plots folder
-plot_path_epsilon = os.path.join(plots_folder, 'epsilon_decay.png')
-plt.savefig(plot_path_epsilon)
-print(f"Epsilon decay graph saved at {plot_path_epsilon}")
-
-# Plotting the TD Error over Time
-plt.figure(figsize=(10, 5))
-plt.plot(range(len(agent.td_errors)), agent.td_errors, label='TD Error', linewidth=0.75)
-plt.xlabel('Steps')
-plt.ylabel('TD Error')
-plt.title('TD Error over Training')
-plt.legend()
-plt.grid(True)
-
-# Save the TD error plot to a file in the plots folder
-plot_path_td_error = os.path.join(plots_folder, 'td_error.png')
-plt.savefig(plot_path_td_error)
-print(f"TD error graph saved at {plot_path_td_error}")
-
-# Plotting Win/Loss Rate
-plt.figure(figsize=(10, 5))
-plt.plot(episodes, win_loss_rates, label='Win/Loss Rate', color='blue', linewidth=0.75)
-plt.xlabel('Episodes')
-plt.ylabel('Win/Loss (1=Win, 0=Loss)')
-plt.title('Win/Loss Rate Over Episodes')
-plt.legend()
-plt.grid(True)
-
-# Save the win/loss plot to a file in the plots folder
-plot_path_win_loss = os.path.join(plots_folder, 'win_loss_rate.png')
-plt.savefig(plot_path_win_loss)
-print(f"Win/Loss rate graph saved at {plot_path_win_loss}")
+plot_training_progress(episodes, episode_rewards, moving_avg_rewards, plots_folder)
+plot_steps_per_episode(episodes, steps_per_episode_list, plots_folder)
+plot_epsilon_decay(episodes, epsilon_values, plots_folder)
+plot_td_error(agent.td_errors, plots_folder)
+plot_win_loss_pie(win_loss_rates, plots_folder)
 
 # Save the Q-table after training
 q_table_path = os.path.join(trained_model_folder, 'q_table.pkl')
