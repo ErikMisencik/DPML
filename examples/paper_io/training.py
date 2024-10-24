@@ -13,20 +13,23 @@ from Paper_io_develop import PaperIoEnv
 from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLearningAgent
 
 # Set the flag for rendering the environment
-render_game = True  # Set to True if you want to render the game during training
+render_game = False  # Set to True if you want to render the game during training
 # Create the environment
 env = PaperIoEnv(render=render_game)
 
 # Assign random colors to agents (assuming 2 agents)
-agent_colors = assign_agent_colors(env.num_players)
+# Assign random colors to agents (assuming 2 agents)
+color_info = assign_agent_colors(env.num_players)
+agent_colors = [info[0] for info in color_info]  # Extract RGB values for rendering
+agent_color_names = [info[1] for info in color_info]  # Extract color names for logging
 
 # Choose the policy
 agent = QLearningAgent(env)
 policy_name = 'q_learning'
 
 # Training variables
-num_episodes = 5000  # You may need more episodes for learning
-steps_per_episode = 300  # Adjust as needed
+num_episodes = 50000  # You may need more episodes for learning
+steps_per_episode = 400  # Adjust as needed
 episode_rewards = []  # Store rewards per episode
 moving_avg_rewards = []  # Moving average of rewards
 steps_per_episode_list = []  # Store steps per episode
@@ -91,7 +94,7 @@ def save_training_info(file_path, num_episodes, steps_per_episode, agent, reward
         f.write(f"Minimum Epsilon: {agent.min_epsilon}\n")
         f.write(f"Total Wins: {agent_wins}\n")
         f.write(f"Total Losses: {agent_losses}\n")
-        f.write(f"Agent Colors: {agent_colors}\n") 
+        f.write(f"Agent Colors (Names): {agent_color_names}\n")
         f.write(f"Final Q-Table Path: {q_table_path}\n")
         # Writing reward information
         f.write("\nReward Information:\n")

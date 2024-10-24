@@ -10,9 +10,9 @@ class PaperIoEnv:
 
         self.reward_config = {
             'self_elimination_penalty': -200,
-            'trail_reward': 3,  # Base trail reward every 5 steps
-            'max_trail_reward': 15,  # Maximum trail reward
-            'territory_conversion_multiplier': 5,
+            'trail_reward': 4,  # Base trail reward every 5 steps
+            'max_trail_reward': 20,  # Maximum trail reward
+            'territory_conversion_multiplier': 8,
             'opponent_elimination_reward': 10,
             'opponent_elimination_penalty': -20
         }
