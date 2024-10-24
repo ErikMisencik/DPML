@@ -1,0 +1,21 @@
+Q-Learning Training Information
+Policy Name: q_learning
+Number of Episodes: 5000
+Steps per Episode: 300
+Learning Rate: 0.002
+Discount Factor: 0.99
+Initial Epsilon: 1.0
+Final Epsilon: 0.09995093964326238
+Epsilon Decay Rate: 0.9995
+Minimum Epsilon: 0.1
+Total Wins: 2474
+Total Losses: 2526
+Final Q-Table Path: models\q_learning_3\trained_model\q_table.pkl
+
+Reward Information:
+Penalty for Self-Elimination: -200
+Reward for Trail Creation (Per 5 Steps): 3
+Max Trail Reward: 15
+Territory Conversion Multiplier: 5
+Opponent Elimination Reward: 10
+Opponent Elimination Penalty: -20

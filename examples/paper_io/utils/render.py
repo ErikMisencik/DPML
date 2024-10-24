@@ -1,24 +1,13 @@
 import pygame
 import numpy as np
-
-def render_game(screen, grid, players, alive, cell_size, window_size, num_players, steps):
+def render_game(screen, grid, players, alive, cell_size, window_size, num_players, steps, agent_colors):
     
-    # Initialize pygame fonts
+    # Initialize pygame fontsplayer_colors
     pygame.font.init()
     font = pygame.font.SysFont(None, 35)  # Font definition inside the function
 
     # Fill background with white
     screen.fill((230, 230, 230))  # Light grey background
-
-    # Define player colors
-    colors = [
-        (0, 255, 0),  # Green
-        (255, 0, 0),  # Blue
-        (0, 0, 255),  # Red
-        (255, 255, 0),  # Yellow
-        (255, 0, 255),  # Magenta
-        (0, 255, 255),  # Cyan
-    ]
 
     # Draw the circular arena with a beveled effect for 3D
     center = (window_size // 2, window_size // 2)
@@ -38,11 +27,11 @@ def render_game(screen, grid, players, alive, cell_size, window_size, num_player
             if cell_value > 0:
                 # Territory with subtle 3D effect
                 player_id = cell_value - 1
-                pygame.draw.rect(screen, colors[player_id], rect)
+                pygame.draw.rect(screen, agent_colors[player_id], rect)
 
                 # Add subtle 3D shading for territories
-                light_color = [min(255, int(c * 1.05)) for c in colors[player_id]]
-                shadow_color = [max(0, int(c * 0.9)) for c in colors[player_id]]
+                light_color = [min(255, int(c * 1.05)) for c in agent_colors[player_id]]
+                shadow_color = [max(0, int(c * 0.9)) for c in agent_colors[player_id]]
                 pygame.draw.line(screen, light_color, rect.topleft, (rect.right, rect.top), 1)
                 pygame.draw.line(screen, light_color, rect.topleft, (rect.left, rect.bottom), 1)
                 pygame.draw.line(screen, shadow_color, rect.bottomright, (rect.right, rect.top), 1)
@@ -51,7 +40,7 @@ def render_game(screen, grid, players, alive, cell_size, window_size, num_player
             elif cell_value < 0:
                 # Trail with subtle 3D effect
                 player_id = -cell_value - 1
-                faded_color = [int(0.5 * 255 + 0.5 * c) for c in colors[player_id]]
+                faded_color = [int(0.5 * 255 + 0.5 * c) for c in agent_colors[player_id]]
                 pygame.draw.rect(screen, faded_color, rect)
 
                 # Add subtle 3D shading for trails
@@ -68,7 +57,7 @@ def render_game(screen, grid, players, alive, cell_size, window_size, num_player
             continue
         x, y = player['position']
         rect = pygame.Rect(y * cell_size, x * cell_size, cell_size, cell_size)
-        color = [min(255, c + 100) for c in colors[i % len(colors)]]
+        color = [min(255, c + 100) for c in agent_colors[i]]
 
         # Draw player with a stronger 3D effect
         pygame.draw.rect(screen, color, rect)
@@ -86,5 +75,6 @@ def render_game(screen, grid, players, alive, cell_size, window_size, num_player
     # Display the number of steps in the top-left corner
     step_text = font.render(f'Steps: {steps}', True, (0, 0, 0))  # Black text
     screen.blit(step_text, (10, 10))  # Render in the top-left corner
+
     # Update display
     pygame.display.flip()

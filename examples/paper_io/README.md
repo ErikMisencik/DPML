@@ -47,9 +47,9 @@ pip install stable_baselines tensorflow==1.14.0
 conda install -c conda-forge mpi4py
 ````
 
-## Use for testing
+## Use for evaluating
 
-python test_render.py
+python eval.py
 
 ## Use for training
 

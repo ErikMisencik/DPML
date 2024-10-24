@@ -9,7 +9,7 @@ class PaperIoEnv:
         # Initialization stays the same
 
         self.reward_config = {
-            'self_elimination_penalty': -100,
+            'self_elimination_penalty': -200,
             'trail_reward': 3,  # Base trail reward every 5 steps
             'max_trail_reward': 15,  # Maximum trail reward
             'territory_conversion_multiplier': 5,
@@ -150,10 +150,10 @@ class PaperIoEnv:
         return observations, rewards, done, {}
 
 
-    def render(self):
+    def render(self,  player_colors=None):
         if self.render_game and self.screen:
             # Use external utility function to render the game
-            render_game(self.screen, self.grid, self.players, self.alive, self.cell_size, self.window_size, self.num_players, self.steps_taken)
+            render_game(self.screen, self.grid, self.players, self.alive, self.cell_size, self.window_size, self.num_players, self.steps_taken, player_colors)
             pygame.display.flip()  # Update the pygame display
             # Limit the frame rate to 30 FPS
             self.clock.tick(30)

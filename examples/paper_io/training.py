@@ -4,6 +4,7 @@ import matplotlib.ticker as mticker  # For better tick formatting
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
+from examples.paper_io.utils.agent_colors import assign_agent_colors
 from examples.paper_io.utils.plots import plot_epsilon_decay, plot_steps_per_episode, plot_td_error, plot_training_progress, plot_win_loss_pie
 import pygame  # Import pygame for rendering only if necessary
 
@@ -12,9 +13,12 @@ from Paper_io_develop import PaperIoEnv
 from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLearningAgent
 
 # Set the flag for rendering the environment
-render_game = False  # Set to True if you want to render the game during training
+render_game = True  # Set to True if you want to render the game during training
 # Create the environment
 env = PaperIoEnv(render=render_game)
+
+# Assign random colors to agents (assuming 2 agents)
+agent_colors = assign_agent_colors(env.num_players)
 
 # Choose the policy
 agent = QLearningAgent(env)
@@ -87,6 +91,7 @@ def save_training_info(file_path, num_episodes, steps_per_episode, agent, reward
         f.write(f"Minimum Epsilon: {agent.min_epsilon}\n")
         f.write(f"Total Wins: {agent_wins}\n")
         f.write(f"Total Losses: {agent_losses}\n")
+        f.write(f"Agent Colors: {agent_colors}\n") 
         f.write(f"Final Q-Table Path: {q_table_path}\n")
         # Writing reward information
         f.write("\nReward Information:\n")
@@ -115,7 +120,7 @@ while episode_num < num_episodes:
     for step in range(steps_per_episode):
         # Optionally render the game if the flag is True
         if render_game:
-            env.render()  # Call the environment's render method
+            env.render(agent_colors)  # Call the environment's render method
 
         # Get actions from the agent
         actions = agent.get_actions(obs)
