@@ -24,9 +24,14 @@ def load_q_learning_model(q_table_path):
 # Function to evaluate agents in the environment
 def evaluate(agent1, agent1_name, agent2, agent2_name, num_games=10):
     # Assign random colors to the agents
-    agent_colors = assign_agent_colors(env.num_players)
+    color_info = assign_agent_colors(env.num_players)
+    agent_colors = [info[0] for info in color_info]  # Extract only RGB values for rendering
+    agent_color_names = [info[1] for info in color_info]  # Extract color names for logging
 
-    print(f"Evaluating {agent1_name} (Color: {agent_colors[0]}) against {agent2_name} (Color: {agent_colors[1]})")
+    # Print agent colors at the start with both name and RGB tuple
+    print(f"\nEvaluation Setup:")
+    print(f"{agent1_name} is assigned color {agent_color_names[0]} ")
+    print(f"{agent2_name} is assigned color {agent_color_names[1]} \n")
 
     agent1_wins = 0
     agent2_wins = 0
@@ -39,10 +44,9 @@ def evaluate(agent1, agent1_name, agent2, agent2_name, num_games=10):
 
         while not done:
             # Render the game, passing player colors
-             # Optionally render the game if the flag is True
             if render_game:
                 env.render(agent_colors)  # Pass the agent colors to the render method
-                
+
             # Get actions from both agents based on the current observation
             actions_agent1 = agent1.get_actions(obs)
             actions_agent2 = agent2.get_actions(obs)
@@ -68,9 +72,9 @@ def evaluate(agent1, agent1_name, agent2, agent2_name, num_games=10):
             agent2_wins += 1
 
     # Final evaluation results
-    print(f"Evaluation Results (over {num_games} games):")
-    print(f"{agent1_name} (Color: {agent_colors[0]}) wins: {agent1_wins}")
-    print(f"{agent2_name} (Color: {agent_colors[1]}) wins: {agent2_wins}")
+    print(f"\nEvaluation Results (over {num_games} games):")
+    print(f"{agent1_name} (Color: {agent_color_names[0]}) wins: {agent1_wins}")
+    print(f"{agent2_name} (Color: {agent_color_names[1]}) wins: {agent2_wins}")
 
 # Main evaluation function (non-interactive)
 def main():
@@ -78,13 +82,9 @@ def main():
 
     # Use absolute path for Agent 1's Q-learning model
     q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/q_learning_3/trained_model/q_table.pkl"
-    # q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/archive_models/q_learning_19/trained_model/q_table.pkl"
-   
+
     agent1 = load_q_learning_model(q_table_path_agent1)
     agent1_name = "Q-Learning Agent"
-
-    # agent2 = load_q_learning_model(q_table_path_agent1)
-    # agent2_name = "Q-Learning Agent 2"
 
     # Agent 2: Random agent
     agent2 = RandomAgent(env)
