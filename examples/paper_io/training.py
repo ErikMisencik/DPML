@@ -28,8 +28,10 @@ agent = QLearningAgent(env)
 policy_name = 'q_learning'
 
 # Training variables
-num_episodes = 30000
+num_episodes = 50000
 steps_per_episode = 400
+epsilon_reset_interval = 10000  # Reset epsilon every 10,000 episodes
+epsilon_reset_value = 0.50    # Value to reset epsilon to
 episode_rewards = []
 moving_avg_rewards = []
 steps_per_episode_list = []
@@ -85,6 +87,8 @@ def save_training_info(file_path, num_episodes, steps_per_episode, agent, reward
         f.write(f"Final Epsilon: {agent.epsilon}\n")
         f.write(f"Epsilon Decay Rate: {agent.epsilon_decay}\n")
         f.write(f"Minimum Epsilon: {agent.min_epsilon}\n")
+        f.write(f"Epsilon Reset Interval: {epsilon_reset_interval}\n")
+        f.write(f"Epsilon Reset Value: {epsilon_reset_value}\n")
         f.write(f"------------------------------------\n")
         # Write statistics for each agent, grouping their stats together
         for idx in range(env.num_players):
@@ -190,6 +194,17 @@ while episode_num < num_episodes:
     else:
         moving_avg_rewards.append(np.mean(episode_rewards))
 
+    # Periodic epsilon reset
+    if (episode_num + 1) % epsilon_reset_interval == 0:
+        agent.epsilon = epsilon_reset_value
+        print(f"\nEpsilon reset to {epsilon_reset_value} at episode {episode_num + 1}")
+
+      # Save Q-table every 10,000 episodes
+    if (episode_num + 1) % 10000 == 0:
+        q_table_path = os.path.join(trained_model_folder, f'q_table_{episode_num + 1}.pkl')
+        agent.save_q_table(q_table_path)
+        print(f"Q-table saved at {q_table_path}")
+
     # Decay epsilon after each episode
     agent.decay_epsilon()
 
@@ -212,7 +227,7 @@ plot_average_self_eliminations(episodes, self_eliminations_per_episode, plots_fo
 plot_total_self_eliminations_per_episode(episodes, self_eliminations_per_episode, plots_folder)
 
 # Save the Q-table after training
-q_table_path = os.path.join(trained_model_folder, 'q_table.pkl')
+q_table_path = os.path.join(trained_model_folder, 'q_table_end.pkl')
 agent.save_q_table(q_table_path)
 print(f"Q-table saved at {q_table_path}")
 

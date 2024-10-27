@@ -10,7 +10,7 @@ from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLearningAg
 from examples.paper_io.utils.agent_colors import assign_agent_colors
 
 # Set up the rendering flag for the environment
-render_game = True  # We want to render the environment for evaluation
+render_game = False  # We want to render the environment for evaluation
 
 # Initialize the environment with rendering enabled
 env = PaperIoEnv(render=render_game)
@@ -35,6 +35,8 @@ def evaluate(agent1, agent1_name, agent2, agent2_name, num_games=10):
 
     agent1_wins = 0
     agent2_wins = 0
+    agent1_rewards = 0
+    agent2_rewards = 0
 
     for game_num in range(num_games):
         obs = env.reset()  # Reset the environment for a new game
@@ -56,20 +58,34 @@ def evaluate(agent1, agent1_name, agent2, agent2_name, num_games=10):
 
             # Take a step in the environment
             obs, rewards, done, _ = env.step(actions)
-            sleep(0.2)
+
+            # Accumulate rewards for each agent
+            agent1_rewards += rewards[0]
+            agent2_rewards += rewards[1]
+
+            if render_game:   # Slow down the game for rendering
+                sleep(0.15)
+
 
         # Determine which agent won
         agent1_alive = env.alive[0]
         agent2_alive = env.alive[1]
 
+         # Determine the winner based on whether the agent is alive or has the most rewards
+        if agent1_alive and not agent2_alive:
+            agent1_wins += 1
+        elif agent2_alive and not agent1_alive:
+            agent2_wins += 1
+        else:
+            # If both are alive or both are eliminated, compare the accumulated rewards
+            if agent1_rewards > agent2_rewards:
+                agent1_wins += 1
+            elif agent2_rewards > agent1_rewards:
+                agent2_wins += 1
+
         # Print the result of the current game
         print(f"Game {game_num + 1}: {agent1_name} {'won' if agent1_alive else 'lost'}, {agent2_name} {'won' if agent2_alive else 'lost'}")
 
-        # Update win counts
-        if agent1_alive:
-            agent1_wins += 1
-        elif agent2_alive:
-            agent2_wins += 1
 
     # Final evaluation results
     print(f"\nEvaluation Results (over {num_games} games):")
@@ -81,17 +97,24 @@ def main():
     print("Starting evaluation...")
 
     # Use absolute path for Agent 1's Q-learning model
-    q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/q_learning_3/trained_model/q_table.pkl"
+    q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/archive_models/q_learning_18/trained_model/q_table.pkl"
 
-    agent1 = load_q_learning_model(q_table_path_agent1)
-    agent1_name = "Q-Learning Agent"
+    # # Use absolute path for Agent 1's Q-learning model
+    q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/q_learning_5/trained_model/q_table.pkl"
+    
+
+    # agent1 = load_q_learning_model(q_table_path_agent1)
+    # agent1_name = "Q-Learning Agent 1"
+
+    agent1 = load_q_learning_model(q_table_path_agent2)
+    agent1_name = "Q-Learning Agent "
 
     # Agent 2: Random agent
     agent2 = RandomAgent(env)
     agent2_name = "Random Agent"
 
     # Number of games to evaluate
-    num_games = 1000  # You can change the number of evaluation games
+    num_games = 10000  # You can change the number of evaluation games
 
     # Evaluate the agents with their descriptive names
     evaluate(agent1, agent1_name, agent2, agent2_name, num_games)

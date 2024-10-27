@@ -3,7 +3,7 @@ import random
 import pickle
 
 class QLearningAgent:
-    def __init__(self, env, learning_rate=0.002, discount_factor=0.99,
+    def __init__(self, env, learning_rate=0.004, discount_factor=0.99,
                  epsilon=1.0, epsilon_decay=0.9995, min_epsilon=0.1):
         self.env = env
         self.learning_rate = learning_rate        # Learning rate

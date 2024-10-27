@@ -9,14 +9,14 @@ class PaperIoEnv:
         # Initialization remains the same
         #captured_area reward = len(player['trail']) + captured_area * self.reward_config['territory_capture_reward_per_cell']
         self.reward_config = {
-            'self_elimination_penalty': -300,  # Increased penalty
-            'trail_reward': 2,  # Reduced trail reward per 3 steps
+            'self_elimination_penalty': -500,  # Increased penalty
+            'trail_reward': 4,  # Reduced trail reward per 3 steps
             'max_trail_reward': 20,
             'territory_capture_reward_per_cell': 10,  
             'opponent_elimination_reward': 150,  # Increased reward
             'opponent_elimination_penalty': -50,  # Increased penalty for being eliminated
-            'enemy_territory_capture_reward_per_cell': 10,  # Increased reward per cell
-            'territory_loss_penalty_per_cell': -10  # Increased penalty per cell lost
+            # 'enemy_territory_capture_reward_per_cell': 10,  # Increased reward per cell
+            # 'territory_loss_penalty_per_cell': -10  # Increased penalty per cell lost
         }
         self.steps_taken = 0  # Initialize steps
         self.grid_size = grid_size
@@ -166,9 +166,9 @@ class PaperIoEnv:
                     self.players[owner_id - 1]['territory'] -= 1
                     self.players[player_id - 1]['territory'] += 1
                     # Penalize the owner for losing territory
-                    rewards[owner_id - 1] += self.reward_config['territory_loss_penalty_per_cell']
-                    # Reward the capturing agent
-                    rewards[i] += self.reward_config['enemy_territory_capture_reward_per_cell']
+                    # rewards[owner_id - 1] += self.reward_config['territory_loss_penalty_per_cell']
+                    # # Reward the capturing agent
+                    # rewards[i] += self.reward_config['enemy_territory_capture_reward_per_cell']
                 else:
                     # Owner is already eliminated; capture territory directly
                     self.grid[new_x, new_y] = -player_id
@@ -317,8 +317,8 @@ class PaperIoEnv:
             if old_player_id > 0 and old_player_id != player_id:
                 # Enemy territory captured
                 self.players[old_player_id - 1]['territory'] -= 1
-                rewards[old_player_id - 1] += self.reward_config['territory_loss_penalty_per_cell']
-                rewards[player_id - 1] += self.reward_config['enemy_territory_capture_reward_per_cell']
+                # rewards[old_player_id - 1] += self.reward_config['territory_loss_penalty_per_cell']
+                # rewards[player_id - 1] += self.reward_config['enemy_territory_capture_reward_per_cell']
             elif old_player_id == 0:
                 # Neutral territory captured
                 rewards[player_id - 1] += self.reward_config['territory_capture_reward_per_cell']
