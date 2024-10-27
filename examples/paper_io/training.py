@@ -4,9 +4,8 @@ import numpy as np
 import sys
 from examples.paper_io.utils.agent_colors import assign_agent_colors
 from examples.paper_io.utils.plots import (
-    plot_epsilon_decay, plot_steps_per_episode, plot_td_error,
+    plot_average_self_eliminations, plot_cumulative_self_eliminations, plot_epsilon_decay, plot_steps_per_episode, plot_td_error, plot_total_self_eliminations_per_episode,
     plot_training_progress, plot_agent_wins, plot_agent_eliminations,
-    plot_self_eliminations_per_episode
 )
 import pygame  # Import pygame for rendering only if necessary
 
@@ -29,7 +28,7 @@ agent = QLearningAgent(env)
 policy_name = 'q_learning'
 
 # Training variables
-num_episodes = 1000
+num_episodes = 30000
 steps_per_episode = 400
 episode_rewards = []
 moving_avg_rewards = []
@@ -203,7 +202,14 @@ plot_epsilon_decay(episodes, epsilon_values, plots_folder)
 plot_td_error(agent.td_errors, plots_folder)
 plot_agent_wins(agent_wins, plots_folder)
 plot_agent_eliminations(agent_eliminations, plots_folder)
-plot_self_eliminations_per_episode(episodes, self_eliminations_per_episode, plots_folder)
+
+plot_cumulative_self_eliminations(episodes, self_eliminations_per_episode, plots_folder)
+
+
+plot_average_self_eliminations(episodes, self_eliminations_per_episode, plots_folder, window_size=window_size)
+
+
+plot_total_self_eliminations_per_episode(episodes, self_eliminations_per_episode, plots_folder)
 
 # Save the Q-table after training
 q_table_path = os.path.join(trained_model_folder, 'q_table.pkl')

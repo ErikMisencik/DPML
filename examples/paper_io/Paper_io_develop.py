@@ -7,15 +7,16 @@ from gym.spaces import Box, Discrete
 class PaperIoEnv:
     def __init__(self, grid_size=50, num_players=2, render=False):
         # Initialization remains the same
+        #captured_area reward = len(player['trail']) + captured_area * self.reward_config['territory_capture_reward_per_cell']
         self.reward_config = {
-            'self_elimination_penalty': -200,
-            'trail_reward': 4,  # Base trail reward every 5 steps
-            'max_trail_reward': 20,  # Maximum trail reward
-            'territory_conversion_multiplier': 8,
-            'opponent_elimination_reward': 50,
-            'opponent_elimination_penalty': -20,
-            'enemy_territory_capture_reward': 5,  # New reward for capturing enemy territory
-            'territory_loss_penalty': -5         # Penalty for losing territory
+            'self_elimination_penalty': -300,  # Increased penalty
+            'trail_reward': 2,  # Reduced trail reward per 3 steps
+            'max_trail_reward': 20,
+            'territory_capture_reward_per_cell': 10,  
+            'opponent_elimination_reward': 150,  # Increased reward
+            'opponent_elimination_penalty': -50,  # Increased penalty for being eliminated
+            'enemy_territory_capture_reward_per_cell': 10,  # Increased reward per cell
+            'territory_loss_penalty_per_cell': -10  # Increased penalty per cell lost
         }
         self.steps_taken = 0  # Initialize steps
         self.grid_size = grid_size
@@ -119,7 +120,8 @@ class PaperIoEnv:
                 self.self_eliminations_by_agent[i] += 1
                 self.alive[i] = False  # Mark the agent as eliminated
                 eliminations.append(i)
-                continue
+                done = True  # End the game if self-elimination occurs
+                break  # Stop further processing
 
             # Opponent Elimination: Agent steps on an opponent's trail
             if cell_value < 0 and cell_value != -player_id:
@@ -130,8 +132,9 @@ class PaperIoEnv:
                     rewards[owner_id - 1] += self.reward_config['opponent_elimination_penalty']
                     rewards[i] += self.reward_config['opponent_elimination_reward']
                     self.eliminations_by_agent[i] += 1  # Count this as an elimination
-                    # End the game early if one agent eliminates the other
-                    done = True
+                    done = True  # End the game if opponent elimination occurs
+                    break  # Stop further processing
+                    
 
             # Update position and trail
             player['position'] = new_position
@@ -142,16 +145,15 @@ class PaperIoEnv:
                 player['trail'].append(new_position)
 
                 # Gain rewards for creating a trail
-                if len(player['trail']) % 5 == 0:
-                    rewards[i] += min(len(player['trail']) // 5 * self.reward_config['trail_reward'], 
+                if len(player['trail']) % 3 == 0:
+                    rewards[i] += min(len(player['trail']) // 3 * self.reward_config['trail_reward'], 
                                     self.reward_config['max_trail_reward'])
 
             elif cell_value == player_id and player['trail']:
                 # Agent returns to their own territory and closes a loop
                 # Convert trail to territory
-                rewards[i] += self.convert_trail_to_territory(player_id, rewards)
-                # Additional reward for territory conversion
-                rewards[i] += self.players[i]['territory'] * self.reward_config['territory_conversion_multiplier']
+                self.convert_trail_to_territory(player_id, rewards)
+                # Rewards are handled inside convert_trail_to_territory
 
             elif cell_value > 0 and cell_value != player_id:
                 # Agent moves into another agent's territory
@@ -160,15 +162,18 @@ class PaperIoEnv:
                     # Capture the enemy territory cell
                     self.grid[new_x, new_y] = -player_id  # Mark it as part of the agent's trail
                     player['trail'].append(new_position)
-                    # Penalize the owner for losing territory
+                    # Adjust territories
                     self.players[owner_id - 1]['territory'] -= 1
-                    rewards[owner_id - 1] += self.reward_config['territory_loss_penalty']
+                    self.players[player_id - 1]['territory'] += 1
+                    # Penalize the owner for losing territory
+                    rewards[owner_id - 1] += self.reward_config['territory_loss_penalty_per_cell']
                     # Reward the capturing agent
-                    rewards[i] += self.reward_config['enemy_territory_capture_reward']
+                    rewards[i] += self.reward_config['enemy_territory_capture_reward_per_cell']
                 else:
                     # Owner is already eliminated; capture territory directly
                     self.grid[new_x, new_y] = -player_id
                     player['trail'].append(new_position)
+                    self.players[player_id - 1]['territory'] += 1
 
             else:
                 # Unhandled cases (should not occur)
@@ -253,30 +258,34 @@ class PaperIoEnv:
         return self.grid.copy()
 
     def convert_trail_to_territory(self, player_id, rewards):
-        # Convert player's trail into permanent territory and return reward for captured area
         player = self.players[player_id - 1]
-        captured_area = 0  # Initialize captured area size
+        # Convert trail cells to territory
         for cell in player['trail']:
             x, y = cell
             self.grid[x, y] = player_id
-            captured_area += 1  # Increment captured territory count
+            self.players[player_id - 1]['territory'] += 1  # Update territory count
+
         # Capture enclosed areas including enemy territories
-        captured_area += self.capture_area(player_id, rewards)  # Pass rewards to capture_area
+        captured_area = self.capture_area(player_id, rewards)
+
+        # Total area captured includes trail cells and enclosed area
+        total_captured_area = len(player['trail']) + captured_area
+
+        # Clear the player's trail
         player['trail'] = []
 
-        # Update player's territory count
-        self.players[player_id - 1]['territory'] += captured_area
-
-        # Reward based on how much area was captured
-        return captured_area * 3.5 
+        # Reward based on total area captured
+        reward = total_captured_area * self.reward_config['territory_capture_reward_per_cell']
+        rewards[player_id - 1] += reward
+        return reward
 
     def capture_area(self, player_id, rewards):
-        # Implement area capture logic and track territories lost by other players
+        # Identify player's cells (both territory and trail)
         player_cells = (self.grid == player_id) | (self.grid == -player_id)
         mask = ~player_cells
         filled = np.zeros_like(self.grid, dtype=bool)
-        territory_lost = [0] * self.num_players  # Track territory lost for each player
 
+        # Flood fill from the borders to find non-enclosed areas
         def flood_fill(start_x, start_y):
             stack = [(start_x, start_y)]
             while stack:
@@ -286,11 +295,12 @@ class PaperIoEnv:
                 if filled[x, y] or not mask[x, y]:
                     continue
                 filled[x, y] = True
-                stack.append((x - 1, y))
-                stack.append((x + 1, y))
-                stack.append((x, y - 1))
-                stack.append((x, y + 1))
+                stack.extend([
+                    (x - 1, y), (x + 1, y),
+                    (x, y - 1), (x, y + 1)
+                ])
 
+        # Perform flood fill from the borders
         for x in range(self.grid_size):
             flood_fill(x, 0)
             flood_fill(x, self.grid_size - 1)
@@ -298,22 +308,25 @@ class PaperIoEnv:
             flood_fill(0, y)
             flood_fill(self.grid_size - 1, y)
 
+        # Enclosed area is where filled is False and mask is True
         enclosed_area = ~filled & mask
 
-        # Assign territory to the player and subtract it from others
+        # Assign territory to the player and adjust rewards/penalties
         for x, y in zip(*np.where(enclosed_area)):
             old_player_id = self.grid[x, y]
             if old_player_id > 0 and old_player_id != player_id:
-                # Subtract territory from the original owner
-                territory_lost[old_player_id - 1] += 1
-                self.players[old_player_id - 1]['territory'] -= 1  # Update territory count
-                # Penalize the player who lost territory
-                rewards[old_player_id - 1] += self.reward_config['territory_loss_penalty']
-                # Reward the capturing player
-                rewards[player_id - 1] += self.reward_config['enemy_territory_capture_reward']
-            self.grid[x, y] = player_id  # Assign to the capturing player
+                # Enemy territory captured
+                self.players[old_player_id - 1]['territory'] -= 1
+                rewards[old_player_id - 1] += self.reward_config['territory_loss_penalty_per_cell']
+                rewards[player_id - 1] += self.reward_config['enemy_territory_capture_reward_per_cell']
+            elif old_player_id == 0:
+                # Neutral territory captured
+                rewards[player_id - 1] += self.reward_config['territory_capture_reward_per_cell']
+            # Update the grid and player's territory count
+            self.grid[x, y] = player_id
+            self.players[player_id - 1]['territory'] += 1
 
-        # Return the total captured area
+        # Return the number of cells captured
         return np.sum(enclosed_area)
 
     def _within_arena(self, x, y):
