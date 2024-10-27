@@ -5,7 +5,7 @@ import pygame
 from gym.spaces import Box, Discrete
 
 class PaperIoEnv:
-    def __init__(self, grid_size=50, num_players=2, render=False):
+    def __init__(self, grid_size=50, num_players=2, render=False, max_steps=1000):
         # Initialization remains the same
         #captured_area reward = len(player['trail']) + captured_area * self.reward_config['territory_capture_reward_per_cell']
         self.reward_config = {
@@ -39,6 +39,8 @@ class PaperIoEnv:
         self.self_eliminations_by_agent = [0 for _ in range(self.num_players)]
         self.agent_wins = [0 for _ in range(self.num_players)]
         self.cumulative_rewards = [0 for _ in range(self.num_players)]
+
+        self.max_steps = max_steps  # Added max_steps parameter
 
         self.reset()
 
@@ -87,13 +89,10 @@ class PaperIoEnv:
     def step(self, actions):
         rewards = [0] * self.num_players
         done = False
-        eliminations = []
         self.steps_taken += 1
         info = {}
 
         for i, action in enumerate(actions):
-            if not self.alive[i]:
-                continue  # Skip eliminated players
             player = self.players[i]
             x, y = player['position']
             player_id = player['id']
@@ -118,23 +117,19 @@ class PaperIoEnv:
             if new_position in player['trail']:
                 rewards[i] += self.reward_config['self_elimination_penalty']
                 self.self_eliminations_by_agent[i] += 1
-                self.alive[i] = False  # Mark the agent as eliminated
-                eliminations.append(i)
-                done = True  # End the game if self-elimination occurs
-                break  # Stop further processing
+                # Process respawn
+                self._process_elimination(i)
+                continue  # Skip to next agent
 
             # Opponent Elimination: Agent steps on an opponent's trail
             if cell_value < 0 and cell_value != -player_id:
                 owner_id = -cell_value
-                if self.alive[owner_id - 1]:  # Ensure the owner is still active
-                    self.alive[owner_id - 1] = False
-                    eliminations.append(owner_id - 1)
-                    rewards[owner_id - 1] += self.reward_config['opponent_elimination_penalty']
-                    rewards[i] += self.reward_config['opponent_elimination_reward']
-                    self.eliminations_by_agent[i] += 1  # Count this as an elimination
-                    done = True  # End the game if opponent elimination occurs
-                    break  # Stop further processing
-                    
+                # Process respawn of the opponent
+                rewards[owner_id - 1] += self.reward_config['opponent_elimination_penalty']
+                rewards[i] += self.reward_config['opponent_elimination_reward']
+                self.eliminations_by_agent[i] += 1
+                self._process_elimination(owner_id - 1)
+                # Continue processing current agent's move     
 
             # Update position and trail
             player['position'] = new_position
@@ -158,22 +153,12 @@ class PaperIoEnv:
             elif cell_value > 0 and cell_value != player_id:
                 # Agent moves into another agent's territory
                 owner_id = cell_value
-                if self.alive[owner_id - 1]:
-                    # Capture the enemy territory cell
-                    self.grid[new_x, new_y] = -player_id  # Mark it as part of the agent's trail
-                    player['trail'].append(new_position)
-                    # Adjust territories
-                    self.players[owner_id - 1]['territory'] -= 1
-                    self.players[player_id - 1]['territory'] += 1
-                    # Penalize the owner for losing territory
-                    # rewards[owner_id - 1] += self.reward_config['territory_loss_penalty_per_cell']
-                    # # Reward the capturing agent
-                    # rewards[i] += self.reward_config['enemy_territory_capture_reward_per_cell']
-                else:
-                    # Owner is already eliminated; capture territory directly
-                    self.grid[new_x, new_y] = -player_id
-                    player['trail'].append(new_position)
-                    self.players[player_id - 1]['territory'] += 1
+                # Capture the enemy territory cell
+                self.grid[new_x, new_y] = -player_id  # Mark it as part of the agent's trail
+                player['trail'].append(new_position)
+                # Adjust territories
+                self.players[owner_id - 1]['territory'] -= 1
+                self.players[player_id - 1]['territory'] += 1
 
             else:
                 # Unhandled cases (should not occur)
@@ -183,27 +168,32 @@ class PaperIoEnv:
         for i in range(self.num_players):
             self.cumulative_rewards[i] += rewards[i]
 
-        # Process eliminations
-        for idx in eliminations:
-            self._process_elimination(idx)
-
-        observations = [self.get_observation_for_player(i) for i in range(self.num_players)]
-        if sum(self.alive) <= 1:
+        # Determine if the episode is done
+        if self.steps_taken >= self.max_steps:
             done = True
 
-        # Determine the winner based on criteria
+        observations = [self.get_observation_for_player(i) for i in range(self.num_players)]          
+
+       # Determine the winner based on criteria
         if done:
             winners = []
-            # Check if any agent is still alive and eliminated the opponent
-            for i in range(self.num_players):
-                if self.alive[i] and self.eliminations_by_agent[i] > 0:
-                    winners.append(i)
+            # Find the agent with the highest cumulative reward
+            max_reward = max(self.cumulative_rewards)
+            # Check if there is a unique agent with the highest reward
+            if self.cumulative_rewards.count(max_reward) == 1:
+                winners = [i for i, r in enumerate(self.cumulative_rewards) if r == max_reward]
 
-            # If no agent eliminated the other, check for the highest cumulative reward
+            # If multiple agents share the same highest reward, consider additional criteria (optional)
             if not winners:
-                max_reward = max(self.cumulative_rewards)
-                if self.cumulative_rewards.count(max_reward) == 1:
-                    winners = [i for i, r in enumerate(self.cumulative_rewards) if r == max_reward]
+                # For example, prioritize agents with more eliminations or fewer self-eliminations
+                max_eliminations = max(self.eliminations_by_agent)
+                candidates = [i for i, r in enumerate(self.cumulative_rewards) if r == max_reward]
+                winners = [i for i in candidates if self.eliminations_by_agent[i] == max_eliminations]
+
+                # If still tied, further criteria can be used (e.g., fewer self-eliminations)
+                if len(winners) > 1:
+                    min_self_eliminations = min(self.self_eliminations_by_agent[i] for i in winners)
+                    winners = [i for i in winners if self.self_eliminations_by_agent[i] == min_self_eliminations]
 
             # Update win counts for the winning agents if there are any winners
             if winners:
@@ -214,7 +204,8 @@ class PaperIoEnv:
             info = {
                 'eliminations_by_agent': self.eliminations_by_agent.copy(),
                 'self_eliminations_by_agent': self.self_eliminations_by_agent.copy(),
-                'winners': winners
+                'winners': winners,
+                'cumulative_rewards': self.cumulative_rewards.copy()
             }
         else:
             info = {}
@@ -245,13 +236,40 @@ class PaperIoEnv:
         return random.choice(directions)
 
     def _process_elimination(self, idx):
-        # Handle player elimination by removing their trail and territory
+        # Handle player respawn by removing their trail and territory
         player = self.players[idx]
+        player_id = player['id']
+
+        # Remove trail from the grid
         for trail_cell in player['trail']:
             x, y = trail_cell
             self.grid[x, y] = 0
-        self.grid[self.grid == player['id']] = 0
         player['trail'] = []
+
+        # Remove territory from the grid
+        self.grid[self.grid == player_id] = 0
+        player['territory'] = 0  # Reset territory count
+
+        # Reduce cumulative reward by 50%
+        self.cumulative_rewards[idx] *= 0.5
+
+        # Respawn the player at a new position with initial territory
+        while True:
+            x = np.random.randint(5, self.grid_size - 5)
+            y = np.random.randint(5, self.grid_size - 5)
+            # Check if the area x:x+2, y:y+2 is free and within arena
+            if self._within_arena(x, y) and \
+            np.all(self.grid[x:x+2, y:y+2] == 0):
+                break
+        position = (x, y)
+        player['position'] = position
+        # Set initial territory
+        initial_territory_size = 4  # As in reset method
+        player['territory'] = initial_territory_size
+        self.grid[x:x+2, y:y+2] = player_id  # Mark initial territory on the grid
+
+        # Assign a new random direction
+        self.directions[idx] = self._random_direction()
 
     def get_observation_for_player(self, player_idx):
         # Return the current observation (grid state) for a player

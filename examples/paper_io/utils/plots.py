@@ -32,10 +32,6 @@ def plot_training_progress(episodes, episode_rewards, moving_avg_rewards, plots_
     plot_path = os.path.join(plots_folder, 'training_progress.png')
     save_plot(episodes, episode_rewards, 'Episodes', 'Total Reward', 'Training Progress: Reward over Episodes', plot_path, moving_avg=True, window_size=window_size)
 
-def plot_steps_per_episode(episodes, steps_per_episode_list, plots_folder):
-    plot_path_steps = os.path.join(plots_folder, 'steps_per_episode.png')
-    save_plot(episodes, steps_per_episode_list, 'Episodes', 'Steps', 'Steps Taken Per Episode', plot_path_steps, plot_type='scatter', color='green')
-
 def plot_epsilon_decay(episodes, epsilon_values, plots_folder):
     plot_path_epsilon = os.path.join(plots_folder, 'epsilon_decay.png')
     save_plot(episodes, epsilon_values, 'Episodes', 'Epsilon Value', 'Epsilon Decay Over Time', plot_path_epsilon, color='purple')
@@ -92,15 +88,6 @@ def plot_average_self_eliminations(episodes, self_eliminations_per_episode, plot
     print(f"Average self-eliminations plot saved at {plot_path}")
     plt.close()
 
-
-def plot_total_self_eliminations_per_episode(episodes, self_eliminations_per_episode, plots_folder):
-    # Convert self_eliminations_per_episode to NumPy array
-    self_elims_array = np.array(self_eliminations_per_episode)  # Shape: (num_episodes, num_agents)
-    # Compute total self-eliminations per episode (sum over agents)
-    total_self_elims = np.sum(self_elims_array, axis=1)  # Shape: (num_episodes,)
-    plot_path = os.path.join(plots_folder, 'total_self_eliminations_per_episode.png')
-    save_plot(episodes, total_self_elims, 'Episodes', 'Total Self-Eliminations', 'Total Self-Eliminations per Episode', plot_path)
-
 def plot_agent_wins(agent_wins, plots_folder):
     labels = [f'Agent {i}' for i in range(len(agent_wins))]
     wins = agent_wins
@@ -135,4 +122,17 @@ def plot_agent_eliminations(agent_eliminations, plots_folder):
     plot_path = os.path.join(plots_folder, 'agent_eliminations.png')
     plt.savefig(plot_path)
     print(f"Agent eliminations plot saved at {plot_path}")
+    plt.close()
+
+# Function to plot cumulative rewards per agent
+def plot_cumulative_rewards(episodes, cumulative_rewards_per_agent, plots_folder):
+    plt.figure(figsize=(12, 6))
+    for i in range(len(cumulative_rewards_per_agent)):
+        plt.plot(episodes, cumulative_rewards_per_agent[i], label=f'Agent {i}')
+    plt.xlabel('Episode')
+    plt.ylabel('Cumulative Reward')
+    plt.title('Cumulative Rewards per Agent')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(os.path.join(plots_folder, 'cumulative_rewards_per_agent.png'))
     plt.close()
