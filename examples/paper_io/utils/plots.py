@@ -1,34 +1,32 @@
-# plots.py
 import os
 import matplotlib.pyplot as plt
 import numpy as np
 
 def save_plot(episodes, data, xlabel, ylabel, title, file_name, plot_type='line', color=None, label=None, moving_avg=False, window_size=50):
-        plt.figure(figsize=(10, 5))
-    
-        if plot_type == 'line':
-            plt.plot(episodes, data, label=label if label else ylabel, linewidth=0.75, color=color)
-        elif plot_type == 'scatter':
-            plt.scatter(episodes, data, label=label if label else ylabel, color=color, s=3)
+    plt.figure(figsize=(10, 5))
 
-        # Correct moving average calculation
-        if moving_avg:
-            if len(data) >= window_size:
-                moving_avg_data = [np.mean(data[max(0, i - window_size):i+1]) for i in range(len(data))]
-                plt.plot(episodes, moving_avg_data, label=f'Moving Average (window={window_size})', color='orange', linewidth=2)
-            else:
-                moving_avg_data = [np.mean(data)] * len(data)
-                plt.plot(episodes, moving_avg_data, label=f'Moving Average (window={window_size})', color='orange', linewidth=2)
+    if plot_type == 'line':
+        plt.plot(episodes, data, label=label if label else ylabel, linewidth=0.75, color=color)
+    elif plot_type == 'scatter':
+        plt.scatter(episodes, data, label=label if label else ylabel, color=color, s=3)
 
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
-        plt.title(title)
-        plt.legend()
-        plt.grid(True)
+    if moving_avg:
+        if len(data) >= window_size:
+            moving_avg_data = [np.mean(data[max(0, i - window_size):i+1]) for i in range(len(data))]
+            plt.plot(episodes, moving_avg_data, label=f'Moving Average (window={window_size})', color='orange', linewidth=2)
+        else:
+            moving_avg_data = [np.mean(data)] * len(data)
+            plt.plot(episodes, moving_avg_data, label=f'Moving Average', color='orange', linewidth=2)
 
-        plt.savefig(file_name)
-        print(f"Plot saved at {file_name}")
-        plt.close()
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.legend()
+    plt.grid(True)
+
+    plt.savefig(file_name)
+    print(f"Plot saved at {file_name}")
+    plt.close()
 
 def plot_training_progress(episodes, episode_rewards, moving_avg_rewards, plots_folder, window_size=50):
     plot_path = os.path.join(plots_folder, 'training_progress.png')
@@ -46,35 +44,43 @@ def plot_td_error(td_errors, plots_folder):
     plot_path_td_error = os.path.join(plots_folder, 'td_error.png')
     save_plot(range(len(td_errors)), td_errors, 'Steps', 'TD Error', 'TD Error over Training', plot_path_td_error)
 
-def plot_win_loss_pie(win_loss_rates, plots_folder):
-    # Calculate the total wins and losses
-    total_wins = win_loss_rates.count(1)
-    total_losses = win_loss_rates.count(0)
-    total_games = total_wins + total_losses
+def plot_self_eliminations_per_episode(episodes, self_elims_list, plots_folder):
+    plot_path = os.path.join(plots_folder, 'self_eliminations_per_episode.png')
+    save_plot(episodes, self_elims_list, 'Episodes', 'Self-Eliminations', 'Self-Eliminations per Episode', plot_path)
 
-    # Data for pie chart
-    labels = ['Wins', 'Losses']
-    sizes = [total_wins, total_losses]
-    colors = ['green', 'red']  # You can choose different colors if needed
-    explode = (0.1, 0)  # Slightly "explode" the win section for emphasis
+def plot_agent_wins(agent_wins, plots_folder):
+    labels = [f'Agent {i}' for i in range(len(agent_wins))]
+    wins = agent_wins
+    colors = plt.cm.tab20.colors[:len(agent_wins)]
 
-    # Create a pie chart
-    plt.figure(figsize=(7, 7))
-    plt.pie(sizes, explode=explode, labels=labels, colors=colors, autopct='%1.1f%%', shadow=True, startangle=140)
-    plt.axis('equal')  # Equal aspect ratio ensures that the pie chart is drawn as a circle.
+    plt.figure(figsize=(10, 5))
+    plt.bar(labels, wins, color=colors)
+    plt.xlabel('Agents')
+    plt.ylabel('Number of Wins')
+    plt.title('Total Wins per Agent')
+    plt.grid(axis='y')
 
-    # Add a title with the exact numbers of wins and losses
-    plt.title(f'Win/Loss Ratio\nWins: {total_wins}, Losses: {total_losses}, Total: {total_games}')
-
-    # Save the pie chart to a file
-    plot_path_pie = os.path.join(plots_folder, 'win_loss_pie_chart.png')
-    plt.savefig(plot_path_pie, bbox_inches='tight')
-    print(f"Win/Loss pie chart saved at {plot_path_pie}")
-
+    # Save the plot
+    plot_path = os.path.join(plots_folder, 'agent_wins.png')
+    plt.savefig(plot_path)
+    print(f"Agent wins plot saved at {plot_path}")
     plt.close()
-# Example Usage:
-# plot_training_progress(episodes, episode_rewards, moving_avg_rewards, plots_folder)
-# plot_steps_per_episode(episodes, steps_per_episode_list, plots_folder)
-# plot_epsilon_decay(episodes, epsilon_values, plots_folder)
-# plot_td_error(agent.td_errors, plots_folder)
-# plot_win_loss_rate(episodes, win_loss_rates, plots_folder)
+
+def plot_agent_eliminations(agent_eliminations, plots_folder):
+    labels = [f'Agent {i}' for i in range(len(agent_eliminations))]
+    eliminations = agent_eliminations
+    colors = plt.cm.tab20.colors[:len(agent_eliminations)]
+
+    plt.figure(figsize=(10, 5))
+    plt.bar(labels, eliminations, color=colors)
+    plt.xlabel('Agents')
+    plt.ylabel('Number of Eliminations')
+    plt.title('Total Eliminations per Agent')
+    plt.grid(axis='y')
+
+    # Save the plot
+    plot_path = os.path.join(plots_folder, 'agent_eliminations.png')
+    plt.savefig(plot_path)
+    print(f"Agent eliminations plot saved at {plot_path}")
+    plt.close()
+
