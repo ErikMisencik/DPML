@@ -9,12 +9,12 @@ class PaperIoEnv:
         # Initialization remains the same
         #captured_area reward = len(player['trail']) + captured_area * self.reward_config['territory_capture_reward_per_cell']
         self.reward_config = {
-            'self_elimination_penalty': -500,  # Increased penalty
+            'self_elimination_penalty': -400,  # Increased penalty
             'trail_reward': 10,  # Reduced trail reward per 3 steps
-            'max_trail_reward': 50,
+            'max_trail_reward': 200,
             'territory_capture_reward_per_cell': 30,  
-            'opponent_elimination_reward': 150,  # Increased reward
-            'opponent_elimination_penalty': -50,  # Increased penalty for being eliminated
+            'opponent_elimination_reward': 350,  # Increased reward
+            'opponent_elimination_penalty': -100,  # Increased penalty for being eliminated
             # 'enemy_territory_capture_reward_per_cell': 10,  # Increased reward per cell
             # 'territory_loss_penalty_per_cell': -10  # Increased penalty per cell lost
         }
@@ -205,7 +205,8 @@ class PaperIoEnv:
                 'eliminations_by_agent': self.eliminations_by_agent.copy(),
                 'self_eliminations_by_agent': self.self_eliminations_by_agent.copy(),
                 'winners': winners,
-                'cumulative_rewards': self.cumulative_rewards.copy()
+                'cumulative_rewards': self.cumulative_rewards.copy(),
+                'territory_by_agent': [player['territory'] for player in self.players]  # Add territory info
             }
         else:
             info = {}

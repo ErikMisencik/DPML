@@ -136,3 +136,47 @@ def plot_cumulative_rewards(episodes, cumulative_rewards_per_agent, plots_folder
     plt.grid(True)
     plt.savefig(os.path.join(plots_folder, 'cumulative_rewards_per_agent.png'))
     plt.close()
+
+def plot_average_eliminations(episodes, eliminations_per_episode, plots_folder, window_size=50):
+    # Convert eliminations_per_episode to a NumPy array
+    elims_array = np.array(eliminations_per_episode)  # Shape: (num_episodes, num_agents)
+
+    # Compute moving average for each agent
+    moving_avg_elims = np.array([
+        np.convolve(elims_array[:, i], np.ones(window_size) / window_size, mode='same')
+        for i in range(elims_array.shape[1])
+    ])
+
+    # Plot average eliminations for each agent
+    plt.figure(figsize=(10, 6))
+    for i in range(elims_array.shape[1]):
+        plt.plot(episodes, moving_avg_elims[i], label=f'Agent {i} Moving Average (window={window_size})')
+
+    plt.xlabel('Episodes')
+    plt.ylabel('Average Eliminations')
+    plt.title(f'Average Eliminations per Agent over Episodes with Moving Average (Window Size = {window_size})')
+    plt.legend()
+    plt.grid(True)
+    plot_path = os.path.join(plots_folder, 'average_eliminations_per_agent.png')
+    plt.savefig(plot_path)
+    print(f"Average eliminations plot saved at {plot_path}")
+    plt.close()   
+
+def plot_territory_gained(episodes, territory_per_agent, plots_folder):
+    # Convert territory_per_agent to a NumPy array for easier manipulation
+    territory_array = np.array(territory_per_agent)  # Shape: (num_agents, num_episodes)
+
+    # Plot territory gained for each agent
+    plt.figure(figsize=(10, 6))
+    for i in range(territory_array.shape[0]):
+        plt.plot(episodes, territory_array[i], label=f'Agent {i}')
+
+    plt.xlabel('Episodes')
+    plt.ylabel('Territory Gained')
+    plt.title('Territory Gained by Agents Over Episodes')
+    plt.legend()
+    plt.grid(True)
+    plot_path = os.path.join(plots_folder, 'territory_gained_per_agent.png')
+    plt.savefig(plot_path)
+    print(f"Territory gained plot saved at {plot_path}")
+    plt.close()

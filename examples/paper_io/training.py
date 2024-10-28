@@ -5,7 +5,7 @@ import sys
 from examples.paper_io.utils.agent_colors import assign_agent_colors
 from examples.paper_io.utils.plots import (
     plot_average_self_eliminations, plot_cumulative_rewards, plot_cumulative_self_eliminations, plot_epsilon_decay, plot_td_error,
-    plot_training_progress, plot_agent_wins, plot_agent_eliminations,
+    plot_training_progress, plot_agent_wins, plot_agent_eliminations, plot_average_eliminations, plot_territory_gained
 )
 import pygame  # Import pygame for rendering only if necessary
 
@@ -16,10 +16,10 @@ from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLearningAg
 render_game = False  # Set to True if you want to render the game during training
 
 # Training variables
-num_episodes = 20000
-steps_per_episode = 400
-epsilon_reset_interval = 10000  # Reset epsilon every 10,000 episodes
-epsilon_reset_value = 0.30    # Value to reset epsilon to
+num_episodes = 10000
+steps_per_episode = 300
+epsilon_reset_interval = 5000  # Reset epsilon every 10,000 episodes
+epsilon_reset_value = 0.25    # Value to reset epsilon to
 window_size = 50  # For smoothing graphs
 loading_bar_length = 20;  # Length of the loading bar
 
@@ -47,6 +47,7 @@ agent_wins = [0 for _ in range(env.num_players)]
 agent_eliminations = [0 for _ in range(env.num_players)]
 agent_self_eliminations = [0 for _ in range(env.num_players)]
 cumulative_rewards_per_agent = [[] for _ in range(env.num_players)]
+territory_per_agent = [[] for _ in range(env.num_players)]  # Track territory per agent
 
 # Function to find the next available folder index
 def get_next_model_index(models_dir, policy_name):
@@ -180,6 +181,11 @@ while episode_num < num_episodes:
     for i in range(env.num_players):
         cumulative_rewards_per_agent[i].append(cumulative_rewards[i])
 
+    # Update territory information per agent
+    territory_info = info.get('territory_by_agent', [0] * env.num_players)
+    for i in range(env.num_players):
+        territory_per_agent[i].append(territory_info[i])
+
     # Track self-eliminations for the current episode
     self_eliminations_per_episode.append(info.get('self_eliminations_by_agent', [0] * env.num_players))
 
@@ -196,10 +202,10 @@ while episode_num < num_episodes:
     else:
         moving_avg_rewards.append(np.mean(episode_rewards))
 
-    # Periodic epsilon reset
-    if (episode_num + 1) % epsilon_reset_interval == 0:
-        agent.epsilon = epsilon_reset_value
-        print(f"\nEpsilon reset to {epsilon_reset_value} at episode {episode_num + 1}")
+    # # Periodic epsilon reset
+    # if (episode_num + 1) % epsilon_reset_interval == 0:
+    #     agent.epsilon = epsilon_reset_value
+    #     print(f"\nEpsilon reset to {epsilon_reset_value} at episode {episode_num + 1}")
 
       # Save Q-table every 10,000 episodes
     if (episode_num + 1) % 10000 == 0:
@@ -221,6 +227,8 @@ plot_agent_eliminations(agent_eliminations, plots_folder)
 plot_cumulative_self_eliminations(episodes, self_eliminations_per_episode, plots_folder)
 plot_average_self_eliminations(episodes, self_eliminations_per_episode, plots_folder, window_size=window_size)
 plot_cumulative_rewards(episodes, cumulative_rewards_per_agent, plots_folder)
+plot_average_eliminations(episodes, self_eliminations_per_episode, plots_folder, window_size=window_size)
+plot_territory_gained(episodes, territory_per_agent, plots_folder)
 
 # Save the Q-table after training
 q_table_path = os.path.join(trained_model_folder, 'q_table_end.pkl')
