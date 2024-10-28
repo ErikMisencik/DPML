@@ -16,10 +16,10 @@ from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLearningAg
 render_game = False  # Set to True if you want to render the game during training
 
 # Training variables
-num_episodes = 500
+num_episodes = 20000
 steps_per_episode = 400
 epsilon_reset_interval = 10000  # Reset epsilon every 10,000 episodes
-epsilon_reset_value = 0.50    # Value to reset epsilon to
+epsilon_reset_value = 0.30    # Value to reset epsilon to
 window_size = 50  # For smoothing graphs
 loading_bar_length = 20;  # Length of the loading bar
 
