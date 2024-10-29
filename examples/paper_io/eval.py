@@ -62,7 +62,7 @@ def evaluate(agent1, agent1_name, agent2, agent2_name, num_games=10):
                 agent_game_rewards[i] += rewards[i]
 
             if render_game:   # Slow down the game for rendering
-                sleep(0.05)  # Adjust the sleep time as needed
+                sleep(0.1)  # Adjust the sleep time as needed
 
         # After the game ends, get the winner from info
         winners = info.get('winners', [])
@@ -95,7 +95,7 @@ def main():
 
     # Paths to the trained Q-learning models
     q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/archive_models/q_learning_1_respawn/trained_model/q_table_end.pkl"
-    q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/q_learning_5/trained_model/q_table.pkl"
+    q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/q_learning_10/trained_model/q_table_end.pkl"
 
     # Load agents
     agent1 = load_q_learning_model(q_table_path_agent1)

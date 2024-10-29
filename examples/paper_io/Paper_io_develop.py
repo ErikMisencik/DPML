@@ -9,12 +9,12 @@ class PaperIoEnv:
         # Initialization remains the same
         #captured_area reward = len(player['trail']) + captured_area * self.reward_config['territory_capture_reward_per_cell']
         self.reward_config = {
-            'self_elimination_penalty': -400,  # Increased penalty
-            'trail_reward': 10,  # Reduced trail reward per 3 steps
+            'self_elimination_penalty': -1000,  # Increased penalty
+            'trail_reward': 10,  # Reduced trail reward per 2 steps
             'max_trail_reward': 200,
-            'territory_capture_reward_per_cell': 30,  
-            'opponent_elimination_reward': 350,  # Increased reward
-            'opponent_elimination_penalty': -100,  # Increased penalty for being eliminated
+            'territory_capture_reward_per_cell': 60,  
+            'opponent_elimination_reward': 500,  # Increased reward
+            'opponent_elimination_penalty': -200,  # Increased penalty for being eliminated
             # 'enemy_territory_capture_reward_per_cell': 10,  # Increased reward per cell
             # 'territory_loss_penalty_per_cell': -10  # Increased penalty per cell lost
         }
@@ -140,8 +140,8 @@ class PaperIoEnv:
                 player['trail'].append(new_position)
 
                 # Gain rewards for creating a trail
-                if len(player['trail']) % 3 == 0:
-                    rewards[i] += min(len(player['trail']) // 3 * self.reward_config['trail_reward'], 
+                if len(player['trail']) % 2 == 0:
+                    rewards[i] += min(len(player['trail']) // 2 * self.reward_config['trail_reward'], 
                                     self.reward_config['max_trail_reward'])
 
             elif cell_value == player_id and player['trail']:

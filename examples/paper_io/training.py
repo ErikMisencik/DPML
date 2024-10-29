@@ -2,6 +2,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
+import time  
 from examples.paper_io.utils.agent_colors import assign_agent_colors
 from examples.paper_io.utils.plots import (
     plot_average_self_eliminations, plot_cumulative_rewards, plot_cumulative_self_eliminations, plot_epsilon_decay, plot_td_error,
@@ -12,16 +13,18 @@ import pygame  # Import pygame for rendering only if necessary
 from Paper_io_develop import PaperIoEnv
 from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLearningAgent
 
+
+
 # Set the flag for rendering the environment
 render_game = False  # Set to True if you want to render the game during training
 
 # Training variables
-num_episodes = 10000
+num_episodes = 50
 steps_per_episode = 300
-epsilon_reset_interval = 5000  # Reset epsilon every 10,000 episodes
-epsilon_reset_value = 0.25    # Value to reset epsilon to
-window_size = 50  # For smoothing graphs
-loading_bar_length = 20;  # Length of the loading bar
+epsilon_reset_interval = 5000  # Reset epsilon every x episodes
+epsilon_reset_value = 0.25     # Value to reset epsilon to
+window_size = 50               # For smoothing graphs
+loading_bar_length = 20;       # Length of the loading bar
 
 # Create the environment
 env = PaperIoEnv(render=render_game, max_steps=steps_per_episode)
@@ -31,8 +34,16 @@ color_info = assign_agent_colors(env.num_players)
 agent_colors = [info[0] for info in color_info]  # RGB values for rendering
 agent_color_names = [info[1] for info in color_info]  # Color names for logging
 
+# Define Q-learning parameters
+learning_rate = 0.003       # Adjust the learning rate if desired
+discount_factor = 0.99      # Adjust the discount factor
+epsilon = 1.0               # Initial exploration rate
+epsilon_decay = 0.9995      # Decay rate for epsilon
+min_epsilon = 0.1           # Minimum exploration rate
+
 # Choose the policy
-agent = QLearningAgent(env)
+agent = QLearningAgent(env, learning_rate=learning_rate, discount_factor=discount_factor, epsilon=epsilon, 
+                       epsilon_decay=epsilon_decay, min_epsilon=min_epsilon)
 policy_name = 'q_learning'
 
 episode_rewards = []
@@ -109,6 +120,10 @@ def save_training_info(file_path, num_episodes, steps_per_episode, agent, reward
         for key, value in env.reward_config.items():
             f.write(f"{key.replace('_', ' ').capitalize()}: {value}\n")
     print(f"Training information saved at {file_path}")
+
+# Start the timer for the entire training process
+training_start_time = time.time()
+
 # Print the initial header
 print(f"{'Epoch':<6} {'Progress':<23}")
 print("=" * 30)
@@ -218,6 +233,8 @@ while episode_num < num_episodes:
 
     episode_num += 1
 
+total_training_time = (time.time() - training_start_time) / 60
+
 # Plotting (including the new cumulative rewards plot)
 plot_training_progress(episodes, episode_rewards, moving_avg_rewards, plots_folder)
 plot_epsilon_decay(episodes, epsilon_values, plots_folder)
@@ -245,4 +262,5 @@ plt.show()
 if render_game:
     pygame.quit()
 
+print(f"\nTotal Training Time: {total_training_time:.2f} minutes")
 print("Training was Completed.")
