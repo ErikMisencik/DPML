@@ -247,9 +247,10 @@ plot_average_eliminations(episodes, self_eliminations_per_episode, plots_folder,
 plot_territory_gained(episodes, territory_per_agent, plots_folder)
 
 # Save the Q-table after training
-q_table_path = os.path.join(trained_model_folder, 'q_table_end.pkl')
-agent.save_q_table(q_table_path)
-print(f"Q-table saved at {q_table_path}")
+for idx, agent in enumerate(agents):
+    q_table_path = os.path.join(trained_model_folder, f'q_table_agent_{idx}.pkl')
+    agent.save(q_table_path)
+    print(f"Q-table for agent {idx} saved at {q_table_path}")
 
 # Save the training information
 save_training_info(training_info_file, num_episodes, steps_per_episode, agent, env.reward_config)

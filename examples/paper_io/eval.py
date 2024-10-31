@@ -9,7 +9,7 @@ from examples.paper_io.algorithm.Random.random_agent import RandomAgent
 from examples.paper_io.utils.agent_colors import assign_agent_colors
 
 # Set up the rendering flag for the environment
-render_game = True  # Set to True if you want to render the game during evaluation
+render_game = False  # Set to True if you want to render the game during evaluation
 
 # Initialize the environment with rendering enabled and max_steps
 steps_per_episode = 400  # Use the same max_steps as in training
@@ -18,7 +18,7 @@ env = PaperIoEnv(render=render_game, max_steps=steps_per_episode)
 # Function to load a trained Q-learning model (Q-table)
 def load_q_learning_model(q_table_path):
     agent = QLearningAgent(env)
-    agent.load_q_table(q_table_path)  # Load the Q-table from the provided path
+    agent.load(q_table_path)  # Load the Q-table from the provided path
     return agent
 
 # Function to evaluate agents in the environment
@@ -47,12 +47,12 @@ def evaluate(agent1, agent1_name, agent2, agent2_name, num_games=10):
             if render_game:
                 env.render(agent_colors)  # Pass the agent colors to the render method
 
-            # Get actions for all agents
-            actions_agent1 = agent1.get_actions(obs)
-            actions_agent2 = agent2.get_actions(obs)
+            # Get actions for both agents separately
+            action_agent1 = agent1.get_action(obs, 0)  # Agent 1 is at index 0
+            action_agent2 = agent2.get_action(obs, 1)  # Agent 2 is at index 1
 
             # Combine actions from both agents into one list
-            actions = [actions_agent1[i] if i == 0 else actions_agent2[i] for i in range(env.num_players)]
+            actions = [action_agent1, action_agent2]
 
             # Take a step in the environment
             obs, rewards, done, info = env.step(actions)
@@ -94,8 +94,8 @@ def main():
     print("Starting evaluation...")
 
     # Paths to the trained Q-learning models
-    q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/q_learning_10/trained_model/q_table_end.pkl"
-    q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/q_learning_14/trained_model/q_table_end.pkl"
+    q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/archive_models/q_learning_14_R/trained_model/q_table_end.pkl"
+    q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/q_learning_10/trained_model/q_table_agent_0.pkl"
 
     # Load agents
     agent1 = load_q_learning_model(q_table_path_agent1)
