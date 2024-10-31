@@ -4,7 +4,7 @@ class RandomAgent:
     def __init__(self, env):
         self.env = env
 
-    def get_actions(self, observation):
+    def get_action(self, observation):
         # Return random actions for each alive player
         return [
             self.env.action_spaces[i].sample() if self.env.alive[i] else None

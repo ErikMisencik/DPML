@@ -14,12 +14,11 @@ from Paper_io_develop import PaperIoEnv
 from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLearningAgent
 
 
-
 # Set the flag for rendering the environment
 render_game = False  # Set to True if you want to render the game during training
 
 # Training variables
-num_episodes = 5000
+num_episodes = 100
 steps_per_episode = 300
 epsilon_reset_interval = 5000  # Reset epsilon every x episodes
 epsilon_reset_value = 0.25     # Value to reset epsilon to
@@ -27,7 +26,13 @@ window_size = 50               # For smoothing graphs
 loading_bar_length = 20;       # Length of the loading bar
 
 # Create the environment
-env = PaperIoEnv(render=render_game, max_steps=steps_per_episode)
+num_agents = 1  # Change this number as desired
+env = PaperIoEnv(render=render_game, max_steps=steps_per_episode, num_players=num_agents)
+
+# Choose algorithm and initialize agents
+# Initialize agents
+agents = [QLearningAgent(env, learning_rate=0.003, discount_factor=0.99, epsilon=1.0, epsilon_decay=0.999, min_epsilon=0.1) for _ in range(num_agents)]
+policy_name = 'q_learning_multi' if num_agents > 1 else 'q_learning_single'
 
 # Assign random colors to agents
 color_info = assign_agent_colors(env.num_players)
@@ -38,7 +43,7 @@ agent_color_names = [info[1] for info in color_info]  # Color names for logging
 learning_rate = 0.003       # Adjust the learning rate if desired
 discount_factor = 0.99      # Adjust the discount factor
 epsilon = 1.0               # Initial exploration rate
-epsilon_decay = 0.9995      # Decay rate for epsilon
+epsilon_decay = 0.999      # Decay rate for epsilon
 min_epsilon = 0.1           # Minimum exploration rate
 
 # Choose the policy
@@ -141,26 +146,20 @@ while episode_num < num_episodes:
         if render_game:
             env.render(agent_colors)
 
-        # Get actions from the agent
-        actions = agent.get_actions(obs)
+        # Get actions for each agent
+        actions = [agent.get_action(obs, i) for i, agent in enumerate(agents)]
+        states = [agent.get_state(obs, i) for i, agent in enumerate(agents)]
 
-        # Record the current state for each player
-        states = []
-        for i in range(env.num_players):
-            state = agent.get_state(obs, i)
-            states.append(state)
-
-        # Take a step in the environment
+        # Step in the environment with the selected actions
         next_obs, rewards, done, info = env.step(actions)
-
-        # Update total reward for the episode
         episode_reward += sum(rewards)
 
-        # Record the next state for each player and update Q-values
-        for i in range(env.num_players):
-            next_state = agent.get_state(next_obs, i)
-            agent.update_q_values(states[i], actions[i], rewards[i], next_state, done, i)
+        # Update each agent with its respective state, action, reward, and next state
+        next_states = [agent.get_state(next_obs, i) for i, agent in enumerate(agents)]
+        for i, agent in enumerate(agents):
+            agent.update(states[i], actions[i], rewards[i], next_states[i], done, i)
 
+        # Update observation and step count
         obs = next_obs
         step += 1
 
