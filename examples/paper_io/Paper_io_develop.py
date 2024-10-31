@@ -12,7 +12,7 @@ class PaperIoEnv:
             'self_elimination_penalty': -1000,  # Increased penalty
             'trail_reward': 10,  # Reduced trail reward per 2 steps
             'max_trail_reward': 200,
-            'territory_capture_reward_per_cell': 60,  
+            'territory_capture_reward_per_cell': 40,  
             'opponent_elimination_reward': 500,  # Increased reward
             'opponent_elimination_penalty': -200,  # Increased penalty for being eliminated
             # 'enemy_territory_capture_reward_per_cell': 10,  # Increased reward per cell
@@ -78,9 +78,9 @@ class PaperIoEnv:
                 'position': position,
                 'id': player_id,
                 'trail': [],
-                'territory': 4  # Start with initial territory
+                'territory': 9  # Start with initial territory
             })
-            self.grid[x:x+2, y:y+2] = player_id  # Mark 4 cells as the player's territory
+            self.grid[x:x+3, y:y+3] = player_id  # Mark 4 cells as the player's territory
 
         # Return initial observations for each player
         observations = [self.get_observation_for_player(i) for i in range(self.num_players)]

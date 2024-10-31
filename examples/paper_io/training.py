@@ -18,12 +18,19 @@ from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLearningAg
 render_game = False  # Set to True if you want to render the game during training
 
 # Training variables
-num_episodes = 10000
-steps_per_episode = 300
-epsilon_reset_interval = 5000  # Reset epsilon every x episodes
-epsilon_reset_value = 0.25     # Value to reset epsilon to
+num_episodes = 15000
+steps_per_episode = 350
+epsilon_reset_interval = 7500  # Reset epsilon every x episodes
+epsilon_reset_value = 0.50     # Value to reset epsilon to
 window_size = 50               # For smoothing graphs
 loading_bar_length = 20;       # Length of the loading bar
+
+# Define Q-learning parameters
+learning_rate = 0.002       # Adjust the learning rate if desired
+discount_factor = 0.99      # Adjust the discount factor
+epsilon = 1.0               # Initial exploration rate
+epsilon_decay = 0.9995      # Decay rate for epsilon
+min_epsilon = 0.1           # Minimum exploration rate
 
 # Create the environment
 num_agents = 1  # Change this number as desired
@@ -39,13 +46,6 @@ color_info = assign_agent_colors(env.num_players)
 agent_colors = [info[0] for info in color_info]  # RGB values for rendering
 agent_color_names = [info[1] for info in color_info]  # Color names for logging
 
-# Define Q-learning parameters
-learning_rate = 0.003       # Adjust the learning rate if desired
-discount_factor = 0.99      # Adjust the discount factor
-epsilon = 1.0               # Initial exploration rate
-epsilon_decay = 0.9995      # Decay rate for epsilon
-min_epsilon = 0.1           # Minimum exploration rate
-
 # Choose the policy
 agent = QLearningAgent(env, learning_rate=learning_rate, discount_factor=discount_factor, epsilon=epsilon, 
                        epsilon_decay=epsilon_decay, min_epsilon=min_epsilon)
@@ -56,7 +56,9 @@ moving_avg_rewards = []
 steps_per_episode_list = []
 epsilon_values = []
 episodes = []
-self_eliminations_per_episode = []  # Track self-eliminations per episode
+eliminations_per_episode = []
+self_eliminations_per_episode = []
+  
 
 # Initialize cumulative counts
 agent_wins = [0 for _ in range(env.num_players)]
@@ -183,11 +185,12 @@ while episode_num < num_episodes:
             agent_wins[winner] += 1
 
     eliminations = info.get('eliminations_by_agent', [0] * env.num_players)
+    eliminations_per_episode.append(info.get('eliminations_by_agent', [0] * env.num_players))
+    self_eliminations = info.get('self_eliminations_by_agent', [0] * env.num_players)
+    self_eliminations_per_episode.append(info.get('self_eliminations_by_agent', [0] * env.num_players))
+
     for i in range(env.num_players):
         agent_eliminations[i] += eliminations[i]
-
-    self_eliminations = info.get('self_eliminations_by_agent', [0] * env.num_players)
-    for i in range(env.num_players):
         agent_self_eliminations[i] += self_eliminations[i]
 
     # Update cumulative rewards per agent
@@ -200,8 +203,7 @@ while episode_num < num_episodes:
     for i in range(env.num_players):
         territory_per_agent[i].append(territory_info[i])
 
-    # Track self-eliminations for the current episode
-    self_eliminations_per_episode.append(info.get('self_eliminations_by_agent', [0] * env.num_players))
+   
 
     # Store episode data
     episode_rewards.append(episode_reward)
@@ -216,10 +218,10 @@ while episode_num < num_episodes:
     else:
         moving_avg_rewards.append(np.mean(episode_rewards))
 
-    # # Periodic epsilon reset
-    # if (episode_num + 1) % epsilon_reset_interval == 0:
-    #     agent.epsilon = epsilon_reset_value
-    #     print(f"\nEpsilon reset to {epsilon_reset_value} at episode {episode_num + 1}")
+    # Periodic epsilon reset
+    if (episode_num + 1) % epsilon_reset_interval == 0:
+        agent.epsilon = epsilon_reset_value
+        print(f"\nEpsilon reset to {epsilon_reset_value} at episode {episode_num + 1}")
 
       # Save Q-table every 10,000 episodes
     if (episode_num + 1) % 10000 == 0:
@@ -243,7 +245,7 @@ plot_agent_eliminations(agent_eliminations, plots_folder)
 plot_cumulative_self_eliminations(episodes, self_eliminations_per_episode, plots_folder)
 plot_average_self_eliminations(episodes, self_eliminations_per_episode, plots_folder, window_size=window_size)
 plot_cumulative_rewards(episodes, cumulative_rewards_per_agent, plots_folder)
-plot_average_eliminations(episodes, self_eliminations_per_episode, plots_folder, window_size=window_size)
+plot_average_eliminations(episodes, eliminations_per_episode, plots_folder, window_size=window_size)
 plot_territory_gained(episodes, territory_per_agent, plots_folder)
 
 # Save the Q-table after training
