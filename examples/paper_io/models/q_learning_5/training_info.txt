@@ -1,0 +1,29 @@
+Q-Learning Training Information
+Policy Name: q_learning
+Number of Episodes: 15000
+Max Steps per Episode: 350
+Learning Rate: 0.003
+Discount Factor: 0.99
+Initial Epsilon: 1.0
+Final Epsilon: 0.4995
+Epsilon Decay Rate: 0.999
+Minimum Epsilon: 0.1
+Epsilon Reset Interval: 7500
+Epsilon Reset Value: 0.5
+------------------------------------
+Agent 0:
+  Total Wins: 15000
+  Total Eliminations: 0
+  Total Self-Eliminations: 145604
+  Average Cumulative Reward: 633.06
+
+Agent Colors (Names): ['Green']
+Final Q-Table Path: models\q_learning_5\trained_model\q_table_ag_0.pkl
+
+Reward Information:
+Self elimination penalty: -1000
+Trail reward: 10
+Max trail reward: 200
+Territory capture reward per cell: 40
+Opponent elimination reward: 500
+Opponent elimination penalty: -200

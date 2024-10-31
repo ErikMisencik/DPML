@@ -38,7 +38,7 @@ env = PaperIoEnv(render=render_game, max_steps=steps_per_episode, num_players=nu
 
 # Choose algorithm and initialize agents
 # Initialize agents
-agents = [QLearningAgent(env, learning_rate=0.003, discount_factor=0.99, epsilon=1.0, epsilon_decay=0.999, min_epsilon=0.1) for _ in range(num_agents)]
+agents = [QLearningAgent(env, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon) for _ in range(num_agents)]
 policy_name = 'q_learning_multi' if num_agents > 1 else 'q_learning_single'
 
 # Assign random colors to agents
