@@ -18,7 +18,7 @@ from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLearningAg
 render_game = False  # Set to True if you want to render the game during training
 
 # Training variables
-num_episodes = 100
+num_episodes = 10000
 steps_per_episode = 300
 epsilon_reset_interval = 5000  # Reset epsilon every x episodes
 epsilon_reset_value = 0.25     # Value to reset epsilon to
@@ -43,7 +43,7 @@ agent_color_names = [info[1] for info in color_info]  # Color names for logging
 learning_rate = 0.003       # Adjust the learning rate if desired
 discount_factor = 0.99      # Adjust the discount factor
 epsilon = 1.0               # Initial exploration rate
-epsilon_decay = 0.999      # Decay rate for epsilon
+epsilon_decay = 0.9995      # Decay rate for epsilon
 min_epsilon = 0.1           # Minimum exploration rate
 
 # Choose the policy
@@ -224,7 +224,7 @@ while episode_num < num_episodes:
       # Save Q-table every 10,000 episodes
     if (episode_num + 1) % 10000 == 0:
         q_table_path = os.path.join(trained_model_folder, f'q_table_{episode_num + 1}.pkl')
-        agent.save_q_table(q_table_path)
+        agent.save(q_table_path)
         print(f"Q-table saved at {q_table_path}")
 
     # Decay epsilon after each episode
@@ -248,7 +248,7 @@ plot_territory_gained(episodes, territory_per_agent, plots_folder)
 
 # Save the Q-table after training
 for idx, agent in enumerate(agents):
-    q_table_path = os.path.join(trained_model_folder, f'q_table_agent_{idx}.pkl')
+    q_table_path = os.path.join(trained_model_folder, f'q_table_ag_{idx}.pkl')
     agent.save(q_table_path)
     print(f"Q-table for agent {idx} saved at {q_table_path}")
 
