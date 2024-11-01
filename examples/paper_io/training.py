@@ -35,7 +35,7 @@ if load_existing_model:
     epsilon_reset = False          
     epsilon_reset_value = 0.15      # Mid-range value for epsilon reset
     epsilon_reset_interval = 2500  # More frequent exploration resets
-    epsilon_decay = 0.9993          # Keep similar decay rate
+    epsilon_decay = 0.999          # Keep similar decay rate
     min_epsilon = 0.1              # Minimum exploration rate remains the same
 
 else:
