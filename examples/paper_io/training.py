@@ -14,58 +14,39 @@ from Paper_io_develop import PaperIoEnv
 from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLearningAgent
 
 
-# Set the flag for rendering the environment
-render_game = False  # Set to True if you want to render the game during training
+# Choose algorithm and initialize agents
+num_agents = 1 
+render_game = False  # Set to True if you want to render the game during training 
+steps_per_episode = 350
+load_existing_model = True  # Set to True to load an existing model
 
 # Training variables
-num_episodes = 15000
-steps_per_episode = 350
-epsilon_reset_interval = 7500  # Reset epsilon every x episodes
+num_episodes = 150
+epsilon_reset = False  # Set to True to reset epsilon to a specific value
 epsilon_reset_value = 0.50     # Value to reset epsilon to
+epsilon_reset_interval = 7500  # Reset epsilon every x episodes
+
 window_size = 50               # For smoothing graphs
 loading_bar_length = 20;       # Length of the loading bar
 
 # Define Q-learning parameters
-learning_rate = 0.002       # Adjust the learning rate if desired
+learning_rate = 0.005       # Adjust the learning rate if desired
 discount_factor = 0.99      # Adjust the discount factor
 epsilon = 1.0               # Initial exploration rate
-epsilon_decay = 0.9995      # Decay rate for epsilon
+epsilon_decay = 0.9997      # Decay rate for epsilon
 min_epsilon = 0.1           # Minimum exploration rate
 
-# Create the environment
-num_agents = 1  # Change this number as desired
 env = PaperIoEnv(render=render_game, max_steps=steps_per_episode, num_players=num_agents)
 
-# Choose algorithm and initialize agents
-# Initialize agents
 agents = [QLearningAgent(env, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon) for _ in range(num_agents)]
-policy_name = 'q_learning_multi' if num_agents > 1 else 'q_learning_single'
 
-# Assign random colors to agents
-color_info = assign_agent_colors(env.num_players)
-agent_colors = [info[0] for info in color_info]  # RGB values for rendering
-agent_color_names = [info[1] for info in color_info]  # Color names for logging
+agent_type = agents[0].__class__.__name__  # Assumes all agents are of the same type
 
-# Choose the policy
-agent = QLearningAgent(env, learning_rate=learning_rate, discount_factor=discount_factor, epsilon=epsilon, 
-                       epsilon_decay=epsilon_decay, min_epsilon=min_epsilon)
-policy_name = 'q_learning'
-
-episode_rewards = []
-moving_avg_rewards = []
-steps_per_episode_list = []
-epsilon_values = []
-episodes = []
-eliminations_per_episode = []
-self_eliminations_per_episode = []
-  
-
-# Initialize cumulative counts
-agent_wins = [0 for _ in range(env.num_players)]
-agent_eliminations = [0 for _ in range(env.num_players)]
-agent_self_eliminations = [0 for _ in range(env.num_players)]
-cumulative_rewards_per_agent = [[] for _ in range(env.num_players)]
-territory_per_agent = [[] for _ in range(env.num_players)]  # Track territory per agent
+policy_name = (
+    f"{'LoadedModel' if load_existing_model else 'NewModel'}_"
+    f"{'Multi' if num_agents > 1 else 'Single'}_"
+    f"{agent_type}"
+)
 
 # Function to find the next available folder index
 def get_next_model_index(models_dir, policy_name):
@@ -93,40 +74,79 @@ os.makedirs(plots_folder, exist_ok=True)
 
 # File to save training details
 training_info_file = os.path.join(model_folder, 'training_info.txt')
+q_table_file = os.path.join('models', 'q_learning_13', 'trained_model', 'q_table_15000.pkl')
+
+# Assign random colors to agents
+color_info = assign_agent_colors(env.num_players)
+agent_colors = [info[0] for info in color_info]  # RGB values for rendering
+agent_color_names = [info[1] for info in color_info]  # Color names for logging
+
+# Initialize agents and load model if needed
+agents = []
+for i in range(num_agents):
+    agent = QLearningAgent(env, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon)
+    if load_existing_model and os.path.exists(q_table_file):
+        agent.load(q_table_file)
+    agents.append(agent)
+policy_name = 'q_learning'
+
+episode_rewards = []
+moving_avg_rewards = []
+steps_per_episode_list = []
+epsilon_values = []
+episodes = []
+eliminations_per_episode = []
+self_eliminations_per_episode = []
+  
+# Initialize cumulative counts
+agent_wins = [0 for _ in range(env.num_players)]
+agent_eliminations = [0 for _ in range(env.num_players)]
+agent_self_eliminations = [0 for _ in range(env.num_players)]
+cumulative_rewards_per_agent = [[] for _ in range(env.num_players)]
+territory_per_agent = [[] for _ in range(env.num_players)]  # Track territory per agent
 
 # Function to save training information
 def save_training_info(file_path, num_episodes, steps_per_episode, agent, reward_config):
     with open(file_path, 'w') as f:
-        f.write(f"Q-Learning Training Information\n")
-        f.write(f"Policy Name: {policy_name}\n")
-        f.write(f"Number of Episodes: {num_episodes}\n")
-        f.write(f"Max Steps per Episode: {env.max_steps}\n")
-        f.write(f"Learning Rate: {agent.learning_rate}\n")
-        f.write(f"Discount Factor: {agent.discount_factor}\n")
-        f.write(f"Initial Epsilon: {1.0}\n")
-        f.write(f"Final Epsilon: {agent.epsilon}\n")
-        f.write(f"Epsilon Decay Rate: {agent.epsilon_decay}\n")
-        f.write(f"Minimum Epsilon: {agent.min_epsilon}\n")
-        f.write(f"Epsilon Reset Interval: {epsilon_reset_interval}\n")
-        f.write(f"Epsilon Reset Value: {epsilon_reset_value}\n")
-        f.write(f"------------------------------------\n")
-        # Write statistics for each agent
+        # General Training Info
+        f.write("=== Q-Learning Training Information ===\n")
+        f.write(f"Policy Name         : {policy_name}\n")
+        f.write(f"Number of Episodes  : {num_episodes}\n")
+        f.write(f"Max Steps per Ep.   : {env.max_steps}\n")
+        f.write(f"Learning Rate       : {agent.learning_rate}\n")
+        f.write(f"Discount Factor     : {agent.discount_factor}\n")
+        f.write(f"Initial Epsilon     : {1.0}\n")
+        f.write(f"Final Epsilon       : {agent.epsilon}\n")
+        f.write(f"Epsilon Decay Rate  : {agent.epsilon_decay}\n")
+        f.write(f"Minimum Epsilon     : {agent.min_epsilon}\n")
+        f.write(f"Epsilon Reset Every : {epsilon_reset_interval} episodes\n")
+        f.write(f"Epsilon Reset Value : {epsilon_reset_value}\n")
+        f.write("\n")
+
+        # Agent Statistics
+        f.write("=== Agent Statistics ===\n")
         for idx in range(env.num_players):
+            avg_cumulative_reward = (np.mean(cumulative_rewards_per_agent[idx])
+                                     if cumulative_rewards_per_agent[idx] else 0)
             f.write(f"Agent {idx}:\n")
-            f.write(f"  Total Wins: {agent_wins[idx]}\n")
-            f.write(f"  Total Eliminations: {agent_eliminations[idx]}\n")
-            f.write(f"  Total Self-Eliminations: {agent_self_eliminations[idx]}\n")
-            # Calculate average cumulative reward
-            avg_cumulative_reward = np.mean(cumulative_rewards_per_agent[idx]) if cumulative_rewards_per_agent[idx] else 0
-            f.write(f"  Average Cumulative Reward: {avg_cumulative_reward:.2f}\n")
-            f.write("\n")
-        f.write(f"Agent Colors (Names): {agent_color_names}\n")
-        f.write(f"Final Q-Table Path: {q_table_path}\n")
-        # Reward information
-        f.write("\nReward Information:\n")
+            f.write(f"  - Total Wins           : {agent_wins[idx]}\n")
+            f.write(f"  - Total Eliminations   : {agent_eliminations[idx]}\n")
+            f.write(f"  - Total Self-Eliminations : {agent_self_eliminations[idx]}\n")
+            f.write(f"  - Avg Cumulative Reward : {avg_cumulative_reward:.2f}\n\n")
+
+        # Additional Information
+        f.write(f"Agent Colors (Names): {', '.join(agent_color_names)}\n")
+        f.write(f"Final Q-Table Path  : {q_table_path}\n")
+        f.write("\n")
+
+        # Reward Configuration
+        f.write("=== Reward Information ===\n")
         for key, value in env.reward_config.items():
-            f.write(f"{key.replace('_', ' ').capitalize()}: {value}\n")
+            reward_name = key.replace('_', ' ').capitalize()
+            f.write(f"{reward_name:20}: {value}\n")
+    
     print(f"Training information saved at {file_path}")
+
 
 # Start the timer for the entire training process
 training_start_time = time.time()
@@ -203,8 +223,6 @@ while episode_num < num_episodes:
     for i in range(env.num_players):
         territory_per_agent[i].append(territory_info[i])
 
-   
-
     # Store episode data
     episode_rewards.append(episode_reward)
     episodes.append(episode_num)
@@ -219,15 +237,16 @@ while episode_num < num_episodes:
         moving_avg_rewards.append(np.mean(episode_rewards))
 
     # Periodic epsilon reset
-    if (episode_num + 1) % epsilon_reset_interval == 0:
+    if ((episode_num + 1) % epsilon_reset_interval == 0) and epsilon_reset == True:
         agent.epsilon = epsilon_reset_value
         print(f"\nEpsilon reset to {epsilon_reset_value} at episode {episode_num + 1}")
 
-      # Save Q-table every 10,000 episodes
-    if (episode_num + 1) % 10000 == 0:
-        q_table_path = os.path.join(trained_model_folder, f'q_table_{episode_num + 1}.pkl')
-        agent.save(q_table_path)
-        print(f"Q-table saved at {q_table_path}")
+    # Save Q-table periodically
+    if (episode_num + 1) % 5000 == 0:
+        for idx, agent in enumerate(agents):
+            q_table_path = os.path.join(trained_model_folder, f'q_table_ag_{idx}_{episode_num + 1}.pkl')
+            agent.save(q_table_path)
+            print(f"Q-table for agent {idx} saved at {q_table_path}")
 
     # Decay epsilon after each episode
     agent.decay_epsilon()

@@ -9,9 +9,9 @@ class PaperIoEnv:
         # Initialization remains the same
         #captured_area reward = len(player['trail']) + captured_area * self.reward_config['territory_capture_reward_per_cell']
         self.reward_config = {
-            'self_elimination_penalty': -1000,  # Increased penalty
-            'trail_reward': 10,  # Reduced trail reward per 2 steps
-            'max_trail_reward': 200,
+            'self_elimination_penalty': -3500,  # Increased penalty
+            'trail_reward': 20,  # Reduced trail reward per 2 steps
+            'max_trail_reward': 300,
             'territory_capture_reward_per_cell': 40,  
             'opponent_elimination_reward': 500,  # Increased reward
             'opponent_elimination_penalty': -200,  # Increased penalty for being eliminated
