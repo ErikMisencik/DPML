@@ -21,7 +21,7 @@ steps_per_episode = 350
 load_existing_model = True  # Set to True to load an existing model
 
 # Training variables
-num_episodes = 150
+num_episodes = 15000
 epsilon_reset = False  # Set to True to reset epsilon to a specific value
 epsilon_reset_value = 0.50     # Value to reset epsilon to
 epsilon_reset_interval = 7500  # Reset epsilon every x episodes
