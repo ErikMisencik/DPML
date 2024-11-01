@@ -4,7 +4,7 @@ import random
 from examples.paper_io.algorithm.base_agent import BaseAgent
  # Assuming BaseAgent is saved in base_agent.py
 
-class QLearningAgent(BaseAgent):
+class QLAgent(BaseAgent):
     def __init__(self, env, learning_rate=0.003, discount_factor=0.99,
                  epsilon=1.0, epsilon_decay=0.9995, min_epsilon=0.1):
         super().__init__(env)

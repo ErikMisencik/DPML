@@ -4,7 +4,7 @@ import sys
 from time import sleep
 import pygame
 from Paper_io_develop import PaperIoEnv
-from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLearningAgent
+from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLAgent
 from examples.paper_io.algorithm.Random.random_agent import RandomAgent
 from examples.paper_io.utils.agent_colors import assign_agent_colors
 
@@ -17,7 +17,7 @@ env = PaperIoEnv(render=render_game, max_steps=steps_per_episode)
 
 # Function to load a trained Q-learning model (Q-table)
 def load_q_learning_model(q_table_path):
-    agent = QLearningAgent(env)
+    agent = QLAgent(env)
     agent.load(q_table_path)  # Load the Q-table from the provided path
     return agent
 

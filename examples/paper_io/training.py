@@ -11,40 +11,55 @@ from examples.paper_io.utils.plots import (
 import pygame  # Import pygame for rendering only if necessary
 
 from Paper_io_develop import PaperIoEnv
-from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLearningAgent
+from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLAgent
 
 
 # Choose algorithm and initialize agents
 num_agents = 1 
 render_game = False  # Set to True if you want to render the game during training 
-steps_per_episode = 350
 load_existing_model = True  # Set to True to load an existing model
-
-# Training variables
-num_episodes = 15000
-epsilon_reset = False  # Set to True to reset epsilon to a specific value
-epsilon_reset_value = 0.50     # Value to reset epsilon to
-epsilon_reset_interval = 7500  # Reset epsilon every x episodes
+steps_per_episode = 350
 
 window_size = 50               # For smoothing graphs
 loading_bar_length = 20;       # Length of the loading bar
 
-# Define Q-learning parameters
-learning_rate = 0.005       # Adjust the learning rate if desired
-discount_factor = 0.99      # Adjust the discount factor
-epsilon = 1.0               # Initial exploration rate
-epsilon_decay = 0.9997      # Decay rate for epsilon
-min_epsilon = 0.1           # Minimum exploration rate
+# Training variables
+discount_factor = 0.99  # Typically remains the same for both training and retraining
+
+# Set parameters based on whether we are training from scratch or retraining
+if load_existing_model:
+    # Parameters for retraining (fine-tuning)
+    num_episodes = 7500            # Fewer episodes for retraining
+    epsilon = 0.3                  # Lower initial exploration rate for retraining
+    learning_rate = 0.003          # Smaller learning rate for fine-tuning
+    epsilon_reset = False          
+    epsilon_reset_value = 0.15      # Mid-range value for epsilon reset
+    epsilon_reset_interval = 2500  # More frequent exploration resets
+    epsilon_decay = 0.9993          # Keep similar decay rate
+    min_epsilon = 0.1              # Minimum exploration rate remains the same
+
+else:
+    # Parameters for initial training
+    num_episodes = 15000           # Full training length
+    epsilon = 1.0                  # High exploration at start
+    learning_rate = 0.005          # Standard learning rate for initial training
+    epsilon_reset = False          # No epsilon reset for initial training
+    epsilon_reset_value = 0.50     # Not used if epsilon_reset is False
+    epsilon_reset_interval = 7500  # Not used if epsilon_reset is False
+    epsilon_decay = 0.9997         # Standard decay rate
+    min_epsilon = 0.1              # Minimum exploration rate
+
 
 env = PaperIoEnv(render=render_game, max_steps=steps_per_episode, num_players=num_agents)
 
-agents = [QLearningAgent(env, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon) for _ in range(num_agents)]
+agents = [QLAgent(env, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon) for _ in range(num_agents)]
 
 agent_type = agents[0].__class__.__name__  # Assumes all agents are of the same type
 
 policy_name = (
-    f"{'LoadedModel' if load_existing_model else 'NewModel'}_"
-    f"{'Multi' if num_agents > 1 else 'Single'}_"
+    f"{'PreTrained' if load_existing_model else 'New'}_"
+    f"{'M' if num_agents > 1 else 'S'}_"
+    f"{num_agents + '_' if num_agents > 1 else ''}"
     f"{agent_type}"
 )
 
@@ -74,7 +89,7 @@ os.makedirs(plots_folder, exist_ok=True)
 
 # File to save training details
 training_info_file = os.path.join(model_folder, 'training_info.txt')
-q_table_file = os.path.join('models', 'q_learning_13', 'trained_model', 'q_table_15000.pkl')
+q_table_file = os.path.join('models', 'LoadedModel_Single_QLearningAgent_1', 'trained_model', 'q_table_10000.pkl')
 
 # Assign random colors to agents
 color_info = assign_agent_colors(env.num_players)
@@ -84,7 +99,7 @@ agent_color_names = [info[1] for info in color_info]  # Color names for logging
 # Initialize agents and load model if needed
 agents = []
 for i in range(num_agents):
-    agent = QLearningAgent(env, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon)
+    agent = QLAgent(env, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon)
     if load_existing_model and os.path.exists(q_table_file):
         agent.load(q_table_file)
     agents.append(agent)
