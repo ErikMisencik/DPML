@@ -5,7 +5,7 @@ import pygame
 from gym.spaces import Box, Discrete
 
 class PaperIoEnv:
-    def __init__(self, grid_size=50, num_players=2, render=False, max_steps=1000):
+    def __init__(self, grid_size=50, num_players=2, render=False, max_steps=1000,  partial_observability=False):
         # Initialization remains the same
         #captured_area reward = len(player['trail']) + captured_area * self.reward_config['territory_capture_reward_per_cell']
         self.reward_config = {
@@ -28,6 +28,7 @@ class PaperIoEnv:
         self.window_size = self.grid_size * self.cell_size 
         self.render_game = render  
         self.screen = None
+        self.partial_observability = partial_observability
         if self.render_game:
             pygame.init()
             self.screen = pygame.display.set_mode((self.window_size, self.window_size))
@@ -69,11 +70,12 @@ class PaperIoEnv:
         self.self_eliminations_by_agent = [0 for _ in range(self.num_players)]
         self.cumulative_rewards = [0 for _ in range(self.num_players)]
 
+        arena_margin = 0  # Adjust if you have a margin
         for i in range(self.num_players):
             while True:
-                x = np.random.randint(5, self.grid_size - 5)
-                y = np.random.randint(5, self.grid_size - 5)
-                if self.grid[x, y] == 0 and self._within_arena(x, y):
+                x = np.random.randint(arena_margin + 5, self.grid_size - arena_margin - 5)
+                y = np.random.randint(arena_margin + 5, self.grid_size - arena_margin - 5)
+                if self.grid[x, y] == 0:
                     break
             position = (x, y)
             player_id = i + 1
@@ -111,60 +113,69 @@ class PaperIoEnv:
             new_x, new_y = x + dx, y + dy
 
             if not self._within_arena(new_x, new_y):
-                new_x, new_y = x, y  # Stay in the current position
-
-            new_position = (new_x, new_y)
-            cell_value = self.grid[new_x, new_y]
-
-            # Self-Elimination: Agent steps on its own trail
-            if new_position in player['trail']:
-                rewards[i] += self.reward_config['self_elimination_penalty']
-                self.self_eliminations_by_agent[i] += 1
-                self._process_elimination(i)
-                continue  # Skip to next agent
-
-            # Opponent Elimination: Agent steps on an opponent's trail
-            if cell_value < 0 and cell_value != -player_id:
-                owner_id = -cell_value
-                # Process respawn of the opponent
-                rewards[owner_id - 1] += self.reward_config['opponent_elimination_penalty']
-                rewards[i] += self.reward_config['opponent_elimination_reward']
-                self.eliminations_by_agent[i] += 1
-                self._process_elimination(owner_id - 1)
-                # Continue processing current agent's move     
-
-            # Update position and trail
-            player['position'] = new_position
-
-            if cell_value == 0 or cell_value == -player_id:
-                # Moving into empty space or own trail
-                self.grid[new_x, new_y] = -player_id
-                player['trail'].append(new_position)
-
-                # Gain rewards for creating a trail    REWARD? HERE
-                # if len(player['trail']) % 3 == 0:
-                #     rewards[i] += min(len(player['trail']) // 3 * self.reward_config['trail_reward'], 
-                #                     self.reward_config['max_trail_reward'])
-
-            elif cell_value == player_id and player['trail']:
-                # Agent returns to their own territory and closes a loop
-                # Convert trail to territory
-                self.convert_trail_to_territory(player_id, rewards)
-                # Rewards are handled inside convert_trail_to_territory
-
-            elif cell_value > 0 and cell_value != player_id:
-                # Agent moves into another agent's territory
-                owner_id = cell_value
-                # Capture the enemy territory cell
-                self.grid[new_x, new_y] = -player_id  # Mark it as part of the agent's trail
-                player['trail'].append(new_position)
-                # Adjust territories
-                self.players[owner_id - 1]['territory'] -= 1
-                self.players[player_id - 1]['territory'] += 1
-
+                # Agent cannot move forward; stays in place
+                # Optionally, penalize for hitting the edge
+                rewards[i] += -1  # Small penalty
+                new_x, new_y = x, y
             else:
-                # Unhandled cases (should not occur)
-                pass
+                # Agent can move
+                pass  # Proceed normally
+
+             # Check if the agent has moved
+            moved = (new_x, new_y) != (x, y)
+            new_position = (new_x, new_y)
+
+            if moved:
+                cell_value = self.grid[new_x, new_y]
+                # Self-Elimination: Agent steps on its own trail
+                if new_position in player['trail']:
+                    rewards[i] += self.reward_config['self_elimination_penalty']
+                    self.self_eliminations_by_agent[i] += 1
+                    self._process_elimination(i)
+                    continue  # Skip to next agent
+
+                # Opponent Elimination: Agent steps on an opponent's trail
+                if cell_value < 0 and cell_value != -player_id:
+                    owner_id = -cell_value
+                    # Process respawn of the opponent
+                    rewards[owner_id - 1] += self.reward_config['opponent_elimination_penalty']
+                    rewards[i] += self.reward_config['opponent_elimination_reward']
+                    self.eliminations_by_agent[i] += 1
+                    self._process_elimination(owner_id - 1)
+                    # Continue processing current agent's move     
+
+                # Update position and trail
+                player['position'] = new_position
+
+                if cell_value == 0 or cell_value == -player_id:
+                    # Moving into empty space or own trail
+                    self.grid[new_x, new_y] = -player_id
+                    player['trail'].append(new_position)
+
+                    # Gain rewards for creating a trail    REWARD? HERE
+                    # if len(player['trail']) % 3 == 0:
+                    #     rewards[i] += min(len(player['trail']) // 3 * self.reward_config['trail_reward'], 
+                    #                     self.reward_config['max_trail_reward'])
+
+                elif cell_value == player_id and player['trail']:
+                    # Agent returns to their own territory and closes a loop
+                    # Convert trail to territory
+                    self.convert_trail_to_territory(player_id, rewards)
+                    # Rewards are handled inside convert_trail_to_territory
+
+                elif cell_value > 0 and cell_value != player_id:
+                    # Agent moves into another agent's territory
+                    owner_id = cell_value
+                    # Capture the enemy territory cell
+                    self.grid[new_x, new_y] = -player_id  # Mark it as part of the agent's trail
+                    player['trail'].append(new_position)
+                    # Adjust territories
+                    self.players[owner_id - 1]['territory'] -= 1
+                    self.players[player_id - 1]['territory'] += 1
+
+                else:
+                    # Unhandled cases (should not occur)
+                    pass
 
              # Add a penalty for long trails without closure
             max_trail_length = self.reward_config['max_trail_length']
@@ -281,8 +292,41 @@ class PaperIoEnv:
         self.directions[idx] = self._random_direction()
 
     def get_observation_for_player(self, player_idx):
-        # Return the current observation (grid state) for a player
-        return self.grid.copy()
+        if self.partial_observability:
+            # Partial Observability: Agent sees a local grid around its position
+
+            # Get the player's current position
+            player = self.players[player_idx]
+            x, y = player['position']
+
+            # Define the size of the local observation grid (e.g., radius of 3 for a 7x7 grid)
+            obs_radius = 3  # You can adjust this value as needed
+
+            # Calculate the bounds of the local grid, ensuring they stay within grid limits
+            x_min = max(0, x - obs_radius)
+            x_max = min(self.grid_size, x + obs_radius + 1)
+            y_min = max(0, y - obs_radius)
+            y_max = min(self.grid_size, y + obs_radius + 1)
+
+            # Extract the local grid around the player
+            local_grid = self.grid[x_min:x_max, y_min:y_max]
+
+            # Create a padded grid to handle cases where the local grid is at the edge
+            padded_grid = np.full((2 * obs_radius + 1, 2 * obs_radius + 1), -127, dtype=np.int8)
+            x_offset = x_min - (x - obs_radius)
+            y_offset = y_min - (y - obs_radius)
+            padded_grid[
+                x_offset:x_offset + (x_max - x_min),
+                y_offset:y_offset + (y_max - y_min)
+            ] = local_grid
+
+            # Return only the local grid as the observation
+            return padded_grid
+        else:
+            # Full Observability: Agent sees the entire grid
+
+            # Return a copy of the full grid
+            return self.grid.copy()
 
     def convert_trail_to_territory(self, player_id, rewards):
         player = self.players[player_id - 1]
@@ -362,19 +406,11 @@ class PaperIoEnv:
 
     def _within_arena(self, x, y):
         """
-        Checks if a given position (x, y) is within the circular arena.
+        Checks if a given position (x, y) is within the square arena.
         """
-        cell_size = self.cell_size
-        center = (self.grid_size * cell_size // 2, self.grid_size * cell_size // 2)
-        radius = self.grid_size * cell_size // 2 - 20
-
-        # Calculate the center of the current cell
-        cell_center_x = (y * cell_size) + (cell_size // 2)
-        cell_center_y = (x * cell_size) + (cell_size // 2)
-
-        # Check if the distance from the center is within the radius of the circle
-        distance = np.sqrt((cell_center_x - center[0]) ** 2 + (cell_center_y - center[1]) ** 2)
-        return distance <= radius
+        arena_margin = 0  # Adjust if you want a margin around the edges
+        return arena_margin <= x < self.grid_size - arena_margin and \
+            arena_margin <= y < self.grid_size - arena_margin
 
     def close(self):
         if self.render_game:

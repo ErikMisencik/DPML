@@ -6,7 +6,7 @@ from examples.paper_io.algorithm.base_agent import BaseAgent
 
 class QLAgent(BaseAgent):
     def __init__(self, env, learning_rate=0.003, discount_factor=0.99,
-                 epsilon=1.0, epsilon_decay=0.9995, min_epsilon=0.1):
+                 epsilon=1.0, epsilon_decay=0.9995, min_epsilon=0.1, load_only=False):
         super().__init__(env)
         self.learning_rate = learning_rate
         self.discount_factor = discount_factor
@@ -15,6 +15,7 @@ class QLAgent(BaseAgent):
         self.min_epsilon = min_epsilon
         self.q_table = {}
         self.td_errors = []
+        self.load_only = load_only  # New attribute to lock Q-table
 
     def get_state(self, observation, player_idx):
         grid = observation[player_idx]
@@ -50,6 +51,8 @@ class QLAgent(BaseAgent):
         return action
 
     def update(self, state, action, reward, next_state, done, player_idx):
+        if self.load_only:
+            return  # Do nothing if in load_only mode
         state = tuple(state) if isinstance(state, list) else state
         next_state = tuple(next_state) if isinstance(next_state, list) else next_state
         action = tuple(action) if isinstance(action, list) else action

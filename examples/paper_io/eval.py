@@ -18,7 +18,7 @@ env = PaperIoEnv(render=render_game, max_steps=steps_per_episode)
 
 # Function to load a trained Q-learning model (Q-table)
 def load_q_learning_model(q_table_path):
-    agent = QLAgent(env)
+    agent = QLAgent(env, learning_rate=0, epsilon=0.0, load_only=True)  # Read-only Q-table
     agent.load(q_table_path)  # Load the Q-table from the provided path
     return agent
 
@@ -63,7 +63,7 @@ def evaluate(agent1, agent1_name, agent2, agent2_name, num_games=10):
                 agent_game_rewards[i] += rewards[i]
 
             if render_game:   # Slow down the game for rendering
-                sleep(0.1)  # Adjust the sleep time as needed
+                sleep(0.05)  # Adjust the sleep time as needed
 
         # After the game ends, get the winner from info
         winners = info.get('winners', [])
@@ -95,8 +95,8 @@ def main():
     print("Starting evaluation...")
 
     # Paths to the trained Q-learning models
-    q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/archive_models/q_learning_14_R/trained_model/q_table_end.pkl"
-    q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/PreTrained_S_QLAgent_7/trained_model/q_table_ag_0_end.pkl"
+    q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/archive_models/q_learning_13/trained_model/q_table_ag_0.pkl"
+    q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/PreTrained_S_QLAgent_9/trained_model/q_table_ag_0_end.pkl"
 
     # Load agents
     agent1 = load_q_learning_model(q_table_path_agent1)
@@ -113,7 +113,7 @@ def main():
     # agent2_name = "Random Agent"
 
     # Number of games to evaluate
-    num_games = 1000  # Adjust the number of evaluation games as needed
+    num_games = 5000  # Adjust the number of evaluation games as needed
 
     # Evaluate the agents with their descriptive names
     evaluate(agent1, agent1_name, agent2, agent2_name, num_games)

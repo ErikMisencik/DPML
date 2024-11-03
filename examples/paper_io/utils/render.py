@@ -10,12 +10,9 @@ def render_game(screen, grid, players, alive, cell_size, window_size, num_player
     screen.fill((230, 230, 230))  # Light grey background
 
     # Draw the circular arena with a beveled effect for 3D
-    center = (window_size // 2, window_size // 2)
-    radius = window_size // 2 - 20
-
-    # Beveled border effect for the arena
-    pygame.draw.circle(screen, (200, 200, 200), center, radius + 20)  # Outer darker ring
-    pygame.draw.circle(screen, (255, 255, 255), center, radius)  # White inner circle (arena)
+    # Draw the square arena background
+    arena_margin_pixels = 0  # Margin in pixels if needed
+    pygame.draw.rect(screen, (255, 255, 255), (arena_margin_pixels, arena_margin_pixels, window_size - 2 * arena_margin_pixels, window_size - 2 * arena_margin_pixels))
 
     # Draw trails and territories on the arena surface
     for x in range(grid.shape[0]):
