@@ -29,12 +29,12 @@ discount_factor = 0.99  # Typically remains the same for both training and retra
 # Set parameters based on whether we are training from scratch or retraining
 if load_existing_model:
     # Parameters for retraining (fine-tuning)
-    num_episodes = 7500            # Fewer episodes for retraining
+    num_episodes = 6000           # Fewer episodes for retraining
     epsilon = 0.35                  # Lower initial exploration rate for retraining
     learning_rate = 0.003          # Smaller learning rate for fine-tuning
     epsilon_reset = False          
     epsilon_reset_value = 0.15      # Mid-range value for epsilon reset
-    epsilon_reset_interval = 2500  # More frequent exploration resets
+    epsilon_reset_interval = 3000  # More frequent exploration resets
     epsilon_decay = 0.9994          # Keep similar decay rate
     min_epsilon = 0.1              # Minimum exploration rate remains the same
 
@@ -163,7 +163,6 @@ def save_training_info(file_path, num_episodes, steps_per_episode, agent, reward
             f.write(f"{reward_name:20}: {value}\n")
     
     print(f"Training information saved at {file_path}")
-
 
 # Start the timer for the entire training process
 training_start_time = time.time()

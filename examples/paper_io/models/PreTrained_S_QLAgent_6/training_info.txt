@@ -15,17 +15,22 @@ Epsilon Reset Value : 0.15
 Agent 0:
   - Total Wins           : 7500
   - Total Eliminations   : 0
-  - Total Self-Eliminations : 68040
-  - Avg Cumulative Reward : 3614.61
+  - Total Self-Eliminations : 35574
+  - Avg Cumulative Reward : 2679.04
 
-Agent Colors (Names): Teal
+Agent Colors (Names): Brown
 Loaded Q-Table Path : models\PreTrained_S_QLAgent_4\trained_model\q_table_ag_0_end.pkl
 Final Q-Table Path  : models\PreTrained_S_QLAgent_6\trained_model\q_table_ag_0_end.pkl
 
 === Reward Information ===
-Self elimination penalty: -1000
-Trail reward        : 40
-Max trail reward    : 500
-Territory capture reward per cell: 123
-Opponent elimination reward: 500
-Opponent elimination penalty: -200
+Self elimination penalty: -4000
+Trail reward        : 0
+Max trail reward    : 0
+Territory capture reward per cell: 10
+Loop closure bonus  : 500
+Max trail length    : 10
+Long trail penalty  : -10
+Opponent elimination reward: 0
+Opponent elimination penalty: 0
+Enemy territory capture reward per cell: 0
+Territory loss penalty per cell: 0

@@ -10,13 +10,16 @@ class PaperIoEnv:
         #captured_area reward = len(player['trail']) + captured_area * self.reward_config['territory_capture_reward_per_cell']
         self.reward_config = {
             'self_elimination_penalty': -4000,  # Increased penalty
-            'trail_reward': 20,  # Reduced trail reward per 2 steps
-            'max_trail_reward': 300,
-            'territory_capture_reward_per_cell': 30,  
-            'opponent_elimination_reward': 500,         # Increased reward
-            'opponent_elimination_penalty': -200,         # Increased penalty for being eliminated
-            # 'enemy_territory_capture_reward_per_cell': 10,  # Increased reward per cell
-            # 'territory_loss_penalty_per_cell': -10  # Increased penalty per cell lost
+            'trail_reward': 0,                             # Reduced trail reward per 3 steps          NOT USING RIGHT NOW
+            'max_trail_reward': 0,                        # Maximum trail reward per step             NOT USING RIGHT NOW   
+            'territory_capture_reward_per_cell': 15,      # Increased reward per cell captured
+            'loop_closure_bonus': 1000,                      # New bonus for closing loops of area
+            'max_trail_length': 10,                         # Maximum trail length before penalty
+            'long_trail_penalty': -50,                      # Penalty for long trails                  # New bonus for closing loops of area
+            'opponent_elimination_reward': 0,              # Increased reward for eliminating an opponent   NOT USING RIGHT NOW
+            'opponent_elimination_penalty': 0,             # Increased penalty for being eliminated        NOT USING RIGHT NOW
+            'enemy_territory_capture_reward_per_cell': 0,  # Increased reward per cell
+            'territory_loss_penalty_per_cell': 0,           # Increased penalty per cell lost
         }
         self.steps_taken = 0  # Initialize steps
         self.grid_size = grid_size
@@ -117,7 +120,6 @@ class PaperIoEnv:
             if new_position in player['trail']:
                 rewards[i] += self.reward_config['self_elimination_penalty']
                 self.self_eliminations_by_agent[i] += 1
-                # Process respawn
                 self._process_elimination(i)
                 continue  # Skip to next agent
 
@@ -139,10 +141,10 @@ class PaperIoEnv:
                 self.grid[new_x, new_y] = -player_id
                 player['trail'].append(new_position)
 
-                # Gain rewards for creating a trail
-                if len(player['trail']) % 3 == 0:
-                    rewards[i] += min(len(player['trail']) // 3 * self.reward_config['trail_reward'], 
-                                    self.reward_config['max_trail_reward'])
+                # Gain rewards for creating a trail    REWARD? HERE
+                # if len(player['trail']) % 3 == 0:
+                #     rewards[i] += min(len(player['trail']) // 3 * self.reward_config['trail_reward'], 
+                #                     self.reward_config['max_trail_reward'])
 
             elif cell_value == player_id and player['trail']:
                 # Agent returns to their own territory and closes a loop
@@ -163,6 +165,12 @@ class PaperIoEnv:
             else:
                 # Unhandled cases (should not occur)
                 pass
+
+             # Add a penalty for long trails without closure
+            max_trail_length = self.reward_config['max_trail_length']
+            long_trail_penalty = self.reward_config['long_trail_penalty']
+            if len(player['trail']) > max_trail_length:
+                rewards[i] += long_trail_penalty  # Penalty for excessive trail length
 
         # Update cumulative rewards
         for i in range(self.num_players):
@@ -293,8 +301,12 @@ class PaperIoEnv:
         # Clear the player's trail
         player['trail'] = []
 
-        # Reward based on total area captured
-        reward = total_captured_area * self.reward_config['territory_capture_reward_per_cell']
+        # Non-linear reward calculation
+        area_captured = total_captured_area
+        loop_closure_bonus = self.reward_config['loop_closure_bonus']
+
+        # Implement non-linear reward function (e.g., area raised to 1.5 power)
+        reward = (area_captured ** 1.5) * self.reward_config['territory_capture_reward_per_cell'] + loop_closure_bonus
         rewards[player_id - 1] += reward
         return reward
 
