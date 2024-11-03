@@ -30,12 +30,12 @@ discount_factor = 0.99  # Typically remains the same for both training and retra
 if load_existing_model:
     # Parameters for retraining (fine-tuning)
     num_episodes = 7500            # Fewer episodes for retraining
-    epsilon = 0.3                  # Lower initial exploration rate for retraining
+    epsilon = 0.35                  # Lower initial exploration rate for retraining
     learning_rate = 0.003          # Smaller learning rate for fine-tuning
     epsilon_reset = False          
     epsilon_reset_value = 0.15      # Mid-range value for epsilon reset
     epsilon_reset_interval = 2500  # More frequent exploration resets
-    epsilon_decay = 0.999          # Keep similar decay rate
+    epsilon_decay = 0.9994          # Keep similar decay rate
     min_epsilon = 0.1              # Minimum exploration rate remains the same
 
 else:
@@ -89,7 +89,7 @@ os.makedirs(plots_folder, exist_ok=True)
 
 # File to save training details
 training_info_file = os.path.join(model_folder, 'training_info.txt')
-q_table_file = os.path.join('models', 'LoadedModel_Single_QLearningAgent_1', 'trained_model', 'q_table_10000.pkl')
+q_table_file = os.path.join('models', 'PreTrained_S_QLAgent_4', 'trained_model', 'q_table_ag_0_end.pkl')
 
 # Assign random colors to agents
 color_info = assign_agent_colors(env.num_players)
@@ -151,6 +151,8 @@ def save_training_info(file_path, num_episodes, steps_per_episode, agent, reward
 
         # Additional Information
         f.write(f"Agent Colors (Names): {', '.join(agent_color_names)}\n")
+        if load_existing_model: # Add the loaded model path
+            f.write(f"Loaded Q-Table Path : {q_table_file}\n")
         f.write(f"Final Q-Table Path  : {q_table_path}\n")
         f.write("\n")
 
@@ -284,7 +286,7 @@ plot_territory_gained(episodes, territory_per_agent, plots_folder)
 
 # Save the Q-table after training
 for idx, agent in enumerate(agents):
-    q_table_path = os.path.join(trained_model_folder, f'q_table_ag_{idx}.pkl')
+    q_table_path = os.path.join(trained_model_folder, f'q_table_ag_{idx}_end.pkl')
     agent.save(q_table_path)
     print(f"Q-table for agent {idx} saved at {q_table_path}")
 
