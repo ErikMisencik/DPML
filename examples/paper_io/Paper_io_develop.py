@@ -16,10 +16,10 @@ class PaperIoEnv:
             'loop_closure_bonus': 1000,                      # New bonus for closing loops of area
             'max_trail_length': 10,                         # Maximum trail length before penalty
             'long_trail_penalty': -50,                      # Penalty for long trails                  # New bonus for closing loops of area
-            'opponent_elimination_reward': 0,              # Increased reward for eliminating an opponent   NOT USING RIGHT NOW
-            'opponent_elimination_penalty': 0,             # Increased penalty for being eliminated        NOT USING RIGHT NOW
-            'enemy_territory_capture_reward_per_cell': 0,  # Increased reward per cell
-            'territory_loss_penalty_per_cell': 0,           # Increased penalty per cell lost
+            'opponent_elimination_reward': 200,              # Increased reward for eliminating an opponent   NOT USING RIGHT NOW
+            'opponent_elimination_penalty': -100,             # Increased penalty for being eliminated        NOT USING RIGHT NOW
+            'enemy_territory_capture_reward_per_cell': 15,  # Increased reward per cell
+            'territory_loss_penalty_per_cell': -15,           # Increased penalty per cell lost
         }
         self.steps_taken = 0  # Initialize steps
         self.grid_size = grid_size
@@ -268,14 +268,14 @@ class PaperIoEnv:
             y = np.random.randint(5, self.grid_size - 5)
             # Check if the area x:x+2, y:y+2 is free and within arena
             if self._within_arena(x, y) and \
-            np.all(self.grid[x:x+2, y:y+2] == 0):
+            np.all(self.grid[x:x+3, y:y+3] == 0):
                 break
         position = (x, y)
         player['position'] = position
         # Set initial territory
-        initial_territory_size = 4  # As in reset method
+        initial_territory_size = 9  # As in reset method
         player['territory'] = initial_territory_size
-        self.grid[x:x+2, y:y+2] = player_id  # Mark initial territory on the grid
+        self.grid[x:x+3, y:y+3] = player_id  # Mark initial territory on the grid
 
         # Assign a new random direction
         self.directions[idx] = self._random_direction()
