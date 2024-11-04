@@ -6,8 +6,16 @@ from gym.spaces import Box, Discrete
 
 class PaperIoEnv:
     def __init__(self, grid_size=50, num_players=2, render=False, max_steps=1000,  partial_observability=False):
-        # Initialization remains the same
-        #captured_area reward = len(player['trail']) + captured_area * self.reward_config['territory_capture_reward_per_cell']
+        """
+        Initialize the Paper.io environment.
+
+        Args:
+            grid_size (int): Size of the grid.
+            num_players (int): Number of players in the game.
+            render (bool): Whether to render the game using Pygame.
+            max_steps (int): Maximum number of steps per episode.
+            partial_observability (bool): If True, agents have limited vision.
+        """
         self.reward_config = {
             'self_elimination_penalty': -2000,  # Increased penalty
             'trail_reward': 0,                             # Reduced trail reward per 3 steps          NOT USING RIGHT NOW
@@ -20,7 +28,6 @@ class PaperIoEnv:
             'opponent_elimination_penalty': -150,             # Increased penalty for being eliminated        NOT USING RIGHT NOW
             'enemy_territory_capture_reward_per_cell': 20,  # Increased reward per cell
             'territory_loss_penalty_per_cell': -20,
-            'hit_wall_penalty': -1000,  # CHANGE THIS = NO PENALTY, JUST RIGHT AWAY ELIMINATION HITTIN EDGE OF ARENA
         }
         self.steps_taken = 0  # Initialize steps
         self.grid_size = grid_size
@@ -59,6 +66,12 @@ class PaperIoEnv:
         self.action_spaces = [Discrete(3) for _ in range(self.num_players)]
 
     def reset(self):
+        """
+        Reset the game state and players' positions.
+
+        Returns:
+            observations (list): Initial observations for each player.
+        """
         # Reset game state and players' positions
         self.grid = np.zeros((self.grid_size, self.grid_size), dtype=np.int8)
         self.players = []
@@ -93,6 +106,18 @@ class PaperIoEnv:
         return observations
 
     def step(self, actions):
+        """
+        Perform a step in the environment for all players.
+
+        Args:
+            actions (list): List of actions for each player.
+
+        Returns:
+            observations (list): Observations for each player.
+            rewards (list): Rewards for each player.
+            done (bool): Whether the episode has ended.
+            info (dict): Additional information.
+        """
         rewards = [0] * self.num_players
         done = False
         self.steps_taken += 1
@@ -114,10 +139,11 @@ class PaperIoEnv:
             new_x, new_y = x + dx, y + dy
 
             if not self._within_arena(new_x, new_y):
-                # Agent cannot move forward; stays in place
-                # Optionally, penalize for hitting the edge
-                rewards[i] += self.reward_config['hit_wall_penalty']
-                new_x, new_y = x, y
+                # Agent is out of bounds
+                rewards[i] += self.reward_config['self_elimination_penalty']
+                self.self_eliminations_by_agent[i] += 1
+                self._process_elimination(i)
+                continue  # Skip to next agent
             else:
                 # Agent can move
                 pass  # Proceed normally

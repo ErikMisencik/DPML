@@ -45,7 +45,7 @@ else:
     learning_rate = 0.002          # Standard learning rate for initial training
     epsilon_reset = True          # No epsilon reset for initial training
     epsilon_reset_value = 0.50     # Not used if epsilon_reset is False
-    epsilon_reset_interval = 5000  # Not used if epsilon_reset is False
+    epsilon_reset_interval = 10000  # Not used if epsilon_reset is False
     epsilon_decay = 0.9995         # Standard decay rate
     min_epsilon = 0.05              # Minimum exploration rate
 

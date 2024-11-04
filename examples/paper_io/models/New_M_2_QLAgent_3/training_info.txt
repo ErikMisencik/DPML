@@ -8,24 +8,24 @@ Initial Epsilon     : 1.0
 Final Epsilon       : 0.49975
 Epsilon Decay Rate  : 0.9995
 Minimum Epsilon     : 0.05
-Epsilon Reset Every : 5000 episodes
+Epsilon Reset Every : 10000 episodes
 Epsilon Reset Value : 0.5
 
 === Agent Statistics ===
 Agent 0:
-  - Total Wins           : 2192
-  - Total Eliminations   : 9163
-  - Total Self-Eliminations : 346776
-  - Avg Cumulative Reward : -3046.70
+  - Total Wins           : 1628
+  - Total Eliminations   : 4432
+  - Total Self-Eliminations : 346520
+  - Avg Cumulative Reward : -3257.23
 
 Agent 1:
-  - Total Wins           : 17808
-  - Total Eliminations   : 6012
-  - Total Self-Eliminations : 117609
-  - Avg Cumulative Reward : 5080.18
+  - Total Wins           : 18372
+  - Total Eliminations   : 5369
+  - Total Self-Eliminations : 106918
+  - Avg Cumulative Reward : 6983.21
 
-Agent Colors (Names): Indigo, Yellow
-Final Q-Table Path  : models\New_M_2_QLAgent_2\trained_model\q_table_ag_1_end.pkl
+Agent Colors (Names): Indigo, Red
+Final Q-Table Path  : models\New_M_2_QLAgent_3\trained_model\q_table_ag_1_end.pkl
 
 === Reward Information ===
 Self elimination penalty: -2000
