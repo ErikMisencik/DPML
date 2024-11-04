@@ -9,17 +9,18 @@ class PaperIoEnv:
         # Initialization remains the same
         #captured_area reward = len(player['trail']) + captured_area * self.reward_config['territory_capture_reward_per_cell']
         self.reward_config = {
-            'self_elimination_penalty': -4000,  # Increased penalty
+            'self_elimination_penalty': -2000,  # Increased penalty
             'trail_reward': 0,                             # Reduced trail reward per 3 steps          NOT USING RIGHT NOW
             'max_trail_reward': 0,                        # Maximum trail reward per step             NOT USING RIGHT NOW   
-            'territory_capture_reward_per_cell': 15,      # Increased reward per cell captured
-            'loop_closure_bonus': 1000,                      # New bonus for closing loops of area
+            'territory_capture_reward_per_cell': 20,      # Increased reward per cell captured
+            'loop_closure_bonus': 500,                      # New bonus for closing loops of area
             'max_trail_length': 10,                         # Maximum trail length before penalty
-            'long_trail_penalty': -50,                      # Penalty for long trails                  # New bonus for closing loops of area
-            'opponent_elimination_reward': 200,              # Increased reward for eliminating an opponent   NOT USING RIGHT NOW
-            'opponent_elimination_penalty': -100,             # Increased penalty for being eliminated        NOT USING RIGHT NOW
-            'enemy_territory_capture_reward_per_cell': 15,  # Increased reward per cell
-            'territory_loss_penalty_per_cell': -15,           # Increased penalty per cell lost
+            'long_trail_penalty': -30,                      # Penalty for long trails                  # New bonus for closing loops of area
+            'opponent_elimination_reward': 300,              # Increased reward for eliminating an opponent   NOT USING RIGHT NOW
+            'opponent_elimination_penalty': -150,             # Increased penalty for being eliminated        NOT USING RIGHT NOW
+            'enemy_territory_capture_reward_per_cell': 20,  # Increased reward per cell
+            'territory_loss_penalty_per_cell': -20,
+            'hit_wall_penalty': -1000,  # CHANGE THIS = NO PENALTY, JUST RIGHT AWAY ELIMINATION HITTIN EDGE OF ARENA
         }
         self.steps_taken = 0  # Initialize steps
         self.grid_size = grid_size
@@ -115,7 +116,7 @@ class PaperIoEnv:
             if not self._within_arena(new_x, new_y):
                 # Agent cannot move forward; stays in place
                 # Optionally, penalize for hitting the edge
-                rewards[i] += -1  # Small penalty
+                rewards[i] += self.reward_config['hit_wall_penalty']
                 new_x, new_y = x, y
             else:
                 # Agent can move

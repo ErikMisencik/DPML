@@ -15,9 +15,9 @@ from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLAgent
 
 
 # Choose algorithm and initialize agents
-num_agents = 1 
+num_agents = 2 
 render_game = False  # Set to True if you want to render the game during training 
-load_existing_model = True  # Set to True to load an existing model
+load_existing_model = False  # Set to True to load an existing model
 steps_per_episode = 350
 
 window_size = 50               # For smoothing graphs
@@ -40,14 +40,14 @@ if load_existing_model:
 
 else:
     # Parameters for initial training
-    num_episodes = 15000           # Full training length
+    num_episodes = 20000           # Full training length
     epsilon = 1.0                  # High exploration at start
-    learning_rate = 0.005          # Standard learning rate for initial training
-    epsilon_reset = False          # No epsilon reset for initial training
+    learning_rate = 0.002          # Standard learning rate for initial training
+    epsilon_reset = True          # No epsilon reset for initial training
     epsilon_reset_value = 0.50     # Not used if epsilon_reset is False
-    epsilon_reset_interval = 7500  # Not used if epsilon_reset is False
-    epsilon_decay = 0.9997         # Standard decay rate
-    min_epsilon = 0.1              # Minimum exploration rate
+    epsilon_reset_interval = 5000  # Not used if epsilon_reset is False
+    epsilon_decay = 0.9995         # Standard decay rate
+    min_epsilon = 0.05              # Minimum exploration rate
 
 
 env = PaperIoEnv(render=render_game, max_steps=steps_per_episode, num_players=num_agents)
@@ -59,9 +59,8 @@ agent_type = agents[0].__class__.__name__  # Assumes all agents are of the same 
 policy_name = (
     f"{'PreTrained' if load_existing_model else 'New'}_"
     f"{'M' if num_agents > 1 else 'S'}_"
-    f"{num_agents + '_' if num_agents > 1 else ''}"
-    f"{agent_type}"
-)
+    f"{num_agents}_" if num_agents > 1 else ""
+) + f"{agent_type}"
 
 # Function to find the next available folder index
 def get_next_model_index(models_dir, policy_name):
