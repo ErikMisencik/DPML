@@ -18,6 +18,7 @@ from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLAgent
 num_agents = 2 
 render_game = False  # Set to True if you want to render the game during training 
 load_existing_model = False  # Set to True to load an existing model
+partial_observability = False  # Set to True for partial observability
 steps_per_episode = 350
 
 window_size = 50               # For smoothing graphs
@@ -40,7 +41,7 @@ if load_existing_model:
 
 else:
     # Parameters for initial training
-    num_episodes = 15000          # Full training length
+    num_episodes = 15000         # Full training length
     epsilon = 1.0                  # High exploration at start
     learning_rate = 0.0025          # Standard learning rate for initial training
     epsilon_reset = True          # No epsilon reset for initial training
@@ -50,7 +51,7 @@ else:
     min_epsilon = 0.05              # Minimum exploration rate
 
 
-env = PaperIoEnv(render=render_game, max_steps=steps_per_episode, num_players=num_agents)
+env = PaperIoEnv(render=render_game, max_steps=steps_per_episode, num_players=num_agents, partial_observability=partial_observability)
 
 agents = [QLAgent(env, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon) for _ in range(num_agents)]
 
@@ -58,6 +59,7 @@ agent_type = agents[0].__class__.__name__  # Assumes all agents are of the same 
 
 policy_name = (
     f"{'PreTrained' if load_existing_model else 'New'}_"
+    f"{'P_' if partial_observability == True else ''}"
     f"{'M' if num_agents > 1 else 'S'}_"
     f"{num_agents}_" if num_agents > 1 else ""
 ) + f"{agent_type}"
@@ -125,17 +127,18 @@ def save_training_info(file_path, num_episodes, steps_per_episode, agent, reward
         # General Training Info
         f.write("=== Q-Learning Training Information ===\n")
         f.write(f"Objective: The agent aims to maximize territory gain.\n")
-        f.write(f"Policy Name         : {policy_name}\n")
-        f.write(f"Number of Episodes  : {num_episodes}\n")
-        f.write(f"Max Steps per Ep.   : {env.max_steps}\n")
-        f.write(f"Learning Rate       : {agent.learning_rate}\n")
-        f.write(f"Discount Factor     : {agent.discount_factor}\n")
-        f.write(f"Initial Epsilon     : {epsilon}\n")
-        f.write(f"Final Epsilon       : {agent.epsilon}\n")
-        f.write(f"Epsilon Decay Rate  : {agent.epsilon_decay}\n")
-        f.write(f"Minimum Epsilon     : {agent.min_epsilon}\n")
-        f.write(f"Epsilon Reset Every : {epsilon_reset_interval} episodes\n")
-        f.write(f"Epsilon Reset Value : {epsilon_reset_value}\n")
+        f.write(f"Policy Name           : {policy_name}\n")
+        f.write(f"Partial observability : {partial_observability}\n")
+        f.write(f"Number of Episodes    : {num_episodes}\n")
+        f.write(f"Max Steps per Ep.     : {env.max_steps}\n")
+        f.write(f"Learning Rate         : {agent.learning_rate}\n")
+        f.write(f"Discount Factor       : {agent.discount_factor}\n")
+        f.write(f"Initial Epsilon       : {epsilon}\n")
+        f.write(f"Final Epsilon         : {agent.epsilon}\n")
+        f.write(f"Epsilon Decay Rate    : {agent.epsilon_decay}\n")
+        f.write(f"Minimum Epsilon       : {agent.min_epsilon}\n")
+        f.write(f"Epsilon Reset Every   : {epsilon_reset_interval} episodes\n")
+        f.write(f"Epsilon Reset Value   : {epsilon_reset_value}\n")
         f.write("\n")
 
         # Agent Statistics

@@ -21,8 +21,8 @@ class PaperIoEnv:
             'trail_reward': 10,                          # Small reward for each trail step
             'max_trail_reward': 50,                     # Cap the accumulated trail reward
             'territory_capture_reward_per_cell': 25,    # High reward for capturing new territory
-            'max_trail_length': 0,                      # No limit on trail length
-            'long_trail_penalty': 0,                    # No penalty for long trails
+            'max_trail_length': 15,                      # No limit on trail length
+            'long_trail_penalty': -100,                    # No penalty for long trails
             'opponent_elimination_reward': 100,           # Neutral towards eliminating opponents
             'opponent_elimination_penalty': -50,          # No penalty if eliminated
             'enemy_territory_capture_reward_per_cell': 15, # Reward for capturing enemy territory

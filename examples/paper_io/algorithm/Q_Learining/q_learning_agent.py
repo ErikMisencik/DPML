@@ -20,12 +20,30 @@ class QLAgent(BaseAgent):
     def get_state(self, observation, player_idx):
         grid = observation[player_idx]
         player = self.env.players[player_idx]
-        x, y = player['position']
-        cell_value = grid[x, y]
-        position_status = 'on_territory' if cell_value == player['id'] else 'on_trail' if cell_value == -player['id'] else 'in_neutral'
+        player_id = player['id']
+        
+        # Determine if the observation is partial or full
+        if grid.shape[0] == self.env.grid_size and grid.shape[1] == self.env.grid_size:
+            # Full Observability
+            x_local, y_local = player['position']
+        else:
+            # Partial Observability
+            x_local = grid.shape[0] // 2
+            y_local = grid.shape[1] // 2
+        
+        cell_value = grid[x_local, y_local]
+        position_status = (
+            'on_territory' if cell_value == player_id else
+            'on_trail' if cell_value == -player_id else
+            'in_neutral'
+        )
         trail_length = len(player['trail'])
-        nearest_enemy_distance = self._get_nearest_enemy_distance(player_idx)
-        nearest_enemy_direction = self._get_nearest_enemy_direction(player_idx)
+        nearest_enemy_distance = self._get_nearest_enemy_distance(
+            grid, player_id, x_local, y_local
+        )
+        nearest_enemy_direction = self._get_nearest_enemy_direction(
+            grid, player_id, x_local, y_local
+        )
         state = (
             position_status,
             min(trail_length, 5),
@@ -77,35 +95,35 @@ class QLAgent(BaseAgent):
             self.q_table = pickle.load(f)
         print(f"Q-table loaded from {filepath}")
 
-    def _get_nearest_enemy_distance(self, player_idx):
-        player = self.env.players[player_idx]
-        x1, y1 = player['position']
-        min_distance = self.env.grid_size * 2
-        for i, other_player in enumerate(self.env.players):
-            if i != player_idx and self.env.alive[i]:
-                x2, y2 = other_player['position']
-                distance = abs(x1 - x2) + abs(y1 - y2)
-                if distance < min_distance:
-                    min_distance = distance
-        return min_distance
+    def _get_nearest_enemy_distance(self, grid, player_id, x_local, y_local):
+         # Create a mask for enemy positions
+        enemy_mask = (grid > 0) & (grid != player_id)
+        enemy_positions = np.argwhere(enemy_mask)
+        if enemy_positions.size == 0:
+            return grid.shape[0] * 2  # No enemies detected; return max distance
+        else:
+            # Calculate Manhattan distances to all enemies
+            distances = np.abs(enemy_positions - np.array([x_local, y_local])).sum(axis=1)
+            min_distance = distances.min()
+            return min_distance
 
-    def _get_nearest_enemy_direction(self, player_idx):
-        player = self.env.players[player_idx]
-        x1, y1 = player['position']
-        min_distance = self.env.grid_size * 2
-        direction = 'none'
-        for i, other_player in enumerate(self.env.players):
-            if i != player_idx and self.env.alive[i]:
-                x2, y2 = other_player['position']
-                distance = abs(x1 - x2) + abs(y1 - y2)
-                if distance < min_distance:
-                    min_distance = distance
-                    if x2 > x1:
-                        direction = 'down'
-                    elif x2 < x1:
-                        direction = 'up'
-                    elif y2 > y1:
-                        direction = 'right'
-                    elif y2 < y1:
-                        direction = 'left'
-        return direction
+    def _get_nearest_enemy_direction(self, grid, player_id, x_local, y_local):
+        # Create a mask for enemy positions
+        enemy_mask = (grid > 0) & (grid != player_id)
+        enemy_positions = np.argwhere(enemy_mask)
+        if enemy_positions.size == 0:
+            return 'none'  # No enemies detected
+        else:
+            # Calculate Manhattan distances to all enemies
+            differences = enemy_positions - np.array([x_local, y_local])
+            distances = np.abs(differences).sum(axis=1)
+            min_idx = distances.argmin()
+            dx, dy = differences[min_idx]
+
+            if abs(dx) > abs(dy):
+                direction = 'down' if dx > 0 else 'up'
+            elif abs(dy) > 0:
+                direction = 'right' if dy > 0 else 'left'
+            else:
+                direction = 'none'  # Enemy is at the same position
+            return direction
