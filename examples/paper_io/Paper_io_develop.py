@@ -1,7 +1,7 @@
 import random
 import numpy as np
 from examples.paper_io.utils.render import render_game
-import pygame
+import pygame # type: ignore
 from gym.spaces import Box, Discrete
 
 class PaperIoEnv:
@@ -17,18 +17,17 @@ class PaperIoEnv:
             partial_observability (bool): If True, agents have limited vision.
         """
         self.reward_config = {
-            'self_elimination_penalty': -800,                
-            'trail_reward': 0,                                
-            'max_trail_reward': 0,                            
-            'territory_capture_reward_per_cell': 15,          # Minimal reward for capturing territory
-            'loop_closure_bonus': 0,                          # Not encouraging loop formation
-            'max_trail_length': 0,                            
-            'long_trail_penalty': 0,                          
-            'opponent_elimination_reward': 300,               # High reward for eliminating an opponent
-            'opponent_elimination_penalty': -100,             # Penalty if eliminated
-            'enemy_territory_capture_reward_per_cell': 10,    # Slight incentive to capture enemy territory
-            'territory_loss_penalty_per_cell': -20,           
-            'reward_cut_on_death': 0.5,                       
+            'self_elimination_penalty': -400,           # Discourage self-elimination
+            'trail_reward': 10,                          # Small reward for each trail step
+            'max_trail_reward': 50,                     # Cap the accumulated trail reward
+            'territory_capture_reward_per_cell': 25,    # High reward for capturing new territory
+            'max_trail_length': 0,                      # No limit on trail length
+            'long_trail_penalty': 0,                    # No penalty for long trails
+            'opponent_elimination_reward': 100,           # Neutral towards eliminating opponents
+            'opponent_elimination_penalty': -50,          # No penalty if eliminated
+            'enemy_territory_capture_reward_per_cell': 15, # Reward for capturing enemy territory
+            'territory_loss_penalty_per_cell': -20,     # Penalty for losing territory
+            'reward_survival_percentage': 0.85,         # Encourage survival
         }
         self.steps_taken = 0  # Initialize steps
         self.grid_size = grid_size
@@ -181,8 +180,8 @@ class PaperIoEnv:
                     player['trail'].append(new_position)
 
                     # Gain rewards for creating a trail    REWARD? HERE
-                    if len(player['trail']) % 3 == 0:
-                        rewards[i] += min(len(player['trail']) // 3 * self.reward_config['trail_reward'], 
+                    if len(player['trail']) % 2 == 0:
+                        rewards[i] += min(len(player['trail']) // 2 * self.reward_config['trail_reward'], 
                                         self.reward_config['max_trail_reward'])
 
                 elif cell_value == player_id and player['trail']:
@@ -299,7 +298,7 @@ class PaperIoEnv:
         player['territory'] = 0  # Reset territory count
 
         # Reduce cumulative reward by 50%
-        self.cumulative_rewards[idx] *= self.reward_config['reward_cut_on_death'] 
+        self.cumulative_rewards[idx] *= self.reward_config['reward_survival_percentage'] 
 
         # Respawn the player at a new position with initial territory
         while True:
@@ -375,10 +374,9 @@ class PaperIoEnv:
 
         # Non-linear reward calculation
         area_captured = total_captured_area
-        loop_closure_bonus = self.reward_config['loop_closure_bonus']
 
         # Implement non-linear reward function (e.g., area raised to 1.5 power)
-        reward = (area_captured ** 1.5) * self.reward_config['territory_capture_reward_per_cell'] + loop_closure_bonus
+        reward = (area_captured ** 1.5) * self.reward_config['territory_capture_reward_per_cell']
         rewards[player_id - 1] += reward
         return reward
 

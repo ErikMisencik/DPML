@@ -2,6 +2,7 @@ import os
 import random
 import sys
 from time import sleep
+import pygame # type: ignore
 from examples.paper_io.Paper_io_develop import PaperIoEnv
 from examples.paper_io.algorithm.Greedy.greedy_agent import GreedyAgent
 
@@ -96,19 +97,19 @@ def main():
 
     # Paths to the trained Q-learning models
     # q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/archive_models/q_learning_13/trained_model/q_table_ag_0.pkl"
-    q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/New_M_2_QLAgent_6/trained_model/q_table_ag_1_end.pkl"
-    q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/New_M_2_QLAgent_7/trained_model/q_table_ag_0_end.pkl"
+    q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/archive_models/New_M_2_QLAgent_6/trained_model/q_table_ag_1_end.pkl"
+    q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/New_M_2_QLAgent_2/trained_model/q_table_ag_0_end.pkl"
 
     # Load agents
     agent1 = load_q_learning_model(q_table_path_agent1)
-    agent1_name = "Territory-Focused Agent"
+    agent1_name = "Q Learning Agent 1"  # Name for the Q-Learning agent
     # agent1 = RandomAgent(env)
     # agent1_name = "Random Agent"
     # agent1 = GreedyAgent(env)
     # agent1_name = "Greedy Agent"
 
     agent2 = load_q_learning_model(q_table_path_agent2)
-    agent2_name = "Risk-Taking Agent"  
+    agent2_name = "Q Learning Agent 2"  
     # You can switch agent2 to another Q-Learning agent or a Random agent
     # agent2 = RandomAgent(env)
     # agent2_name = "Random Agent"

@@ -1,41 +1,42 @@
 === Q-Learning Training Information ===
+Objective: The agent aims to maximize territory gain.
 Policy Name         : q_learning
-Number of Episodes  : 20000
+Number of Episodes  : 10000
 Max Steps per Ep.   : 350
-Learning Rate       : 0.002
+Learning Rate       : 0.0025
 Discount Factor     : 0.99
 Initial Epsilon     : 1.0
-Final Epsilon       : 0.49975
-Epsilon Decay Rate  : 0.9995
+Final Epsilon       : 0.39968000000000004
+Epsilon Decay Rate  : 0.9992
 Minimum Epsilon     : 0.05
 Epsilon Reset Every : 5000 episodes
-Epsilon Reset Value : 0.5
+Epsilon Reset Value : 0.4
 
 === Agent Statistics ===
 Agent 0:
-  - Total Wins           : 3547
-  - Total Eliminations   : 7041
-  - Total Self-Eliminations : 340611
-  - Avg Cumulative Reward : -3260.61
+  - Total Wins           : 1267
+  - Total Eliminations   : 4095
+  - Total Self-Eliminations : 172984
+  - Avg Cumulative Reward : -360.70
 
 Agent 1:
-  - Total Wins           : 16453
-  - Total Eliminations   : 5380
-  - Total Self-Eliminations : 118401
-  - Avg Cumulative Reward : 4111.91
+  - Total Wins           : 8733
+  - Total Eliminations   : 2911
+  - Total Self-Eliminations : 67130
+  - Avg Cumulative Reward : 1946.22
 
-Agent Colors (Names): Teal, Yellow
+Agent Colors (Names): Green, Red
 Final Q-Table Path  : models\New_M_2_QLAgent_1\trained_model\q_table_ag_1_end.pkl
 
 === Reward Information ===
-Self elimination penalty: -2000
-Trail reward        : 0
-Max trail reward    : 0
-Territory capture reward per cell: 20
-Loop closure bonus  : 500
-Max trail length    : 10
-Long trail penalty  : -30
-Opponent elimination reward: 300
-Opponent elimination penalty: -150
-Enemy territory capture reward per cell: 20
+Self elimination penalty: -300
+Trail reward        : 2
+Max trail reward    : 20
+Territory capture reward per cell: 25
+Max trail length    : 0
+Long trail penalty  : 0
+Opponent elimination reward: 0
+Opponent elimination penalty: 0
+Enemy territory capture reward per cell: 15
 Territory loss penalty per cell: -20
+Reward survival percentage: 0.75
