@@ -1,0 +1,43 @@
+=== Q-Learning Training Information ===
+Aggressive Agent (Focuses on Opponent Elimination)
+Policy Name         : q_learning
+Number of Episodes  : 15000
+Max Steps per Ep.   : 350
+Learning Rate       : 0.0025
+Discount Factor     : 0.99
+Initial Epsilon     : 1.0
+Final Epsilon       : 0.4997
+Epsilon Decay Rate  : 0.9994
+Minimum Epsilon     : 0.05
+Epsilon Reset Every : 7500 episodes
+Epsilon Reset Value : 0.5
+
+=== Agent Statistics ===
+Agent 0:
+  - Total Wins           : 1763
+  - Total Eliminations   : 5804
+  - Total Self-Eliminations : 259779
+  - Avg Cumulative Reward : -1348.87
+
+Agent 1:
+  - Total Wins           : 13237
+  - Total Eliminations   : 4436
+  - Total Self-Eliminations : 68778
+  - Avg Cumulative Reward : 181.08
+
+Agent Colors (Names): Magenta, Cyan
+Final Q-Table Path  : models\New_M_2_QLAgent_8\trained_model\q_table_ag_1_end.pkl
+
+=== Reward Information ===
+Self elimination penalty: -800
+Trail reward        : 0
+Max trail reward    : 0
+Territory capture reward per cell: 15
+Loop closure bonus  : 0
+Max trail length    : 0
+Long trail penalty  : 0
+Opponent elimination reward: 300
+Opponent elimination penalty: -100
+Enemy territory capture reward per cell: 10
+Territory loss penalty per cell: -20
+Reward cut on death : 0.5
