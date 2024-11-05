@@ -40,13 +40,13 @@ if load_existing_model:
 
 else:
     # Parameters for initial training
-    num_episodes = 20000           # Full training length
+    num_episodes = 15000           # Full training length
     epsilon = 1.0                  # High exploration at start
-    learning_rate = 0.002          # Standard learning rate for initial training
+    learning_rate = 0.0025          # Standard learning rate for initial training
     epsilon_reset = True          # No epsilon reset for initial training
     epsilon_reset_value = 0.50     # Not used if epsilon_reset is False
-    epsilon_reset_interval = 10000  # Not used if epsilon_reset is False
-    epsilon_decay = 0.9995         # Standard decay rate
+    epsilon_reset_interval = 7500  # Not used if epsilon_reset is False
+    epsilon_decay = 0.9994         # Standard decay rate
     min_epsilon = 0.05              # Minimum exploration rate
 
 
@@ -124,6 +124,7 @@ def save_training_info(file_path, num_episodes, steps_per_episode, agent, reward
     with open(file_path, 'w') as f:
         # General Training Info
         f.write("=== Q-Learning Training Information ===\n")
+        f.write(f"Aggressive Agent (Focuses on Opponent Elimination)\n")
         f.write(f"Policy Name         : {policy_name}\n")
         f.write(f"Number of Episodes  : {num_episodes}\n")
         f.write(f"Max Steps per Ep.   : {env.max_steps}\n")
