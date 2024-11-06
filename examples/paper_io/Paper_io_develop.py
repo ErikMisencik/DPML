@@ -17,17 +17,17 @@ class PaperIoEnv:
             partial_observability (bool): If True, agents have limited vision.
         """
         self.reward_config = {
-            'self_elimination_penalty': -400,           # Discourage self-elimination
-            'trail_reward': 10,                          # Small reward for each trail step
-            'max_trail_reward': 50,                     # Cap the accumulated trail reward
-            'territory_capture_reward_per_cell': 25,    # High reward for capturing new territory
-            'max_trail_length': 15,                      # No limit on trail length
+            'self_elimination_penalty': -500,           # Discourage self-elimination
+            'trail_reward': 20,                          # Small reward for each trail step
+            'max_trail_reward': 80,                     # Cap the accumulated trail reward
+            'territory_capture_reward_per_cell': 30,    # High reward for capturing new territory
+            'max_trail_length': 12,                      # No limit on trail length
             'long_trail_penalty': -100,                    # No penalty for long trails
             'opponent_elimination_reward': 100,           # Neutral towards eliminating opponents
             'opponent_elimination_penalty': -50,          # No penalty if eliminated
-            'enemy_territory_capture_reward_per_cell': 15, # Reward for capturing enemy territory
-            'territory_loss_penalty_per_cell': -20,     # Penalty for losing territory
-            'reward_survival_percentage': 0.85,         # Encourage survival
+            'enemy_territory_capture_reward_per_cell': 30, # Reward for capturing enemy territory
+            'territory_loss_penalty_per_cell': -50,     # Penalty for losing territory
+            'reward_survival_percentage': 0.70,         # Encourage survival
         }
         self.steps_taken = 0  # Initialize steps
         self.grid_size = grid_size
@@ -327,7 +327,7 @@ class PaperIoEnv:
             x, y = player['position']
 
             # Define the size of the local observation grid (e.g., radius of 3 for a 7x7 grid)
-            obs_radius = 3  # You can adjust this value as needed
+            obs_radius = 5  # You can adjust this value as needed
 
             # Calculate the bounds of the local grid, ensuring they stay within grid limits
             x_min = max(0, x - obs_radius)

@@ -1,0 +1,43 @@
+=== Q-Learning Training Information ===
+Objective: The agent aims to maximize territory gain.
+Policy Name           : q_learning
+Partial observability : True
+Number of Episodes    : 15000
+Max Steps per Ep.     : 350
+Learning Rate         : 0.0025
+Discount Factor       : 0.99
+Initial Epsilon       : 1.0
+Final Epsilon         : 0.4996
+Epsilon Decay Rate    : 0.9992
+Minimum Epsilon       : 0.05
+Epsilon Reset Every   : 5000 episodes
+Epsilon Reset Value   : 0.5
+
+=== Agent Statistics ===
+Agent 0:
+  - Total Wins           : 2549
+  - Total Eliminations   : 2300
+  - Total Self-Eliminations : 259799
+  - Avg Cumulative Reward : -618.94
+
+Agent 1:
+  - Total Wins           : 12451
+  - Total Eliminations   : 4246
+  - Total Self-Eliminations : 111145
+  - Avg Cumulative Reward : 1175.99
+
+Agent Colors (Names): Indigo, Pink
+Final Q-Table Path  : models\New_P_M_2_QLAgent_2\trained_model\q_table_ag_1_end.pkl
+
+=== Reward Information ===
+Self elimination penalty: -400
+Trail reward        : 10
+Max trail reward    : 50
+Territory capture reward per cell: 25
+Max trail length    : 15
+Long trail penalty  : -100
+Opponent elimination reward: 100
+Opponent elimination penalty: -50
+Enemy territory capture reward per cell: 15
+Territory loss penalty per cell: -20
+Reward survival percentage: 0.65
