@@ -97,8 +97,8 @@ def main():
 
     # Paths to the trained Q-learning models
     # q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/archive_models/q_learning_13/trained_model/q_table_ag_0.pkl"
-    q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/archive_models/New_M_2_QLAgent_6/trained_model/q_table_ag_1_end.pkl"
-    q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/New_P_M_2_QLAgent_3/trained_model/q_table_ag_1_10000.pkl"
+    q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/New_M_3_QLAgent_1/trained_model/q_table_ag_2_end.pkl"
+    q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/archive_models/New_P_M_2_QLAgent_3_X_10000/trained_model/q_table_ag_1_10000.pkl"
 
     # Load agents
     agent1 = load_q_learning_model(q_table_path_agent1)

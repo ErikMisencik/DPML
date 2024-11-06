@@ -18,16 +18,16 @@ class PaperIoEnv:
         """
         self.reward_config = {
             'self_elimination_penalty': -500,           # Discourage self-elimination
-            'trail_reward': 20,                          # Small reward for each trail step
-            'max_trail_reward': 80,                     # Cap the accumulated trail reward
-            'territory_capture_reward_per_cell': 30,    # High reward for capturing new territory
+            'trail_reward': 50,      #every 2             # Small reward for each trail step
+            'max_trail_reward': 300,                     # Cap the accumulated trail reward
+            'territory_capture_reward_per_cell': 50,    # High reward for capturing new territory
             'max_trail_length': 12,                      # No limit on trail length
-            'long_trail_penalty': -100,                    # No penalty for long trails
+            'long_trail_penalty': -200,                    # No penalty for long trails
             'opponent_elimination_reward': 100,           # Neutral towards eliminating opponents
             'opponent_elimination_penalty': -50,          # No penalty if eliminated
             'enemy_territory_capture_reward_per_cell': 30, # Reward for capturing enemy territory
-            'territory_loss_penalty_per_cell': -50,     # Penalty for losing territory
-            'reward_survival_percentage': 0.70,         # Encourage survival
+            'territory_loss_penalty_per_cell': -50,          # Penalty for losing territory
+            'reward_survival_percentage': 0.70,             # Encourage survival
         }
         self.steps_taken = 0  # Initialize steps
         self.grid_size = grid_size

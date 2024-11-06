@@ -18,7 +18,7 @@ from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLAgent
 num_agents = 2 
 render_game = False  # Set to True if you want to render the game during training 
 load_existing_model = False  # Set to True to load an existing model
-partial_observability = False  # Set to True for partial observability
+partial_observability = True  # Set to True for partial observability
 steps_per_episode = 350
 
 window_size = 50               # For smoothing graphs
