@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt # type: ignore
 import numpy as np
 import sys
 import time  
+from examples.paper_io.algorithm.Sarsa.sarsa_agent import SARSAAgent
 from examples.paper_io.utils.agent_colors import assign_agent_colors
 from examples.paper_io.utils.plots import (
     plot_average_self_eliminations, plot_cumulative_rewards, plot_cumulative_self_eliminations, plot_epsilon_decay, plot_td_error,
@@ -12,13 +13,26 @@ import pygame  # type: ignore # Import pygame for rendering only if necessary
 
 from Paper_io_develop import PaperIoEnv
 from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLAgent
+ 
 
+
+# Explicit Q-table paths for LOADING pre-trained models
+explicit_q_table_paths = {
+    0: os.path.join('models', 'PreTrained_S_QLAgent_4', 'trained_model', 'q_table_qlearning_ag_0_end.pkl'),
+    1: os.path.join('models', 'PreTrained_S_SARSA_2', 'trained_model', 'q_table_sarsa_ag_1_end.pkl'),
+}
+
+# Selection of algorithms to train
+algorithm_config = {
+    "Q-Learning": True,   # Train Q-Learning agents
+    "SARSA": True,        # Train SARSA agents
+}
 
 # Choose algorithm and initialize agents
 num_agents = 2 
 render_game = False  # Set to True if you want to render the game during training 
 load_existing_model = False  # Set to True to load an existing model
-partial_observability = True  # Set to True for partial observability
+partial_observability = False  # Set to True for partial observability
 steps_per_episode = 350
 
 window_size = 50               # For smoothing graphs
@@ -41,7 +55,7 @@ if load_existing_model:
 
 else:
     # Parameters for initial training
-    num_episodes = 15000         # Full training length
+    num_episodes = 10000         # Full training length
     epsilon = 1.0                  # High exploration at start
     learning_rate = 0.0025          # Standard learning rate for initial training
     epsilon_reset = True          # No epsilon reset for initial training
@@ -53,16 +67,28 @@ else:
 
 env = PaperIoEnv(render=render_game, max_steps=steps_per_episode, num_players=num_agents, partial_observability=partial_observability)
 
-agents = [QLAgent(env, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon) for _ in range(num_agents)]
+agents = []
+enabled_algorithms = [key for key, value in algorithm_config.items() if value]
+num_algorithms = len(enabled_algorithms)
+agents_per_algorithm = max(1, num_agents // num_algorithms)
 
-agent_type = agents[0].__class__.__name__  # Assumes all agents are of the same type
+for algo in enabled_algorithms:
+    if algo == "Q-Learning":
+        agents += [QLAgent(env, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon)
+                   for _ in range(agents_per_algorithm)]
+    elif algo == "SARSA":
+        agents += [SARSAAgent(env, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon)
+                   for _ in range(agents_per_algorithm)]
 
-policy_name = (
-    f"{'PreTrained' if load_existing_model else 'New'}_"
-    f"{'P_' if partial_observability == True else ''}"
-    f"{'M' if num_agents > 1 else 'S'}_"
-    f"{num_agents}_" if num_agents > 1 else ""
-) + f"{agent_type}"
+# Assign each agent its type (for naming and tracking purposes)
+agent_types = [agent.__class__.__name__ for agent in agents]
+
+policy_name = "PreTrained" if load_existing_model else "New"  
+policy_name += f"{'_P' if partial_observability else ''}"
+policy_name += f"_{'M' if num_agents > 1 else 'S'}_{num_agents}_"   
+enabled_algorithms = [key for key, value in algorithm_config.items() if value]
+policy_name += f"{'_'.join(enabled_algorithms)}"
+
 
 # Function to find the next available folder index
 def get_next_model_index(models_dir, policy_name):
@@ -88,23 +114,28 @@ plots_folder = os.path.join(model_folder, 'plots')
 os.makedirs(trained_model_folder, exist_ok=True)
 os.makedirs(plots_folder, exist_ok=True)
 
-# File to save training details
-training_info_file = os.path.join(model_folder, 'training_info.txt')
-q_table_file = os.path.join('models', 'PreTrained_S_QLAgent_4', 'trained_model', 'q_table_ag_0_end.pkl')
 
 # Assign random colors to agents
 color_info = assign_agent_colors(env.num_players)
 agent_colors = [info[0] for info in color_info]  # RGB values for rendering
 agent_color_names = [info[1] for info in color_info]  # Color names for logging
 
-# Initialize agents and load model if needed
-agents = []
-for i in range(num_agents):
-    agent = QLAgent(env, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon)
-    if load_existing_model and os.path.exists(q_table_file):
-        agent.load(q_table_file)
-    agents.append(agent)
-policy_name = 'q_learning'
+# File to save training details
+training_info_file = os.path.join(model_folder, 'training_info.txt')
+
+# Load models if needed
+loaded_q_paths = []
+for idx, agent in enumerate(agents):
+    q_table_path = explicit_q_table_paths.get(idx, None)
+
+    if q_table_path and os.path.exists(q_table_path):
+        agent.load(q_table_path)
+        print(f"Loaded Q-table for {agent.__class__.__name__} agent {idx} from {q_table_path}")
+    else:
+        print(f"No Q-table found for {agent.__class__.__name__} agent {idx}. Starting from scratch.")
+
+    # Append path (or None) to loaded_q_paths for tracking
+    loaded_q_paths.append(q_table_path)
 
 episode_rewards = []
 moving_avg_rewards = []
@@ -122,48 +153,50 @@ cumulative_rewards_per_agent = [[] for _ in range(env.num_players)]
 territory_per_agent = [[] for _ in range(env.num_players)]  # Track territory per agent
 
 # Function to save training information
-def save_training_info(file_path, num_episodes, steps_per_episode, agent, reward_config):
+def save_training_info(file_path, num_episodes, steps_per_episode, agents, reward_config, loaded_q_paths):
     with open(file_path, 'w') as f:
         # General Training Info
-        f.write("=== Q-Learning Training Information ===\n")
-        f.write(f"Objective: The agent aims to maximize territory gain.\n")
+        f.write("=== Training Information ===\n")
+        f.write(f"Objective: The agents aim to maximize territory gain.\n")
         f.write(f"Policy Name           : {policy_name}\n")
-        f.write(f"Partial observability : {partial_observability}\n")
+        f.write(f"Partial Observability : {partial_observability}\n")
         f.write(f"Number of Episodes    : {num_episodes}\n")
-        f.write(f"Max Steps per Ep.     : {env.max_steps}\n")
-        f.write(f"Learning Rate         : {agent.learning_rate}\n")
-        f.write(f"Discount Factor       : {agent.discount_factor}\n")
-        f.write(f"Initial Epsilon       : {epsilon}\n")
-        f.write(f"Final Epsilon         : {agent.epsilon}\n")
-        f.write(f"Epsilon Decay Rate    : {agent.epsilon_decay}\n")
-        f.write(f"Minimum Epsilon       : {agent.min_epsilon}\n")
-        f.write(f"Epsilon Reset Every   : {epsilon_reset_interval} episodes\n")
-        f.write(f"Epsilon Reset Value   : {epsilon_reset_value}\n")
+        f.write(f"Max Steps per Episode : {steps_per_episode}\n")
         f.write("\n")
 
-        # Agent Statistics
-        f.write("=== Agent Statistics ===\n")
-        for idx in range(env.num_players):
+        # Training Parameters
+        f.write("=== Training Parameters ===\n")
+        f.write(f"Learning Rate         : {agents[0].learning_rate if agents else 'N/A'}\n")
+        f.write(f"Discount Factor       : {agents[0].discount_factor if agents else 'N/A'}\n")
+        f.write(f"Initial Epsilon       : {epsilon}\n")
+        f.write(f"Final Epsilon         : {agents[0].epsilon if agents else 'N/A'}\n")
+        f.write(f"Epsilon Decay Rate    : {epsilon_decay}\n")
+        f.write(f"Minimum Epsilon       : {min_epsilon}\n")
+        f.write(f"Epsilon Reset Every   : {epsilon_reset_interval if epsilon_reset else 'N/A'} episodes\n")
+        f.write(f"Epsilon Reset Value   : {epsilon_reset_value if epsilon_reset else 'N/A'}\n")
+        f.write("\n")
+
+        f.write("=== Agent-Specific Information ===\n")
+        for idx, agent in enumerate(agents):
             avg_cumulative_reward = (np.mean(cumulative_rewards_per_agent[idx])
                                      if cumulative_rewards_per_agent[idx] else 0)
-            f.write(f"Agent {idx}:\n")
-            f.write(f"  - Total Wins           : {agent_wins[idx]}\n")
-            f.write(f"  - Total Eliminations   : {agent_eliminations[idx]}\n")
-            f.write(f"  - Total Self-Eliminations : {agent_self_eliminations[idx]}\n")
-            f.write(f"  - Avg Cumulative Reward : {avg_cumulative_reward:.2f}\n\n")
-
-        # Additional Information
-        f.write(f"Agent Colors (Names): {', '.join(agent_color_names)}\n")
-        if load_existing_model: # Add the loaded model path
-            f.write(f"Loaded Q-Table Path : {q_table_file}\n")
-        f.write(f"Final Q-Table Path  : {q_table_path}\n")
-        f.write("\n")
+            f.write(f"Agent {idx} ({agent.__class__.__name__}):\n")
+            f.write(f"  - Avg Cumulative Reward : {avg_cumulative_reward:.2f}\n")
+            f.write(f"  - Wins                  : {agent_wins[idx]}\n")
+            f.write(f"  - Eliminations          : {agent_eliminations[idx]}\n")
+            f.write(f"  - Self-Eliminations     : {agent_self_eliminations[idx]}\n")
+            f.write(f"  - Color Assigned        : {agent_color_names[idx]}\n")
+            if load_existing_model and loaded_q_paths[idx]:
+                f.write(f"  - Loaded Q-Table Path   : {loaded_q_paths[idx]}\n")
+            else:
+                f.write("  - Loaded Q-Table Path   : None (Training from scratch)\n")
+            f.write("\n")
 
         # Reward Configuration
         f.write("=== Reward Information ===\n")
-        for key, value in env.reward_config.items():
+        for key, value in reward_config.items():
             reward_name = key.replace('_', ' ').capitalize()
-            f.write(f"{reward_name:20}: {value}\n")
+            f.write(f"{reward_name:25}: {value}\n")
     
     print(f"Training information saved at {file_path}")
 
@@ -196,9 +229,15 @@ while episode_num < num_episodes:
         episode_reward += sum(rewards)
 
         # Update each agent with its respective state, action, reward, and next state
+         # Update each agent with its respective state, action, reward, and next state
         next_states = [agent.get_state(next_obs, i) for i, agent in enumerate(agents)]
+        next_actions = [agent.get_action(next_obs, i) for i, agent in enumerate(agents)]
+
         for i, agent in enumerate(agents):
-            agent.update(states[i], actions[i], rewards[i], next_states[i], done, i)
+            if isinstance(agent, SARSAAgent):  # SARSA requires next_action
+                agent.update(states[i], actions[i], rewards[i], next_states[i], next_actions[i], done, i)
+            else:  # Q-Learning and others do not
+                agent.update(states[i], actions[i], rewards[i], next_states[i], done, i)
 
         # Update observation and step count
         obs = next_obs
@@ -263,9 +302,10 @@ while episode_num < num_episodes:
     # Save Q-table periodically
     if (episode_num + 1) % 5000 == 0:
         for idx, agent in enumerate(agents):
-            q_table_path = os.path.join(trained_model_folder, f'q_table_ag_{idx}_{episode_num + 1}.pkl')
+            q_table_path = os.path.join(trained_model_folder, f'{agent.__class__.__name__.lower()}_ag_{idx}_{episode_num + 1}.pkl')
             agent.save(q_table_path)
-            print(f"Q-table for agent {idx} saved at {q_table_path}")
+            print(f"Q-table for {agent.__class__.__name__} agent {idx} saved at {q_table_path}")
+
 
     # Decay epsilon after each episode
     agent.decay_epsilon()
@@ -286,14 +326,14 @@ plot_cumulative_rewards(episodes, cumulative_rewards_per_agent, plots_folder)
 plot_average_eliminations(episodes, eliminations_per_episode, plots_folder, window_size=window_size)
 plot_territory_gained(episodes, territory_per_agent, plots_folder)
 
-# Save the Q-table after training
+# Save models dynamically
 for idx, agent in enumerate(agents):
-    q_table_path = os.path.join(trained_model_folder, f'q_table_ag_{idx}_end.pkl')
-    agent.save(q_table_path)
-    print(f"Q-table for agent {idx} saved at {q_table_path}")
+    model_path = os.path.join(trained_model_folder, f'{agent.__class__.__name__.lower()}_ag_{idx}_end.pkl')
+    agent.save(model_path)
+    print(f"Model for {agent.__class__.__name__} agent {idx} saved at {model_path}")
 
 # Save the training information
-save_training_info(training_info_file, num_episodes, steps_per_episode, agent, env.reward_config)
+save_training_info(training_info_file, num_episodes, steps_per_episode, agents, env.reward_config, loaded_q_paths)
 
 # Show the plots
 plt.show()
