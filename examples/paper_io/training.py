@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt # type: ignore
 import numpy as np
 import sys
 import time  
+from examples.paper_io.algorithm.MonteCarlo.monteCarlo_agent import MCAgent
 from examples.paper_io.algorithm.Sarsa.sarsa_agent import SARSAAgent
 from examples.paper_io.utils.agent_colors import assign_agent_colors
 from examples.paper_io.utils.plots import (
@@ -25,7 +26,8 @@ explicit_q_table_paths = {
 # Selection of algorithms to train
 algorithm_config = {
     "Q-Learning": True,   # Train Q-Learning agents
-    "SARSA": True,        # Train SARSA agents
+    "SARSA": False,        # Train SARSA agents
+    "MonteCarlo": True,  # Train Monte Carlo agents
 }
 
 # Choose algorithm and initialize agents
@@ -79,6 +81,9 @@ for algo in enabled_algorithms:
     elif algo == "SARSA":
         agents += [SARSAAgent(env, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon)
                    for _ in range(agents_per_algorithm)]
+    elif algo == "MonteCarlo":
+        agents += [MCAgent(env, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon)
+                   for _ in range(agents_per_algorithm)]
 
 # Assign each agent its type (for naming and tracking purposes)
 agent_types = [agent.__class__.__name__ for agent in agents]
@@ -86,7 +91,6 @@ agent_types = [agent.__class__.__name__ for agent in agents]
 policy_name = "PreTrained" if load_existing_model else "New"  
 policy_name += f"{'_P' if partial_observability else ''}"
 policy_name += f"_{'M' if num_agents > 1 else 'S'}_{num_agents}_"   
-enabled_algorithms = [key for key, value in algorithm_config.items() if value]
 policy_name += f"{'_'.join(enabled_algorithms)}"
 
 
@@ -234,10 +238,11 @@ while episode_num < num_episodes:
         next_actions = [agent.get_action(next_obs, i) for i, agent in enumerate(agents)]
 
         for i, agent in enumerate(agents):
-            if isinstance(agent, SARSAAgent):  # SARSA requires next_action
+            if isinstance(agent, SARSAAgent):
                 agent.update(states[i], actions[i], rewards[i], next_states[i], next_actions[i], done, i)
-            else:  # Q-Learning and others do not
+            elif not isinstance(agent, MCAgent):  # Q-Learning and other step-based algorithms
                 agent.update(states[i], actions[i], rewards[i], next_states[i], done, i)
+
 
         # Update observation and step count
         obs = next_obs
@@ -306,7 +311,10 @@ while episode_num < num_episodes:
             agent.save(q_table_path)
             print(f"Q-table for {agent.__class__.__name__} agent {idx} saved at {q_table_path}")
 
-
+    # Perform Monte Carlo updates after the episode ends
+    for agent in agents:
+        if isinstance(agent, MCAgent):
+            agent.update()
     # Decay epsilon after each episode
     agent.decay_epsilon()
 
@@ -314,17 +322,23 @@ while episode_num < num_episodes:
 
 total_training_time = (time.time() - training_start_time) / 60
 
-# Plotting (including the new cumulative rewards plot)
+agent_names = [agent.__class__.__name__ for agent in agents]
+td_errors = []
+for agent in agents:
+    if hasattr(agent, "td_errors"):
+        td_errors.extend(agent.td_errors)
+
 plot_training_progress(episodes, episode_rewards, moving_avg_rewards, plots_folder)
 plot_epsilon_decay(episodes, epsilon_values, plots_folder)
-plot_td_error(agent.td_errors, plots_folder)
-plot_agent_wins(agent_wins, plots_folder)
-plot_agent_eliminations(agent_eliminations, plots_folder)
-plot_cumulative_self_eliminations(episodes, self_eliminations_per_episode, plots_folder)
+if td_errors:
+    plot_td_error(td_errors, plots_folder)
+plot_agent_wins(agent_wins, plots_folder, agent_names)
+plot_agent_eliminations(agent_eliminations, plots_folder, agent_names)
+plot_cumulative_self_eliminations(episodes, self_eliminations_per_episode, plots_folder, agent_names)
 plot_average_self_eliminations(episodes, self_eliminations_per_episode, plots_folder, window_size=window_size)
-plot_cumulative_rewards(episodes, cumulative_rewards_per_agent, plots_folder)
-plot_average_eliminations(episodes, eliminations_per_episode, plots_folder, window_size=window_size)
-plot_territory_gained(episodes, territory_per_agent, plots_folder)
+plot_cumulative_rewards(episodes, cumulative_rewards_per_agent, plots_folder, agent_names)
+plot_average_eliminations(episodes, eliminations_per_episode, plots_folder, agent_names, window_size=window_size)
+plot_territory_gained(episodes, territory_per_agent, plots_folder, agent_names)
 
 # Save models dynamically
 for idx, agent in enumerate(agents):

@@ -57,10 +57,10 @@ python training.py
 
 ## RL Policy - CheckList
 
-- Random Policy (Baseline - already done)
-- Greedy Policy (Simple improvement over random)
-- Q-Learning (Start with simple Q-tables and reward maximization)
-- SARSA (A more conservative version of Q-learning)
+- Random Policy DONE
+- Greedy Policy (Simple improvement over random) DONE
+- Q-Learning (Start with simple Q-tables and reward maximization) DONE
+- SARSA (A more conservative version of Q-learning) DONE
 - Monte Carlo Methods (For episodic learning and environments with long-term rewards)
 - Policy Iteration (For deterministic environments with well-defined policies)
 - Temporal Difference (TD) Learning (More dynamic and works well in continuous learning scenarios)
