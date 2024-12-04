@@ -61,7 +61,7 @@ python training.py
 - Greedy Policy (Simple improvement over random) DONE
 - Q-Learning (Start with simple Q-tables and reward maximization) DONE
 - SARSA (A more conservative version of Q-learning) DONE
-- Monte Carlo Methods (For episodic learning and environments with long-term rewards)
-- Policy Iteration (For deterministic environments with well-defined policies)
+- Monte Carlo Methods (For episodic learning and environments with long-term rewards) DONE
 - Temporal Difference (TD) Learning (More dynamic and works well in continuous learning scenarios)
+- Policy Iteration (For deterministic environments with well-defined policies)
 - Actor-Critic (without neural networks) (When combining value functions with policy learning)

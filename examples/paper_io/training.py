@@ -5,6 +5,7 @@ import sys
 import time  
 from examples.paper_io.algorithm.MonteCarlo.monteCarlo_agent import MCAgent
 from examples.paper_io.algorithm.Sarsa.sarsa_agent import SARSAAgent
+from examples.paper_io.algorithm.TD_Learning.td_learning_agent import TDAgent
 from examples.paper_io.utils.agent_colors import assign_agent_colors
 from examples.paper_io.utils.plots import (
     plot_average_self_eliminations, plot_cumulative_rewards, plot_cumulative_self_eliminations, plot_epsilon_decay, plot_td_error,
@@ -14,24 +15,8 @@ import pygame  # type: ignore # Import pygame for rendering only if necessary
 
 from Paper_io_develop import PaperIoEnv
 from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLAgent
- 
 
 
-# Explicit Q-table paths for LOADING pre-trained models
-explicit_q_table_paths = {
-    0: os.path.join('models', 'PreTrained_S_QLAgent_4', 'trained_model', 'q_table_qlearning_ag_0_end.pkl'),
-    1: os.path.join('models', 'PreTrained_S_SARSA_2', 'trained_model', 'q_table_sarsa_ag_1_end.pkl'),
-}
-
-# Selection of algorithms to train
-algorithm_config = {
-    "Q-Learning": True,   # Train Q-Learning agents
-    "SARSA": False,        # Train SARSA agents
-    "MonteCarlo": True,  # Train Monte Carlo agents
-}
-
-# Choose algorithm and initialize agents
-num_agents = 2 
 render_game = False  # Set to True if you want to render the game during training 
 load_existing_model = False  # Set to True to load an existing model
 partial_observability = False  # Set to True for partial observability
@@ -42,6 +27,7 @@ loading_bar_length = 20;       # Length of the loading bar
 
 # Training variables
 discount_factor = 0.99  # Typically remains the same for both training and retraining
+lambda_value = 0.8      # λ parameter for eligibility traces (for TDAgent)
 
 # Set parameters based on whether we are training from scratch or retraining
 if load_existing_model:
@@ -57,7 +43,7 @@ if load_existing_model:
 
 else:
     # Parameters for initial training
-    num_episodes = 10000         # Full training length
+    num_episodes = 150         # Full training length
     epsilon = 1.0                  # High exploration at start
     learning_rate = 0.0025          # Standard learning rate for initial training
     epsilon_reset = True          # No epsilon reset for initial training
@@ -66,24 +52,47 @@ else:
     epsilon_decay = 0.9992         # Standard decay rate
     min_epsilon = 0.05              # Minimum exploration rate
 
+# Explicit Q-table paths for LOADING pre-trained models
+explicit_q_table_paths = {
+    0: os.path.join('models', 'PreTrained_S_QLAgent_4', 'trained_model', 'q_table_qlearning_ag_0_end.pkl'),
+    1: os.path.join('models', 'PreTrained_S_SARSA_2', 'trained_model', 'q_table_sarsa_ag_1_end.pkl'),
+}
 
-env = PaperIoEnv(render=render_game, max_steps=steps_per_episode, num_players=num_agents, partial_observability=partial_observability)
+# Selection of algorithms to train
+algorithm_config = {
+    "Q-Learning": True,   # Train Q-Learning agents
+    "SARSA": False,        # Train SARSA agents
+    "MonteCarlo": True,  # Train Monte Carlo agents
+    "TD": True,            # Train TD agents
+}
 
 agents = []
 enabled_algorithms = [key for key, value in algorithm_config.items() if value]
 num_algorithms = len(enabled_algorithms)
-agents_per_algorithm = max(1, num_agents // num_algorithms)
+agents_per_algorithm = 1  # Number of agents per algorithm
 
 for algo in enabled_algorithms:
     if algo == "Q-Learning":
-        agents += [QLAgent(env, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon)
+        agents += [QLAgent(None, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon)
                    for _ in range(agents_per_algorithm)]
     elif algo == "SARSA":
-        agents += [SARSAAgent(env, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon)
+        agents += [SARSAAgent(None, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon)
                    for _ in range(agents_per_algorithm)]
     elif algo == "MonteCarlo":
-        agents += [MCAgent(env, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon)
+        agents += [MCAgent(None, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon)
                    for _ in range(agents_per_algorithm)]
+    elif algo == "TD":
+        agents += [TDAgent(None, learning_rate, discount_factor, lambda_value, epsilon, epsilon_decay, min_epsilon)
+                   for _ in range(agents_per_algorithm)]
+
+# **Set num_agents to the actual number of agents**
+num_agents = len(agents)
+
+env = PaperIoEnv(render=render_game, max_steps=steps_per_episode, num_players=num_agents, partial_observability=partial_observability)
+
+# Assign the 'env' instance to each agent
+for agent in agents:
+    agent.env = env
 
 # Assign each agent its type (for naming and tracking purposes)
 agent_types = [agent.__class__.__name__ for agent in agents]
@@ -154,7 +163,7 @@ agent_wins = [0 for _ in range(env.num_players)]
 agent_eliminations = [0 for _ in range(env.num_players)]
 agent_self_eliminations = [0 for _ in range(env.num_players)]
 cumulative_rewards_per_agent = [[] for _ in range(env.num_players)]
-territory_per_agent = [[] for _ in range(env.num_players)]  # Track territory per agent
+territory_per_agent = [[] for _ in range(env.num_players)]  
 
 # Function to save training information
 def save_training_info(file_path, num_episodes, steps_per_episode, agents, reward_config, loaded_q_paths):
@@ -233,16 +242,17 @@ while episode_num < num_episodes:
         episode_reward += sum(rewards)
 
         # Update each agent with its respective state, action, reward, and next state
-         # Update each agent with its respective state, action, reward, and next state
         next_states = [agent.get_state(next_obs, i) for i, agent in enumerate(agents)]
         next_actions = [agent.get_action(next_obs, i) for i, agent in enumerate(agents)]
 
         for i, agent in enumerate(agents):
             if isinstance(agent, SARSAAgent):
                 agent.update(states[i], actions[i], rewards[i], next_states[i], next_actions[i], done, i)
-            elif not isinstance(agent, MCAgent):  # Q-Learning and other step-based algorithms
+            elif isinstance(agent, MCAgent):
+                pass  # MCAgent updates at the end of the episode
+            else:
+                # For QLAgent and TDAgent
                 agent.update(states[i], actions[i], rewards[i], next_states[i], done, i)
-
 
         # Update observation and step count
         obs = next_obs
@@ -317,6 +327,8 @@ while episode_num < num_episodes:
             agent.update()
     # Decay epsilon after each episode
     agent.decay_epsilon()
+    # for agent in agents:
+    #     agent.decay_epsilon()
 
     episode_num += 1
 
