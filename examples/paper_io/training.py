@@ -143,7 +143,7 @@ for idx, agent in enumerate(agents):
 
 episode_rewards = []
 moving_avg_rewards = []
-steps_per_episode_list = []
+steps_per_episode_list = [] 
 epsilon_values = []
 episodes = []
 eliminations_per_episode = []
