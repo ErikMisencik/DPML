@@ -43,7 +43,7 @@ if load_existing_model:
 
 else:
     # Parameters for initial training
-    num_episodes = 150         # Full training length
+    num_episodes = 15000         # Full training length
     epsilon = 1.0                  # High exploration at start
     learning_rate = 0.0025          # Standard learning rate for initial training
     epsilon_reset = True          # No epsilon reset for initial training
