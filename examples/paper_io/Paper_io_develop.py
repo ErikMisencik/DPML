@@ -4,7 +4,9 @@ from examples.paper_io.utils.render import render_game
 import pygame # type: ignore
 from gym.spaces import Box, Discrete
 
+
 class PaperIoEnv:
+    BORDER_VALUE = 99
     def __init__(self, grid_size=50, num_players=2, render=False, max_steps=1000,  partial_observability=False):
         """
         Initialize the Paper.io environment.
@@ -56,6 +58,8 @@ class PaperIoEnv:
 
         self.reset()
 
+        self.add_arena_border()
+
         # Observation space remains the same
         self.observation_spaces = [
             Box(low=-self.num_players, high=self.num_players, shape=(self.grid_size, self.grid_size), dtype=np.int8)
@@ -74,6 +78,7 @@ class PaperIoEnv:
         """
         # Reset game state and players' positions
         self.grid = np.zeros((self.grid_size, self.grid_size), dtype=np.int8)
+        self.add_arena_border()
         self.players = []
         self.alive = [True] * self.num_players
         self.directions = [self._random_direction() for _ in range(self.num_players)]  # Random starting directions
@@ -104,6 +109,16 @@ class PaperIoEnv:
         # Return initial observations for each player
         observations = [self.get_observation_for_player(i) for i in range(self.num_players)]
         return observations
+    
+    def add_arena_border(self):
+        """
+        Mark the outermost rows/columns with BORDER_VALUE 
+        so the agent sees them as special border cells.
+        """
+        self.grid[0, :] = self.BORDER_VALUE
+        self.grid[self.grid_size - 1, :] = self.BORDER_VALUE
+        self.grid[:, 0] = self.BORDER_VALUE
+        self.grid[:, self.grid_size - 1] = self.BORDER_VALUE
 
     def step(self, actions):
         """
@@ -432,11 +447,12 @@ class PaperIoEnv:
 
     def _within_arena(self, x, y):
         """
-        Checks if a given position (x, y) is within the square arena.
+        Check if (x, y) is within the playable area, excluding 
+        the border cells that are assigned BORDER_VALUE.
         """
-        arena_margin = 0  # Adjust if you want a margin around the edges
-        return arena_margin <= x < self.grid_size - arena_margin and \
-            arena_margin <= y < self.grid_size - arena_margin
+        # If we want one-layer border, valid range is [1, grid_size-2].
+        # i.e., 0 and (grid_size-1) are borders.
+        return (1 <= x <= self.grid_size - 2) and (1 <= y <= self.grid_size - 2)
 
     def close(self):
         if self.render_game:

@@ -11,7 +11,7 @@ from examples.paper_io.algorithm.Random.random_agent import RandomAgent
 from examples.paper_io.utils.agent_colors import assign_agent_colors
 
 # Set up the rendering flag for the environment
-render_game = False  # Set to True if you want to render the game during evaluation
+render_game = True  # Set to True if you want to render the game during evaluation
 
 # Initialize the environment with rendering enabled and max_steps
 steps_per_episode = 400  # Use the same max_steps as in training
@@ -99,7 +99,7 @@ def main():
     # q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/archive_models/q_learning_13/trained_model/q_table_ag_0.pkl"
     q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/New_M_3_QLAgent_1/trained_model/q_table_ag_2_end.pkl"
     # q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/New_M_2_Q-Learning_SARSA_2/trained_model/sarsaagent_ag_1_end.pkl"
-    q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/New_M_2_Q-Learning_MonteCarlo_1/trained_model/mcagent_ag_1_end.pkl"
+    q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/archive_models/New_M_2_QLAgent_2_X/trained_model/q_table_ag_1_end.pkl"
 
     # Load agents
     agent1 = load_q_learning_model(q_table_path_agent1)
@@ -110,7 +110,7 @@ def main():
     # agent1_name = "Greedy Agent"
 
     agent2 = load_q_learning_model(q_table_path_agent2)
-    agent2_name = "Monte Carlo Agent 2"
+    agent2_name = "Q Learning Agent 2"
     # agent2 = load_q_learning_model(q_table_path_agent2)
     # agent2_name = "Sarsa Agent 2"
     # agent2 = load_q_learning_model(q_table_path_agent2)

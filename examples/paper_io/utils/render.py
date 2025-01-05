@@ -21,7 +21,11 @@ def render_game(screen, grid, players, alive, cell_size, window_size, num_player
             top_left = (y * cell_size, x * cell_size)
             rect = pygame.Rect(top_left[0], top_left[1], cell_size, cell_size)
 
-            if cell_value > 0:
+            if cell_value == 99:
+                # Draw border cell in dark grey or black
+                pygame.draw.rect(screen, (128, 128, 128), rect)
+
+            elif cell_value > 0:
                 # Territory with subtle 3D effect
                 player_id = cell_value - 1
                 pygame.draw.rect(screen, agent_colors[player_id], rect)
