@@ -11,7 +11,7 @@ from examples.paper_io.utils.plots import (
     plot_average_self_eliminations, plot_cumulative_rewards, plot_cumulative_self_eliminations, plot_epsilon_decay, plot_td_error,
     plot_training_progress, plot_agent_wins, plot_agent_eliminations, plot_average_eliminations, plot_territory_gained
 )
-import pygame  # type: ignore # Import pygame for rendering only if necessary
+import pygame 
 
 from Paper_io_develop import PaperIoEnv
 from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLAgent
@@ -61,9 +61,9 @@ explicit_q_table_paths = {
 # Selection of algorithms to train
 algorithm_config = {
     "Q-Learning": True,   # Train Q-Learning agents
-    "SARSA": False,        # Train SARSA agents
-    "MonteCarlo": True,  # Train Monte Carlo agents
-    "TD": True,            # Train TD agents
+    "SARSA": True,        # Train SARSA agents
+    "MonteCarlo": False,  # Train Monte Carlo agents
+    "TD": False,            # Train TD agents
 }
 
 agents = []
@@ -90,11 +90,11 @@ num_agents = len(agents)
 
 env = PaperIoEnv(render=render_game, max_steps=steps_per_episode, num_players=num_agents, partial_observability=partial_observability)
 
-# Assign the 'env' instance to each agent
+# Assign environment to each agent
 for agent in agents:
     agent.env = env
 
-# Assign each agent its type (for naming and tracking purposes)
+
 agent_types = [agent.__class__.__name__ for agent in agents]
 
 policy_name = "PreTrained" if load_existing_model else "New"  
@@ -112,11 +112,11 @@ def get_next_model_index(models_dir, policy_name):
     else:
         return 1
 
-# Initialize model count based on policy name
+
 models_dir = 'models'
 os.makedirs(models_dir, exist_ok=True)
 
-# Determine the next folder name
+# Create a new folder for the model
 model_count = get_next_model_index(models_dir, policy_name)
 model_folder_name = f"{policy_name}_{model_count}"
 
@@ -128,10 +128,10 @@ os.makedirs(trained_model_folder, exist_ok=True)
 os.makedirs(plots_folder, exist_ok=True)
 
 
-# Assign random colors to agents
+
 color_info = assign_agent_colors(env.num_players)
-agent_colors = [info[0] for info in color_info]  # RGB values for rendering
-agent_color_names = [info[1] for info in color_info]  # Color names for logging
+agent_colors = [info[0] for info in color_info] 
+agent_color_names = [info[1] for info in color_info]  
 
 # File to save training details
 training_info_file = os.path.join(model_folder, 'training_info.txt')
@@ -159,11 +159,11 @@ eliminations_per_episode = []
 self_eliminations_per_episode = []
   
 # Initialize cumulative counts
-agent_wins = [0 for _ in range(env.num_players)]
-agent_eliminations = [0 for _ in range(env.num_players)]
-agent_self_eliminations = [0 for _ in range(env.num_players)]
+agent_wins = [0] * env.num_players
+agent_eliminations = [0] * env.num_players
+agent_self_eliminations = [0] * env.num_players
 cumulative_rewards_per_agent = [[] for _ in range(env.num_players)]
-territory_per_agent = [[] for _ in range(env.num_players)]  
+territory_per_agent = [[] for _ in range(env.num_players)]
 
 # Function to save training information
 def save_training_info(file_path, num_episodes, steps_per_episode, agents, reward_config, loaded_q_paths):
@@ -213,6 +213,11 @@ def save_training_info(file_path, num_episodes, steps_per_episode, agents, rewar
     
     print(f"Training information saved at {file_path}")
 
+
+# ----------------------------------------------------------------------------------------
+# TRAINING LOOP (with single-pass states & actions) - epsilon logic unchanged
+# ----------------------------------------------------------------------------------------
+
 # Start the timer for the entire training process
 training_start_time = time.time()
 
@@ -224,26 +229,34 @@ print("=" * 30)
 episode_num = 0
 
 while episode_num < num_episodes:
+    # Initialization for each episode
     obs = env.reset()
     episode_reward = 0
-    done = False  # Initialize the done flag for each episode
-    step = 0  # Initialize step counter
+    done = False  
+    step = 0 
 
     while not done:
         if render_game:
             env.render(agent_colors)
 
-        # Get actions for each agent
-        actions = [agent.get_action(obs, i) for i, agent in enumerate(agents)]
-        states = [agent.get_state(obs, i) for i, agent in enumerate(agents)]
+        states_actions = [
+            (agent.get_state(obs, i), agent.get_action(obs, i))
+            for i, agent in enumerate(agents)
+        ]
+        states = [sa[0] for sa in states_actions]
+        actions = [sa[1] for sa in states_actions]
 
         # Step in the environment with the selected actions
         next_obs, rewards, done, info = env.step(actions)
         episode_reward += sum(rewards)
 
         # Update each agent with its respective state, action, reward, and next state
-        next_states = [agent.get_state(next_obs, i) for i, agent in enumerate(agents)]
-        next_actions = [agent.get_action(next_obs, i) for i, agent in enumerate(agents)]
+        next_states_actions = [
+            (agent.get_state(next_obs, i), agent.get_action(next_obs, i))
+            for i, agent in enumerate(agents)
+        ]
+        next_states = [ns[0] for ns in next_states_actions]
+        next_actions = [ns[1] for ns in next_states_actions]
 
         for i, agent in enumerate(agents):
             if isinstance(agent, SARSAAgent):
@@ -278,9 +291,9 @@ while episode_num < num_episodes:
             agent_wins[winner] += 1
 
     eliminations = info.get('eliminations_by_agent', [0] * env.num_players)
-    eliminations_per_episode.append(info.get('eliminations_by_agent', [0] * env.num_players))
+    eliminations_per_episode.append(eliminations)
     self_eliminations = info.get('self_eliminations_by_agent', [0] * env.num_players)
-    self_eliminations_per_episode.append(info.get('self_eliminations_by_agent', [0] * env.num_players))
+    self_eliminations_per_episode.append(self_eliminations)
 
     for i in range(env.num_players):
         agent_eliminations[i] += eliminations[i]
@@ -321,14 +334,13 @@ while episode_num < num_episodes:
             agent.save(q_table_path)
             print(f"Q-table for {agent.__class__.__name__} agent {idx} saved at {q_table_path}")
 
-    # Perform Monte Carlo updates after the episode ends
+    # Monte Carlo update after episode
     for agent in agents:
         if isinstance(agent, MCAgent):
             agent.update()
+
     # Decay epsilon after each episode
     agent.decay_epsilon()
-    # for agent in agents:
-    #     agent.decay_epsilon()
 
     episode_num += 1
 

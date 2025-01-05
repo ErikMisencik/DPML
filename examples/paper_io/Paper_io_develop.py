@@ -1,119 +1,106 @@
 import random
 import numpy as np
-from examples.paper_io.utils.render import render_game
-import pygame # type: ignore
+from collections import deque  # For efficient BFS
+import pygame  # type: ignore
 from gym.spaces import Box, Discrete
 
+from examples.paper_io.utils.render import render_game
 
 class PaperIoEnv:
     BORDER_VALUE = 99
-    def __init__(self, grid_size=50, num_players=2, render=False, max_steps=1000,  partial_observability=False):
+
+    def __init__(self, grid_size=50, num_players=2, render=False, max_steps=1000, partial_observability=False):
         """
         Initialize the Paper.io environment.
-
-        Args:
-            grid_size (int): Size of the grid.
-            num_players (int): Number of players in the game.
-            render (bool): Whether to render the game using Pygame.
-            max_steps (int): Maximum number of steps per episode.
-            partial_observability (bool): If True, agents have limited vision.
         """
         self.reward_config = {
-            'self_elimination_penalty': -500,           # Discourage self-elimination
-            'trail_reward': 50,      #every 2             # Small reward for each trail step
-            'max_trail_reward': 300,                     # Cap the accumulated trail reward
-            'territory_capture_reward_per_cell': 50,    # High reward for capturing new territory
-            'max_trail_length': 12,                      # No limit on trail length
-            'long_trail_penalty': -200,                    # No penalty for long trails
-            'opponent_elimination_reward': 100,           # Neutral towards eliminating opponents
-            'opponent_elimination_penalty': -50,          # No penalty if eliminated
-            'enemy_territory_capture_reward_per_cell': 30, # Reward for capturing enemy territory
-            'territory_loss_penalty_per_cell': -50,          # Penalty for losing territory
-            'reward_survival_percentage': 0.70,             # Encourage survival
+            'self_elimination_penalty': -500,
+            'trail_reward': 50,
+            'max_trail_reward': 300,
+            'territory_capture_reward_per_cell': 50,
+            'max_trail_length': 12,
+            'long_trail_penalty': -200,
+            'opponent_elimination_reward': 100,
+            'opponent_elimination_penalty': -50,
+            'enemy_territory_capture_reward_per_cell': 30,
+            'territory_loss_penalty_per_cell': -50,
+            'reward_survival_percentage': 0.70,
         }
-        self.steps_taken = 0  # Initialize steps
         self.grid_size = grid_size
         self.num_players = num_players
-        self.cell_size = 15  
-        self.window_size = self.grid_size * self.cell_size 
-        self.render_game = render  
+        self.cell_size = 15
+        self.window_size = self.grid_size * self.cell_size
+        self.render_game = render
         self.screen = None
         self.partial_observability = partial_observability
+
         if self.render_game:
             pygame.init()
             self.screen = pygame.display.set_mode((self.window_size, self.window_size))
             pygame.display.set_caption("Paper.io with Pygame")
             self.clock = pygame.time.Clock()
 
-        # Initialize players' directions
-        self.directions = [(0, 1)] * self.num_players  # Default to moving right
+        self.max_steps = max_steps
+        self.steps_taken = 0
 
-        # Initialize tracking variables
-        self.eliminations_by_agent = [0 for _ in range(self.num_players)]
-        self.self_eliminations_by_agent = [0 for _ in range(self.num_players)]
-        self.agent_wins = [0 for _ in range(self.num_players)]
-        self.cumulative_rewards = [0 for _ in range(self.num_players)]
-
-        self.max_steps = max_steps  # Added max_steps parameter
+        # Trackers
+        self.directions = [(0, 1)] * self.num_players
+        self.eliminations_by_agent = [0] * self.num_players
+        self.self_eliminations_by_agent = [0] * self.num_players
+        self.agent_wins = [0] * self.num_players
+        self.cumulative_rewards = [0] * self.num_players
 
         self.reset()
 
-        self.add_arena_border()
-
-        # Observation space remains the same
+        # Observation space
         self.observation_spaces = [
-            Box(low=-self.num_players, high=self.num_players, shape=(self.grid_size, self.grid_size), dtype=np.int8)
+            Box(low=-self.num_players, high=self.num_players,
+                shape=(self.grid_size, self.grid_size), dtype=np.int8)
             for _ in range(self.num_players)
         ]
-
-        # Action space is now 3: 0 - turn left, 1 - turn right, 2 - go straight
+        # Action space: 0 - turn left, 1 - turn right, 2 - go straight
         self.action_spaces = [Discrete(3) for _ in range(self.num_players)]
 
     def reset(self):
         """
         Reset the game state and players' positions.
-
-        Returns:
-            observations (list): Initial observations for each player.
         """
-        # Reset game state and players' positions
         self.grid = np.zeros((self.grid_size, self.grid_size), dtype=np.int8)
-        self.add_arena_border()
+        self._add_arena_border()
+
         self.players = []
         self.alive = [True] * self.num_players
-        self.directions = [self._random_direction() for _ in range(self.num_players)]  # Random starting directions
+        self.directions = [self._random_direction() for _ in range(self.num_players)]
         self.steps_taken = 0
 
-        # Reset tracking variables
-        self.eliminations_by_agent = [0 for _ in range(self.num_players)]
-        self.self_eliminations_by_agent = [0 for _ in range(self.num_players)]
-        self.cumulative_rewards = [0 for _ in range(self.num_players)]
+        # Reset trackers
+        self.eliminations_by_agent = [0] * self.num_players
+        self.self_eliminations_by_agent = [0] * self.num_players
+        self.cumulative_rewards = [0] * self.num_players
 
-        arena_margin = 0  # Adjust if you have a margin
+        # Place players away from the border
         for i in range(self.num_players):
             while True:
-                x = np.random.randint(arena_margin + 5, self.grid_size - arena_margin - 5)
-                y = np.random.randint(arena_margin + 5, self.grid_size - arena_margin - 5)
+                x = np.random.randint(5, self.grid_size - 5)
+                y = np.random.randint(5, self.grid_size - 5)
                 if self.grid[x, y] == 0:
                     break
-            position = (x, y)
             player_id = i + 1
             self.players.append({
-                'position': position,
+                'position': (x, y),
                 'id': player_id,
-                'trail': [],
-                'territory': 9  # Start with initial territory
+                # MAIN OPTIMIZATION: store trail in a set for O(1) membership
+                'trail': set(),
+                'territory': 9
             })
-            self.grid[x:x+3, y:y+3] = player_id  # Mark 4 cells as the player's territory
+            self.grid[x : x+3, y : y+3] = player_id
 
-        # Return initial observations for each player
         observations = [self.get_observation_for_player(i) for i in range(self.num_players)]
         return observations
-    
-    def add_arena_border(self):
+
+    def _add_arena_border(self):
         """
-        Mark the outermost rows/columns with BORDER_VALUE 
-        so the agent sees them as special border cells.
+        Mark the outermost rows/columns with BORDER_VALUE.
         """
         self.grid[0, :] = self.BORDER_VALUE
         self.grid[self.grid_size - 1, :] = self.BORDER_VALUE
@@ -121,18 +108,6 @@ class PaperIoEnv:
         self.grid[:, self.grid_size - 1] = self.BORDER_VALUE
 
     def step(self, actions):
-        """
-        Perform a step in the environment for all players.
-
-        Args:
-            actions (list): List of actions for each player.
-
-        Returns:
-            observations (list): Observations for each player.
-            rewards (list): Rewards for each player.
-            done (bool): Whether the episode has ended.
-            info (dict): Additional information.
-        """
         rewards = [0] * self.num_players
         done = False
         self.steps_taken += 1
@@ -140,134 +115,119 @@ class PaperIoEnv:
 
         for i, action in enumerate(actions):
             player = self.players[i]
-            x, y = player['position']
+            (x, y) = player['position']
             player_id = player['id']
 
-            # Update direction based on action
+            # Update direction
             if action == 0:
                 self.directions[i] = self._turn_left(self.directions[i])
             elif action == 1:
                 self.directions[i] = self._turn_right(self.directions[i])
 
-            # Move in the current direction
             dx, dy = self.directions[i]
             new_x, new_y = x + dx, y + dy
 
-            if not self._within_arena(new_x, new_y):
-                # Agent is out of bounds
+            # Check grid boundaries
+            if not (0 <= new_x < self.grid_size and 0 <= new_y < self.grid_size):
+                # Out of grid => elimination
                 rewards[i] += self.reward_config['self_elimination_penalty']
                 self.self_eliminations_by_agent[i] += 1
                 self._process_elimination(i)
-                continue  # Skip to next agent
-            else:
-                # Agent can move
-                pass  # Proceed normally
+                continue
 
-             # Check if the agent has moved
-            moved = (new_x, new_y) != (x, y)
-            new_position = (new_x, new_y)
+            cell_value = self.grid[new_x, new_y]
 
-            if moved:
-                cell_value = self.grid[new_x, new_y]
-                # Self-Elimination: Agent steps on its own trail
-                if new_position in player['trail']:
+            # Border => immediate penalty/elimination
+            if cell_value == self.BORDER_VALUE:
+                rewards[i] += self.reward_config['self_elimination_penalty']
+                self.self_eliminations_by_agent[i] += 1
+                self._process_elimination(i)
+                continue
+
+            # Move
+            if (new_x, new_y) != (x, y):
+                # Stepping on own trail => self-elimination
+                if (new_x, new_y) in player['trail']:
                     rewards[i] += self.reward_config['self_elimination_penalty']
                     self.self_eliminations_by_agent[i] += 1
                     self._process_elimination(i)
-                    continue  # Skip to next agent
+                    continue
 
-                # Opponent Elimination: Agent steps on an opponent's trail
+                # Stepping on opponent's trail => eliminate them
                 if cell_value < 0 and cell_value != -player_id:
                     owner_id = -cell_value
-                    # Process respawn of the opponent
                     rewards[owner_id - 1] += self.reward_config['opponent_elimination_penalty']
                     rewards[i] += self.reward_config['opponent_elimination_reward']
                     self.eliminations_by_agent[i] += 1
                     self._process_elimination(owner_id - 1)
-                    # Continue processing current agent's move     
 
-                # Update position and trail
-                player['position'] = new_position
+                # Update player position
+                player['position'] = (new_x, new_y)
 
+                # Stepping into empty or own trail
                 if cell_value == 0 or cell_value == -player_id:
-                    # Moving into empty space or own trail
                     self.grid[new_x, new_y] = -player_id
-                    player['trail'].append(new_position)
+                    player['trail'].add((new_x, new_y))  
 
-                    # Gain rewards for creating a trail    REWARD? HERE
-                    if len(player['trail']) % 2 == 0:
-                        rewards[i] += min(len(player['trail']) // 2 * self.reward_config['trail_reward'], 
-                                        self.reward_config['max_trail_reward'])
+                    # Simple trail reward
+                    trail_len = len(player['trail'])
+                    if trail_len % 2 == 0:
+                        rewards[i] += min((trail_len // 2) * self.reward_config['trail_reward'],
+                                          self.reward_config['max_trail_reward'])
 
+                # Returning to own territory => close loop
                 elif cell_value == player_id and player['trail']:
-                    # Agent returns to their own territory and closes a loop
-                    # Convert trail to territory
                     self.convert_trail_to_territory(player_id, rewards)
-                    # Rewards are handled inside convert_trail_to_territory
 
+                # Entering enemy territory
                 elif cell_value > 0 and cell_value != player_id:
-                    # Agent moves into another agent's territory
                     owner_id = cell_value
-                    # Capture the enemy territory cell
-                    self.grid[new_x, new_y] = -player_id  # Mark it as part of the agent's trail
-                    player['trail'].append(new_position)
-                    # Adjust territories
+                    self.grid[new_x, new_y] = -player_id
+                    player['trail'].add((new_x, new_y))
                     self.players[owner_id - 1]['territory'] -= 1
                     self.players[player_id - 1]['territory'] += 1
 
-                else:
-                    # Unhandled cases (should not occur)
-                    pass
-
-             # Add a penalty for long trails without closure
-            max_trail_length = self.reward_config['max_trail_length']
-            long_trail_penalty = self.reward_config['long_trail_penalty']
-            if len(player['trail']) > max_trail_length:
-                rewards[i] += long_trail_penalty  # Penalty for excessive trail length
+                # Check long trail penalty
+                if len(player['trail']) > self.reward_config['max_trail_length']:
+                    rewards[i] += self.reward_config['long_trail_penalty']
 
         # Update cumulative rewards
-        for i in range(self.num_players):
-            self.cumulative_rewards[i] += rewards[i]
+        for i, rew in enumerate(rewards):
+            self.cumulative_rewards[i] += rew
 
-        # Determine if the episode is done
+        # Check if done
         if self.steps_taken >= self.max_steps:
             done = True
 
-        observations = [self.get_observation_for_player(i) for i in range(self.num_players)]          
+        observations = [self.get_observation_for_player(i) for i in range(self.num_players)]
 
-       # Determine the winner based on criteria
+        # Determine winner
         if done:
             winners = []
-            # Find the agent with the highest cumulative reward
             max_reward = max(self.cumulative_rewards)
-            # Check if there is a unique agent with the highest reward
+            # Single highest
             if self.cumulative_rewards.count(max_reward) == 1:
                 winners = [i for i, r in enumerate(self.cumulative_rewards) if r == max_reward]
-
-            # If multiple agents share the same highest reward, consider additional criteria (optional)
             if not winners:
-                # For example, prioritize agents with more eliminations or fewer self-eliminations
-                max_eliminations = max(self.eliminations_by_agent)
+                # Use eliminations as tie-break
+                max_elims = max(self.eliminations_by_agent)
                 candidates = [i for i, r in enumerate(self.cumulative_rewards) if r == max_reward]
-                winners = [i for i in candidates if self.eliminations_by_agent[i] == max_eliminations]
-
-                # If still tied, further criteria can be used (e.g., fewer self-eliminations)
+                winners = [i for i in candidates if self.eliminations_by_agent[i] == max_elims]
                 if len(winners) > 1:
-                    min_self_eliminations = min(self.self_eliminations_by_agent[i] for i in winners)
-                    winners = [i for i in winners if self.self_eliminations_by_agent[i] == min_self_eliminations]
+                    # Use self-eliminations as final tie-break
+                    min_self_elims = min(self.self_eliminations_by_agent[idx] for idx in winners)
+                    winners = [idx for idx in winners if self.self_eliminations_by_agent[idx] == min_self_elims]
 
-            # Update win counts for the winning agents if there are any winners
             if winners:
-                for i in winners:
-                    self.agent_wins[i] += 1
+                for w in winners:
+                    self.agent_wins[w] += 1
 
-            # Include counts in the info dictionary
             info = {
-                'eliminations_by_agent': self.eliminations_by_agent.copy(),
-                'self_eliminations_by_agent': self.self_eliminations_by_agent.copy(),
+                'eliminations_by_agent': self.eliminations_by_agent[:],
+                'self_eliminations_by_agent': self.self_eliminations_by_agent[:],
                 'winners': winners,
-                'cumulative_rewards': self.cumulative_rewards.copy(),
-                'territory_by_agent': [player['territory'] for player in self.players]  # Add territory info
+                'cumulative_rewards': self.cumulative_rewards[:],
+                'territory_by_agent': [p['territory'] for p in self.players],
             }
         else:
             info = {}
@@ -276,184 +236,130 @@ class PaperIoEnv:
 
     def render(self, player_colors=None):
         if self.render_game and self.screen:
-            # Use external utility function to render the game
-            render_game(self.screen, self.grid, self.players, self.alive, self.cell_size, self.window_size, self.num_players, self.steps_taken, player_colors)
-            pygame.display.flip()  # Update the pygame display
-            # Limit the frame rate to 30 FPS
+            # Assumes an external render_game function
+            render_game(self.screen, self.grid, self.players, self.alive,
+                        self.cell_size, self.window_size, self.num_players,
+                        self.steps_taken, player_colors)
+            pygame.display.flip()
             self.clock.tick(30)
 
     def _turn_left(self, direction):
-        # Rotate direction 90 degrees counterclockwise
         dx, dy = direction
-        return (-dy, dx)
+        return -dy, dx
 
     def _turn_right(self, direction):
-        # Rotate direction 90 degrees clockwise
         dx, dy = direction
-        return (dy, -dx)
-    
+        return dy, -dx
+
     def _random_direction(self):
-        # Randomly choose one of four directions: Up, Down, Left, Right
         directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
         return random.choice(directions)
 
     def _process_elimination(self, idx):
-        # Handle player respawn by removing their trail and territory
         player = self.players[idx]
         player_id = player['id']
 
-        # Remove trail from the grid
-        for trail_cell in player['trail']:
-            x, y = trail_cell
-            self.grid[x, y] = 0
-        player['trail'] = []
+        # Clear trail
+        for (cx, cy) in player['trail']:
+            self.grid[cx, cy] = 0
+        player['trail'].clear()
 
-        # Remove territory from the grid
+        # Clear territory
         self.grid[self.grid == player_id] = 0
-        player['territory'] = 0  # Reset territory count
+        player['territory'] = 0
 
-        # Reduce cumulative reward by 50%
-        self.cumulative_rewards[idx] *= self.reward_config['reward_survival_percentage'] 
+        # Survival penalty
+        self.cumulative_rewards[idx] *= self.reward_config['reward_survival_percentage']
 
-        # Respawn the player at a new position with initial territory
+        # Respawn
         while True:
             x = np.random.randint(5, self.grid_size - 5)
             y = np.random.randint(5, self.grid_size - 5)
-            # Check if the area x:x+2, y:y+2 is free and within arena
-            if self._within_arena(x, y) and \
-            np.all(self.grid[x:x+3, y:y+3] == 0):
-                break
-        position = (x, y)
-        player['position'] = position
-        # Set initial territory
-        initial_territory_size = 9  # As in reset method
-        player['territory'] = initial_territory_size
-        self.grid[x:x+3, y:y+3] = player_id  # Mark initial territory on the grid
-
-        # Assign a new random direction
+            if 0 <= x < self.grid_size and 0 <= y < self.grid_size:
+                # Check 3x3 area
+                subgrid = self.grid[x : x+3, y : y+3]
+                if subgrid.max() == 0:  # area is free
+                    break
+        player['position'] = (x, y)
+        self.grid[x : x+3, y : y+3] = player_id
+        player['territory'] = 9
         self.directions[idx] = self._random_direction()
 
     def get_observation_for_player(self, player_idx):
         if self.partial_observability:
-            # Partial Observability: Agent sees a local grid around its position
-
-            # Get the player's current position
             player = self.players[player_idx]
             x, y = player['position']
-
-            # Define the size of the local observation grid (e.g., radius of 3 for a 7x7 grid)
-            obs_radius = 5  # You can adjust this value as needed
-
-            # Calculate the bounds of the local grid, ensuring they stay within grid limits
+            obs_radius = 5
             x_min = max(0, x - obs_radius)
             x_max = min(self.grid_size, x + obs_radius + 1)
             y_min = max(0, y - obs_radius)
             y_max = min(self.grid_size, y + obs_radius + 1)
 
-            # Extract the local grid around the player
             local_grid = self.grid[x_min:x_max, y_min:y_max]
+            padded_grid = np.full((2*obs_radius + 1, 2*obs_radius + 1), -127, dtype=np.int8)
 
-            # Create a padded grid to handle cases where the local grid is at the edge
-            padded_grid = np.full((2 * obs_radius + 1, 2 * obs_radius + 1), -127, dtype=np.int8)
             x_offset = x_min - (x - obs_radius)
             y_offset = y_min - (y - obs_radius)
-            padded_grid[
-                x_offset:x_offset + (x_max - x_min),
-                y_offset:y_offset + (y_max - y_min)
-            ] = local_grid
 
-            # Return only the local grid as the observation
+            padded_grid[x_offset : x_offset + local_grid.shape[0],
+                        y_offset : y_offset + local_grid.shape[1]] = local_grid
             return padded_grid
         else:
-            # Full Observability: Agent sees the entire grid
-
-            # Return a copy of the full grid
             return self.grid.copy()
 
     def convert_trail_to_territory(self, player_id, rewards):
         player = self.players[player_id - 1]
-        # Convert trail cells to territory
-        for cell in player['trail']:
-            x, y = cell
-            self.grid[x, y] = player_id
-            self.players[player_id - 1]['territory'] += 1  # Update territory count
+        for (cx, cy) in player['trail']:
+            self.grid[cx, cy] = player_id
+            player['territory'] += 1
 
-        # Capture enclosed areas including enemy territories
         captured_area = self.capture_area(player_id, rewards)
+        total_area = len(player['trail']) + captured_area
+        player['trail'].clear()
 
-        # Total area captured includes trail cells and enclosed area
-        total_captured_area = len(player['trail']) + captured_area
-
-        # Clear the player's trail
-        player['trail'] = []
-
-        # Non-linear reward calculation
-        area_captured = total_captured_area
-
-        # Implement non-linear reward function (e.g., area raised to 1.5 power)
-        reward = (area_captured ** 1.5) * self.reward_config['territory_capture_reward_per_cell']
-        rewards[player_id - 1] += reward
-        return reward
+        # Non-linear bonus for area
+        bonus = (total_area ** 1.5) * self.reward_config['territory_capture_reward_per_cell']
+        rewards[player_id - 1] += bonus
+        return bonus
 
     def capture_area(self, player_id, rewards):
-        # Identify player's cells (both territory and trail)
+        # BFS flood fill to find which cells are not enclosed
         player_cells = (self.grid == player_id) | (self.grid == -player_id)
         mask = ~player_cells
         filled = np.zeros_like(self.grid, dtype=bool)
 
-        # Flood fill from the borders to find non-enclosed areas
         def flood_fill(start_x, start_y):
-            stack = [(start_x, start_y)]
-            while stack:
-                x, y = stack.pop()
-                if x < 0 or x >= self.grid_size or y < 0 or y >= self.grid_size:
-                    continue
-                if filled[x, y] or not mask[x, y]:
-                    continue
-                filled[x, y] = True
-                stack.extend([
-                    (x - 1, y), (x + 1, y),
-                    (x, y - 1), (x, y + 1)
-                ])
+            queue = deque()
+            queue.append((start_x, start_y))
+            while queue:
+                sx, sy = queue.popleft()
+                if (0 <= sx < self.grid_size) and (0 <= sy < self.grid_size):
+                    if not filled[sx, sy] and mask[sx, sy]:
+                        filled[sx, sy] = True
+                        queue.append((sx - 1, sy))
+                        queue.append((sx + 1, sy))
+                        queue.append((sx, sy - 1))
+                        queue.append((sx, sy + 1))
 
-        # Perform flood fill from the borders
-        for x in range(self.grid_size):
-            flood_fill(x, 0)
-            flood_fill(x, self.grid_size - 1)
-        for y in range(self.grid_size):
-            flood_fill(0, y)
-            flood_fill(self.grid_size - 1, y)
+        # Flood fill from the outer boundary
+        for row in range(self.grid_size):
+            flood_fill(row, 0)
+            flood_fill(row, self.grid_size - 1)
+        for col in range(self.grid_size):
+            flood_fill(0, col)
+            flood_fill(self.grid_size - 1, col)
 
-        # Enclosed area is where filled is False and mask is True
         enclosed_area = ~filled & mask
-
-        # Assign territory to the player and adjust rewards/penalties
-        for x, y in zip(*np.where(enclosed_area)):
-            old_player_id = self.grid[x, y]
-            if old_player_id > 0 and old_player_id != player_id:
-                # Enemy territory captured
-                self.players[old_player_id - 1]['territory'] -= 1
-                # rewards[old_player_id - 1] += self.reward_config['territory_loss_penalty_per_cell']
-                # rewards[player_id - 1] += self.reward_config['enemy_territory_capture_reward_per_cell']
-            elif old_player_id == 0:
-                # Neutral territory captured
+        # Turn enclosed area into territory
+        coords = np.where(enclosed_area)
+        for (rx, ry) in zip(coords[0], coords[1]):
+            old_id = self.grid[rx, ry]
+            if old_id > 0 and old_id != player_id:
+                self.players[old_id - 1]['territory'] -= 1
+            elif old_id == 0:
                 rewards[player_id - 1] += self.reward_config['territory_capture_reward_per_cell']
-            # Update the grid and player's territory count
-            self.grid[x, y] = player_id
+
+            self.grid[rx, ry] = player_id
             self.players[player_id - 1]['territory'] += 1
 
-        # Return the number of cells captured
-        return np.sum(enclosed_area)
-
-    def _within_arena(self, x, y):
-        """
-        Check if (x, y) is within the playable area, excluding 
-        the border cells that are assigned BORDER_VALUE.
-        """
-        # If we want one-layer border, valid range is [1, grid_size-2].
-        # i.e., 0 and (grid_size-1) are borders.
-        return (1 <= x <= self.grid_size - 2) and (1 <= y <= self.grid_size - 2)
-
-    def close(self):
-        if self.render_game:
-            pygame.quit()
+        return len(coords[0])  # number of enclosed cells
