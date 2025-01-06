@@ -15,16 +15,17 @@ class PaperIoEnv:
         """
         self.reward_config = {
             'self_elimination_penalty': -500,
-            'trail_reward': 50,
+            'long_camping_penalty': -500,
+            'trail_reward': 30,
             'max_trail_reward': 300,
             'territory_capture_reward_per_cell': 50,
-            'max_trail_length': 12,
-            'long_trail_penalty': -200,
-            'opponent_elimination_reward': 100,
+            'max_trail_length': 10,
+            'long_trail_penalty': -350,
+            'opponent_elimination_reward': 200,
             'opponent_elimination_penalty': -50,
             'enemy_territory_capture_reward_per_cell': 30,
             'territory_loss_penalty_per_cell': -50,
-            'reward_survival_percentage': 0.70,
+            'elimination_reward_modifier': 0.70,
         }
         self.grid_size = grid_size
         self.num_players = num_players
@@ -91,7 +92,8 @@ class PaperIoEnv:
                 'id': player_id,
                 # MAIN OPTIMIZATION: store trail in a set for O(1) membership
                 'trail': set(),
-                'territory': 9
+                'territory': 9,
+                'steps_in_own_territory': 0
             })
             self.grid[x : x+3, y : y+3] = player_id
 
@@ -190,6 +192,16 @@ class PaperIoEnv:
                 # Check long trail penalty
                 if len(player['trail']) > self.reward_config['max_trail_length']:
                     rewards[i] += self.reward_config['long_trail_penalty']
+                
+                CAMPING_THRESHOLD = 15
+                if self.grid[new_x, new_y] == player_id:
+                    player['steps_in_own_territory'] += 1
+                else:
+                    player['steps_in_own_territory'] = 0
+
+                if player['steps_in_own_territory'] >= CAMPING_THRESHOLD:
+                    rewards[i] += self.reward_config['long_camping_penalty']
+                    player['steps_in_own_territory'] = 0  # reset after penalizing
 
         # Update cumulative rewards
         for i, rew in enumerate(rewards):
@@ -269,7 +281,7 @@ class PaperIoEnv:
         player['territory'] = 0
 
         # Survival penalty
-        self.cumulative_rewards[idx] *= self.reward_config['reward_survival_percentage']
+        self.cumulative_rewards[idx] *= self.reward_config['elimination_reward_modifier']
 
         # Respawn
         while True:

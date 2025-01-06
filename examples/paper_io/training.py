@@ -1,3 +1,4 @@
+import datetime
 import os
 import matplotlib.pyplot as plt # type: ignore
 import numpy as np
@@ -32,18 +33,18 @@ lambda_value = 0.8      # λ parameter for eligibility traces (for TDAgent)
 # Set parameters based on whether we are training from scratch or retraining
 if load_existing_model:
     # Parameters for retraining (fine-tuning)
-    num_episodes = 7500           # Fewer episodes for retraining
+    num_episodes = 5000           # Fewer episodes for retraining
     epsilon = 0.35                  # Lower initial exploration rate for retraining
     learning_rate = 0.003          # Smaller learning rate for fine-tuning
     epsilon_reset = False          
     epsilon_reset_value = 0.15      # Mid-range value for epsilon reset
-    epsilon_reset_interval = 3000  # More frequent exploration resets
+    epsilon_reset_interval = 2500  # More frequent exploration resets
     epsilon_decay = 0.9994          # Keep similar decay rate
     min_epsilon = 0.1              # Minimum exploration rate remains the same
 
 else:
     # Parameters for initial training
-    num_episodes = 15000         # Full training length
+    num_episodes = 10000         # Full training length
     epsilon = 1.0                  # High exploration at start
     learning_rate = 0.0025          # Standard learning rate for initial training
     epsilon_reset = True          # No epsilon reset for initial training
@@ -167,9 +168,11 @@ territory_per_agent = [[] for _ in range(env.num_players)]
 
 # Function to save training information
 def save_training_info(file_path, num_episodes, steps_per_episode, agents, reward_config, loaded_q_paths):
+    current_date = datetime.now().strftime("%d.%m.%Y")
     with open(file_path, 'w') as f:
         # General Training Info
         f.write("=== Training Information ===\n")
+        f.write(f"Trained Date         : {current_date}\n")
         f.write(f"Objective: The agents aim to maximize territory gain.\n")
         f.write(f"Policy Name           : {policy_name}\n")
         f.write(f"Partial Observability : {partial_observability}\n")
