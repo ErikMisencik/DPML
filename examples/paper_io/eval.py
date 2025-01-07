@@ -98,10 +98,10 @@ def main():
     # Paths to the trained Q-learning models
     # q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/archive_models/q_learning_13/trained_model/q_table_ag_0.pkl"
     # q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/New_M_3_QLAgent_1/trained_model/q_table_ag_2_end.pkl"
-    q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/New_M_2_Q-Learning_SARSA_4/trained_model/qlagent_ag_0_end.pkl"
+    q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/New_M_2_Q-Learning_SARSA_5/trained_model/qlagent_ag_0_end.pkl"
     # q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/New_M_2_Q-Learning_SARSA_2/trained_model/sarsaagent_ag_1_end.pkl"
     # q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/archive_models/New_M_2_QLAgent_2_X/trained_model/q_table_ag_1_end.pkl"
-    q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/New_M_2_Q-Learning_SARSA_4/trained_model/sarsaagent_ag_1_end.pkl"
+    q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/New_M_2_Q-Learning_SARSA_5/trained_model/sarsaagent_ag_1_end.pkl"
 
     # Load agents
     agent1 = load_q_learning_model(q_table_path_agent1)

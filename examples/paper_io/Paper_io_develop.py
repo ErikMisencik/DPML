@@ -14,12 +14,12 @@ class PaperIoEnv:
         Initialize the Paper.io environment.
         """
         self.reward_config = {
-            'self_elimination_penalty': -500,
+            'self_elimination_penalty': -300,
             'long_camping_penalty': -300,
-            'trail_reward': 30,
-            'max_trail_reward': 300,
-            'territory_capture_reward_per_cell': 50,
-            'max_trail_length': 10,
+            'trail_reward': 40,
+            'max_trail_reward': 200,
+            'territory_capture_reward_per_cell': 30,
+            'max_trail_length': 15,
             'long_trail_penalty': -20,
             'opponent_elimination_reward': 200,
             'opponent_elimination_penalty': -50,
