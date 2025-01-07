@@ -15,12 +15,12 @@ class PaperIoEnv:
         """
         self.reward_config = {
             'self_elimination_penalty': -500,
-            'long_camping_penalty': -500,
+            'long_camping_penalty': -300,
             'trail_reward': 30,
             'max_trail_reward': 300,
             'territory_capture_reward_per_cell': 50,
             'max_trail_length': 10,
-            'long_trail_penalty': -350,
+            'long_trail_penalty': -20,
             'opponent_elimination_reward': 200,
             'opponent_elimination_penalty': -50,
             'enemy_territory_capture_reward_per_cell': 30,
@@ -193,7 +193,7 @@ class PaperIoEnv:
                 if len(player['trail']) > self.reward_config['max_trail_length']:
                     rewards[i] += self.reward_config['long_trail_penalty']
                 
-                CAMPING_THRESHOLD = 15
+                CAMPING_THRESHOLD = 10
                 if self.grid[new_x, new_y] == player_id:
                     player['steps_in_own_territory'] += 1
                 else:
