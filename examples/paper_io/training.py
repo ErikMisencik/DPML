@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import os
 import matplotlib.pyplot as plt # type: ignore
 import numpy as np
@@ -44,7 +44,7 @@ if load_existing_model:
 
 else:
     # Parameters for initial training
-    num_episodes = 10000         # Full training length
+    num_episodes = 150 #10000         # Full training length
     epsilon = 1.0                  # High exploration at start
     learning_rate = 0.0025          # Standard learning rate for initial training
     epsilon_reset = True          # No epsilon reset for initial training
@@ -167,12 +167,14 @@ cumulative_rewards_per_agent = [[] for _ in range(env.num_players)]
 territory_per_agent = [[] for _ in range(env.num_players)]
 
 # Function to save training information
-def save_training_info(file_path, num_episodes, steps_per_episode, agents, reward_config, loaded_q_paths):
+def save_training_info(file_path, num_episodes, steps_per_episode, agents, reward_config, loaded_q_paths, total_training_time):
     current_date = datetime.now().strftime("%d.%m.%Y")
     with open(file_path, 'w') as f:
         # General Training Info
         f.write("=== Training Information ===\n")
         f.write(f"Trained Date         : {current_date}\n")
+        f.write(f"Trained Time         : {total_training_time:.2f} minutes\n")
+        f.write("\n")
         f.write(f"Objective: The agents aim to maximize territory gain.\n")
         f.write(f"Policy Name           : {policy_name}\n")
         f.write(f"Partial Observability : {partial_observability}\n")
@@ -374,7 +376,7 @@ for idx, agent in enumerate(agents):
     print(f"Model for {agent.__class__.__name__} agent {idx} saved at {model_path}")
 
 # Save the training information
-save_training_info(training_info_file, num_episodes, steps_per_episode, agents, env.reward_config, loaded_q_paths)
+save_training_info(training_info_file, num_episodes, steps_per_episode, agents, env.reward_config, loaded_q_paths, total_training_time)
 
 # Show the plots
 plt.show()
