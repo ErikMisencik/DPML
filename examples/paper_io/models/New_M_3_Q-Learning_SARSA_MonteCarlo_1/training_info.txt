@@ -1,0 +1,58 @@
+=== Training Information ===
+Trained Date         : 07.01.2025
+Trained Time         : 230.81 minutes
+
+Objective: The agents aim to maximize territory gain.
+Policy Name           : New_M_3_Q-Learning_SARSA_MonteCarlo
+Partial Observability : False
+Number of Episodes    : 10000
+Max Steps per Episode : 350
+
+=== Training Parameters ===
+Learning Rate         : 0.0025
+Discount Factor       : 0.99
+Initial Epsilon       : 1.0
+Final Epsilon         : 1.0
+Epsilon Decay Rate    : 0.9992
+Minimum Epsilon       : 0.05
+Epsilon Reset Every   : 5000 episodes
+Epsilon Reset Value   : 0.5
+
+=== Agent-Specific Information ===
+Agent 0 (QLAgent):
+  - Avg Cumulative Reward : 3557.00
+  - Wins                  : 3310
+  - Eliminations          : 6650
+  - Self-Eliminations     : 173833
+  - Color Assigned        : Blue
+  - Loaded Q-Table Path   : None (Training from scratch)
+
+Agent 1 (SARSAAgent):
+  - Avg Cumulative Reward : 3590.86
+  - Wins                  : 3341
+  - Eliminations          : 6880
+  - Self-Eliminations     : 173491
+  - Color Assigned        : Teal
+  - Loaded Q-Table Path   : None (Training from scratch)
+
+Agent 2 (MCAgent):
+  - Avg Cumulative Reward : 3605.19
+  - Wins                  : 3349
+  - Eliminations          : 6813
+  - Self-Eliminations     : 174073
+  - Color Assigned        : Purple
+  - Loaded Q-Table Path   : None (Training from scratch)
+
+=== Reward Information ===
+Self elimination penalty : -200
+Long camping penalty     : -300
+Trail reward             : 40
+Max trail reward         : 200
+Territory capture reward per cell: 40
+Max trail length         : 15
+Long trail penalty       : -80
+Opponent elimination reward: 200
+Opponent elimination penalty: -50
+Enemy territory capture reward per cell: 30
+Territory loss penalty per cell: -50
+Elimination reward modifier: 0.8
