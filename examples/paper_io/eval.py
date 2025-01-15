@@ -3,9 +3,9 @@ import random
 import sys
 from time import sleep
 import pygame # type: ignore
+
 from examples.paper_io.Paper_io_develop import PaperIoEnv
 from examples.paper_io.algorithm.Greedy.greedy_agent import GreedyAgent
-
 from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLAgent
 from examples.paper_io.algorithm.Random.random_agent import RandomAgent
 from examples.paper_io.utils.agent_colors import assign_agent_colors
@@ -14,8 +14,29 @@ from examples.paper_io.utils.agent_colors import assign_agent_colors
 render_game = True  # Set to True if you want to render the game during evaluation
 
 # Initialize the environment with rendering enabled and max_steps
-steps_per_episode = 400  # Use the same max_steps as in training
+steps_per_episode = 500  # Use the same max_steps as in training
 env = PaperIoEnv(render=render_game, max_steps=steps_per_episode)
+
+# -----------------------------------------------------------------------------
+# NEW: Helper function to determine agent names from file paths
+# -----------------------------------------------------------------------------
+def get_agent_name_from_path(path: str) -> str:
+    """
+    Returns a friendly agent name based on filename keywords.
+    You can extend this function as needed.
+    """
+    path_lower = path.lower()
+    if "qlagent" in path_lower:
+        return "Q Learning Agent"
+    elif "sarsaagent" in path_lower:
+        return "Sarsa Agent"
+    elif "mcagent" in path_lower:
+        return "MonteCarlo Agent"
+    elif "tdagent" in path_lower:
+        return "TD Agent"
+    else:
+        return "Unknown Agent"
+# -----------------------------------------------------------------------------
 
 # Function to load a trained Q-learning model (Q-table)
 def load_q_learning_model(q_table_path):
@@ -95,34 +116,24 @@ def evaluate(agent1, agent1_name, agent2, agent2_name, num_games=10):
 def main():
     print("Starting evaluation...")
 
-    # Paths to the trained Q-learning models
-    # q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/archive_models/q_learning_13/trained_model/q_table_ag_0.pkl"
-    # q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/New_M_3_QLAgent_1/trained_model/q_table_ag_2_end.pkl"
-    q_table_path_agent1 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/New_M_2_Q-Learning_SARSA_7/trained_model/qlagent_ag_0_end.pkl"
-    # q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/New_M_2_Q-Learning_SARSA_2/trained_model/sarsaagent_ag_1_end.pkl"
-    # q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/archive_models/New_M_2_QLAgent_2_X/trained_model/q_table_ag_1_end.pkl"
-    q_table_path_agent2 = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/New_M_2_Q-Learning_SARSA_7/trained_model/sarsaagent_ag_1_end.pkl"
+    base_models_path = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/"
+
+    saved_model_path1 = "New_M_2_Q-Learning_SARSA_6/trained_model/qlagent_ag_0_end.pkl"
+    saved_model_path2 = "New_M_2_Q-Learning_SARSA_6/trained_model/sarsaagent_ag_1_end.pkl"
+
+    q_table_path_agent1 = os.path.join(base_models_path, saved_model_path1)
+    q_table_path_agent2 = os.path.join(base_models_path, saved_model_path2)
 
     # Load agents
     agent1 = load_q_learning_model(q_table_path_agent1)
-    agent1_name = "Q Learning Agent"  # Name for the Q-Learning agent
-    # agent1 = RandomAgent(env)
-    # agent1_name = "Random Agent"
-    # agent1 = GreedyAgent(env)
-    # agent1_name = "Greedy Agent"
-
     agent2 = load_q_learning_model(q_table_path_agent2)
-    agent2_name = "Sarsa Agent"
-    # agent2 = load_q_learning_model(q_table_path_agent2)
-    # agent2_name = "Sarsa Agent 2"
-    # agent2 = load_q_learning_model(q_table_path_agent2)
-    # agent2_name = "Q Learning Agent 2"    
-    # You can switch agent2 to another Q-Learning agent or a Random agent
-    # agent2 = RandomAgent(env)
-    # agent2_name = "Random Agent"
+
+
+    agent1_name = get_agent_name_from_path(q_table_path_agent1)
+    agent2_name = get_agent_name_from_path(q_table_path_agent2)
 
     # Number of games to evaluate
-    num_games = 1000  # Adjust the number of evaluation games as needed
+    num_games = 10  # Adjust the number of evaluation games as needed
 
     # Evaluate the agents with their descriptive names
     evaluate(agent1, agent1_name, agent2, agent2_name, num_games)
