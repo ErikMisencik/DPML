@@ -51,6 +51,9 @@ class PaperIoEnv:
         self.agent_wins = [0] * self.num_players
         self.cumulative_rewards = [0] * self.num_players
 
+        self.trail_length_sums = [0] * self.num_players
+        self.trail_length_counts = [0] * self.num_players
+
         self.reset()
 
         # Observation space
@@ -78,6 +81,9 @@ class PaperIoEnv:
         self.eliminations_by_agent = [0] * self.num_players
         self.self_eliminations_by_agent = [0] * self.num_players
         self.cumulative_rewards = [0] * self.num_players
+
+        self.trail_length_sums = [0] * self.num_players
+        self.trail_length_counts = [0] * self.num_players
 
         # Place players away from the border
         for i in range(self.num_players):
@@ -203,6 +209,12 @@ class PaperIoEnv:
                     rewards[i] += self.reward_config['long_camping_penalty']
                     player['steps_in_own_territory'] = 0  # reset after penalizing
 
+        # Average trail length for each player for episode statistics
+        for i in range(self.num_players):
+            if self.alive[i]:
+                self.trail_length_sums[i] += len(self.players[i]['trail'])
+                self.trail_length_counts[i] += 1
+
         # Update cumulative rewards
         for i, rew in enumerate(rewards):
             self.cumulative_rewards[i] += rew
@@ -234,12 +246,21 @@ class PaperIoEnv:
                 for w in winners:
                     self.agent_wins[w] += 1
 
+            average_trail_by_agent = []
+            for i in range(self.num_players):
+                if self.trail_length_counts[i] > 0:
+                    avg_trail = self.trail_length_sums[i] / self.trail_length_counts[i]
+                else:
+                    avg_trail = 0.0
+                average_trail_by_agent.append(avg_trail)
+
             info = {
                 'eliminations_by_agent': self.eliminations_by_agent[:],
                 'self_eliminations_by_agent': self.self_eliminations_by_agent[:],
                 'winners': winners,
                 'cumulative_rewards': self.cumulative_rewards[:],
                 'territory_by_agent': [p['territory'] for p in self.players],
+                'average_trail_by_agent': average_trail_by_agent,
             }
         else:
             info = {}
