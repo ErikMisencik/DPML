@@ -53,6 +53,7 @@ class PaperIoEnv:
 
         self.trail_length_sums = [0] * self.num_players
         self.trail_length_counts = [0] * self.num_players
+        self.initial_territories = [0] * self.num_players
 
         self.reset()
 
@@ -84,6 +85,7 @@ class PaperIoEnv:
 
         self.trail_length_sums = [0] * self.num_players
         self.trail_length_counts = [0] * self.num_players
+        self.initial_territories = [0] * self.num_players
 
         # Place players away from the border
         for i in range(self.num_players):
@@ -102,6 +104,9 @@ class PaperIoEnv:
                 'steps_in_own_territory': 0
             })
             self.grid[x : x+3, y : y+3] = player_id
+
+        for i in range(self.num_players):
+            self.initial_territories[i] = self.players[i]['territory']
 
         observations = [self.get_observation_for_player(i) for i in range(self.num_players)]
         return observations
@@ -254,6 +259,14 @@ class PaperIoEnv:
                     avg_trail = 0.0
                 average_trail_by_agent.append(avg_trail)
 
+            territory_increase_by_agent = []  
+            for i in range(self.num_players):  
+                start_territory = self.initial_territories[i]  
+                end_territory = self.players[i]['territory']   
+                # If you want the average per step, you could do (end_territory - start_territory) / self.steps_taken
+                territory_increase = end_territory - start_territory  
+                territory_increase_by_agent.append(territory_increase)  
+
             info = {
                 'eliminations_by_agent': self.eliminations_by_agent[:],
                 'self_eliminations_by_agent': self.self_eliminations_by_agent[:],
@@ -261,6 +274,7 @@ class PaperIoEnv:
                 'cumulative_rewards': self.cumulative_rewards[:],
                 'territory_by_agent': [p['territory'] for p in self.players],
                 'average_trail_by_agent': average_trail_by_agent,
+                'average_territory_increase_by_agent': territory_increase_by_agent,
             }
         else:
             info = {}

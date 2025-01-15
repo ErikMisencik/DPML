@@ -9,7 +9,7 @@ from examples.paper_io.algorithm.Sarsa.sarsa_agent import SARSAAgent
 from examples.paper_io.algorithm.TD_Learning.td_learning_agent import TDAgent
 from examples.paper_io.utils.agent_colors import assign_agent_colors
 from examples.paper_io.utils.plots import (
-    plot_average_self_eliminations, plot_average_trail, plot_cumulative_rewards, plot_cumulative_self_eliminations, plot_epsilon_decay, plot_td_error,
+    plot_average_self_eliminations, plot_average_territory_increase, plot_average_trail, plot_cumulative_rewards, plot_cumulative_self_eliminations, plot_epsilon_decay, plot_td_error,
     plot_training_progress, plot_agent_wins, plot_agent_eliminations, plot_average_eliminations, plot_territory_gained
 )
 import pygame 
@@ -44,7 +44,7 @@ if load_existing_model:
 
 else:
     # Parameters for initial training
-    num_episodes = 500        # Full training length 10000
+    num_episodes = 10000        # Full training length 10000
     epsilon = 1.0                  # High exploration at start
     learning_rate = 0.0025          # Standard learning rate for initial training
     epsilon_reset = True          # No epsilon reset for initial training
@@ -86,7 +86,7 @@ for algo in enabled_algorithms:
         agents += [TDAgent(None, learning_rate, discount_factor, lambda_value, epsilon, epsilon_decay, min_epsilon)
                    for _ in range(agents_per_algorithm)]
 
-# **Set num_agents to the actual number of agents**
+# Set num_agents to the actual number of agents
 num_agents = len(agents)
 
 env = PaperIoEnv(render=render_game, max_steps=steps_per_episode, num_players=num_agents, partial_observability=partial_observability)
@@ -95,14 +95,12 @@ env = PaperIoEnv(render=render_game, max_steps=steps_per_episode, num_players=nu
 for agent in agents:
     agent.env = env
 
-
 agent_types = [agent.__class__.__name__ for agent in agents]
 
 policy_name = "PreTrained" if load_existing_model else "New"  
 policy_name += f"{'_P' if partial_observability else ''}"
 policy_name += f"_{'M' if num_agents > 1 else 'S'}_{num_agents}_"   
 policy_name += f"{'_'.join(enabled_algorithms)}"
-
 
 # Function to find the next available folder index
 def get_next_model_index(models_dir, policy_name):
@@ -112,7 +110,6 @@ def get_next_model_index(models_dir, policy_name):
         return max(indices) + 1 if indices else 1
     else:
         return 1
-
 
 models_dir = 'models'
 os.makedirs(models_dir, exist_ok=True)
@@ -127,7 +124,6 @@ trained_model_folder = os.path.join(model_folder, 'trained_model')
 plots_folder = os.path.join(model_folder, 'plots')
 os.makedirs(trained_model_folder, exist_ok=True)
 os.makedirs(plots_folder, exist_ok=True)
-
 
 color_info = assign_agent_colors(env.num_players)
 agent_colors = [info[0] for info in color_info] 
@@ -166,6 +162,7 @@ cumulative_rewards_per_agent = [[] for _ in range(env.num_players)]
 territory_per_agent = [[] for _ in range(env.num_players)]
 
 average_trail_by_agent_data = [[] for _ in range(env.num_players)] 
+average_territory_increase_data = [[] for _ in range(env.num_players)]
 
 # Function to save training information
 def save_training_info(file_path, num_episodes, steps_per_episode, agents, reward_config, loaded_q_paths, total_training_time):
@@ -315,11 +312,17 @@ while episode_num < num_episodes:
     for i in range(env.num_players):
         territory_per_agent[i].append(territory_info[i])
 
-    # NEW: Store the average trail length if it exists in info
-    average_trail = info.get('average_trail_by_agent', None)  # NEW
-    if average_trail is not None:                             # NEW
-        for i in range(env.num_players):                      # NEW
-            average_trail_by_agent_data[i].append(average_trail[i])  # NEW
+    #Store the average trail length if it exists
+    average_trail = info.get('average_trail_by_agent', None)  
+    if average_trail is not None:                            
+        for i in range(env.num_players):                     
+            average_trail_by_agent_data[i].append(average_trail[i])  
+
+    #Store the territory increase if it exists
+    territory_increase = info.get('average_territory_increase_by_agent', None)  
+    if territory_increase is not None:                                          
+        for i in range(env.num_players):                                        
+            average_territory_increase_data[i].append(territory_increase[i])
 
     # Store episode data
     episode_rewards.append(episode_reward)
@@ -377,7 +380,8 @@ plot_average_eliminations(episodes, eliminations_per_episode, plots_folder, agen
 plot_territory_gained(episodes, territory_per_agent, plots_folder, agent_names)
 if any(len(lst) > 0 for lst in average_trail_by_agent_data):              # NEW
     plot_average_trail(episodes, average_trail_by_agent_data, plots_folder, agent_names)  # NEW
-
+if any(len(lst) > 0 for lst in average_territory_increase_data):
+    plot_average_territory_increase(episodes, average_territory_increase_data, plots_folder, agent_names)
 # Save models dynamically
 for idx, agent in enumerate(agents):
     model_path = os.path.join(trained_model_folder, f'{agent.__class__.__name__.lower()}_ag_{idx}_end.pkl')
