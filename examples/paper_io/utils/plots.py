@@ -190,21 +190,26 @@ def plot_territory_gained(episodes, territory_per_agent, plots_folder, agent_nam
     plt.savefig(plot_path)
     plt.close()
 
-def plot_average_trail(episodes, avg_trail_data, directory, agent_names):  
-    plt.figure()                                                           
-    for i in range(len(agent_names)):                                      
-        plt.plot(episodes, avg_trail_data[i], label=f'Agent {i} - {agent_names[i]}', linewidth=1)  
-    plt.xlabel('Epizódy')                                                
-    plt.ylabel('Priemerná Dĺžka Trasy')                                    
-    plt.legend()                                                          
-    plt.title('Priemerná Dĺžka Trasy za Epizódu')              
-    plt.savefig(os.path.join(directory, 'average_trail_by_agent.png'))    
-    plt.close()    
+def plot_average_trail(episodes, avg_trail_data, directory, agent_names):
+    plt.figure()
+    skip = 5  
+    for i in range(len(agent_names)):
+        plt.plot(episodes[::skip], 
+                 avg_trail_data[i][::skip], 
+                 label=f'Agent {i} - {agent_names[i]}', 
+                 linewidth=1, 
+                 alpha=0.6)
+    plt.xlabel('Epizódy')
+    plt.ylabel('Priemerná Dĺžka Trasy')
+    plt.legend()
+    plt.title('Priemerná Dĺžka Trasy za Epizódu')
+    plt.savefig(os.path.join(directory, 'average_trail_by_agent.png'))
+    plt.close()   
 
 def plot_average_territory_increase(episodes, territory_increase_data, directory, agent_names):
     plt.figure()
     for i in range(len(agent_names)):
-        plt.plot(episodes, territory_increase_data[i], label=f'Agent {i} - {agent_names[i]}', linewidth=1)
+        plt.plot(episodes, territory_increase_data[i], label=f'Agent {i} - {agent_names[i]}', linewidth=1, alpha=0.6)
     plt.xlabel('Epizódy')
     plt.ylabel('Zvýšenie územia')
     plt.title('Zvýšenie územia na epizódu')
