@@ -17,9 +17,7 @@ render_game = True  # Set to True if you want to render the game during evaluati
 steps_per_episode = 500  # Use the same max_steps as in training
 env = PaperIoEnv(render=render_game, max_steps=steps_per_episode)
 
-# -----------------------------------------------------------------------------
-# NEW: Helper function to determine agent names from file paths
-# -----------------------------------------------------------------------------
+
 def get_agent_name_from_path(path: str) -> str:
     """
     Returns a friendly agent name based on filename keywords.
@@ -36,7 +34,6 @@ def get_agent_name_from_path(path: str) -> str:
         return "TD Agent"
     else:
         return "Unknown Agent"
-# -----------------------------------------------------------------------------
 
 # Function to load a trained Q-learning model (Q-table)
 def load_q_learning_model(q_table_path):
@@ -118,8 +115,11 @@ def main():
 
     base_models_path = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/"
 
-    saved_model_path1 = "New_M_2_Q-Learning_SARSA_6/trained_model/qlagent_ag_0_end.pkl"
-    saved_model_path2 = "New_M_2_Q-Learning_SARSA_6/trained_model/sarsaagent_ag_1_end.pkl"
+    # saved_model_path1 = "New_M_2_Q-Learning_SARSA_6/trained_model/qlagent_ag_0_end.pkl"
+    # saved_model_path2 = "New_M_2_Q-Learning_SARSA_6/trained_model/sarsaagent_ag_1_end.pkl"
+
+    saved_model_path1 =  "New_M_2_Q-Learning_TD_1/trained_model/qlagent_ag_0_end.pkl"
+    saved_model_path2 =  "New_M_2_Q-Learning_TD_1/trained_model/tdagent_ag_1_end.pkl"
 
     q_table_path_agent1 = os.path.join(base_models_path, saved_model_path1)
     q_table_path_agent2 = os.path.join(base_models_path, saved_model_path2)

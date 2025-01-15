@@ -7,26 +7,28 @@ from gym.spaces import Box, Discrete
 from examples.paper_io.utils.render import render_game
 
 class PaperIoEnv:
-    BORDER_VALUE = 99
 
     def __init__(self, grid_size=50, num_players=2, render=False, max_steps=1000, partial_observability=False):
         """
         Initialize the Paper.io environment.
         """
         self.reward_config = {
-            'self_elimination_penalty': -200,
+            'self_elimination_penalty': -300,
             'long_camping_penalty': -300,
-            'trail_reward': 40,
-            'max_trail_reward': 200,
+            'trail_reward': 0,     
+            'max_trail_reward': 0,
             'territory_capture_reward_per_cell': 40,
             'max_trail_length': 15,
-            'long_trail_penalty': -80,
-            'opponent_elimination_reward': 200,
-            'opponent_elimination_penalty': -50,
+            'long_trail_penalty': -20,
+            'opponent_elimination_reward': 300,
+            'opponent_elimination_penalty': -100,
             'enemy_territory_capture_reward_per_cell': 30,
             'territory_loss_penalty_per_cell': -50,
             'elimination_reward_modifier': 0.80,
         }
+
+        self.CAMPING_THRESHOLD = 50
+        self.BORDER_VALUE = 99
         self.grid_size = grid_size
         self.num_players = num_players
         self.cell_size = 15
@@ -156,7 +158,7 @@ class PaperIoEnv:
                 self.self_eliminations_by_agent[i] += 1
                 self._process_elimination(i)
                 continue
-
+            CAMPING_THRESHOLD = 50
             # Move
             if (new_x, new_y) != (x, y):
                 # Stepping on own trail => self-elimination
@@ -204,7 +206,7 @@ class PaperIoEnv:
                 if len(player['trail']) > self.reward_config['max_trail_length']:
                     rewards[i] += self.reward_config['long_trail_penalty']
                 
-                CAMPING_THRESHOLD = 10
+                # Check camping
                 if self.grid[new_x, new_y] == player_id:
                     player['steps_in_own_territory'] += 1
                 else:
