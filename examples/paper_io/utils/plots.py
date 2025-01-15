@@ -192,7 +192,7 @@ def plot_territory_gained(episodes, territory_per_agent, plots_folder, agent_nam
 
 def plot_average_trail(episodes, avg_trail_data, directory, agent_names):
     plt.figure()
-    skip = 5  
+    skip = 10  
     for i in range(len(agent_names)):
         plt.plot(episodes[::skip], 
                  avg_trail_data[i][::skip], 
