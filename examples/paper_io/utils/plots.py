@@ -123,7 +123,7 @@ def plot_cumulative_rewards(episodes, cumulative_rewards_per_agent, plots_folder
             linestyle=style,
             marker=marker,
             markevery=200,  # Show markers every 200 episodes
-            linewidth=1,
+            linewidth=2,
             alpha=0.6  # More transparency
         )
 
@@ -177,7 +177,7 @@ def plot_territory_gained(episodes, territory_per_agent, plots_folder, agent_nam
             linestyle=style,
             marker=marker,
             markevery=200,  # Show markers every 200 episodes
-            linewidth=1,
+            linewidth=2,
             alpha=0.6  # More transparency
         )
 
@@ -193,7 +193,7 @@ def plot_territory_gained(episodes, territory_per_agent, plots_folder, agent_nam
 def plot_average_trail(episodes, avg_trail_data, directory, agent_names):  
     plt.figure()                                                           
     for i in range(len(agent_names)):                                      
-        plt.plot(episodes, avg_trail_data[i], label=f'Agent {i} - {agent_names[i]}')  
+        plt.plot(episodes, avg_trail_data[i], label=f'Agent {i} - {agent_names[i]}', linewidth=1)  
     plt.xlabel('Epizódy')                                                
     plt.ylabel('Priemerná Dĺžka Trasy')                                    
     plt.legend()                                                          
