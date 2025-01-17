@@ -14,20 +14,25 @@ class PaperIoEnv:
         """
         self.reward_config = {
             'self_elimination_penalty': -300,
-            'long_camping_penalty': -300,
-            'trail_reward': 0,     
-            'max_trail_reward': 0,
-            'territory_capture_reward_per_cell': 40,
-            'max_trail_length': 15,
-            'long_trail_penalty': -20,
+            'long_camping_penalty': -400,
+
+            'trail_reward': 5,              #reward for each new trail cell
+            'max_trail_reward_count': 10,   #Maximum times agent can receive trail_reward before it stops  
+
+            'max_trail_length': 15,         #NEW Maximum trail length before penalty
+            'long_trail_penalty': -5,      #NEW Penalty if agent's trail exceeds max_trail_length
+            'distance_penalty_factor': 0.75,   
+
             'opponent_elimination_reward': 300,
             'opponent_elimination_penalty': -100,
             'enemy_territory_capture_reward_per_cell': 30,
             'territory_loss_penalty_per_cell': -50,
             'elimination_reward_modifier': 0.80,
+
+            'territory_capture_reward_per_cell': 40,
         }
 
-        self.CAMPING_THRESHOLD = 50
+        self.CAMPING_THRESHOLD = 40
         self.BORDER_VALUE = 99
         self.grid_size = grid_size
         self.num_players = num_players
@@ -100,10 +105,10 @@ class PaperIoEnv:
             self.players.append({
                 'position': (x, y),
                 'id': player_id,
-                # MAIN OPTIMIZATION: store trail in a set for O(1) membership
                 'trail': set(),
                 'territory': 9,
-                'steps_in_own_territory': 0
+                'steps_in_own_territory': 0,
+                'trail_reward_count': 0,  #how many times the agent has received the trail_reward
             })
             self.grid[x : x+3, y : y+3] = player_id
 
@@ -158,7 +163,7 @@ class PaperIoEnv:
                 self.self_eliminations_by_agent[i] += 1
                 self._process_elimination(i)
                 continue
-            CAMPING_THRESHOLD = 50
+
             # Move
             if (new_x, new_y) != (x, y):
                 # Stepping on own trail => self-elimination
@@ -185,14 +190,14 @@ class PaperIoEnv:
                     player['trail'].add((new_x, new_y))  
 
                     # Simple trail reward
-                    trail_len = len(player['trail'])
-                    if trail_len % 2 == 0:
-                        rewards[i] += min((trail_len // 2) * self.reward_config['trail_reward'],
-                                          self.reward_config['max_trail_reward'])
+                    if player['trail_reward_count'] < self.reward_config['max_trail_reward_count']:
+                        rewards[i] += self.reward_config['trail_reward']
+                        player['trail_reward_count'] += 1  # track how many times we've rewarded
 
                 # Returning to own territory => close loop
                 elif cell_value == player_id and player['trail']:
                     self.convert_trail_to_territory(player_id, rewards)
+                    player['trail_reward_count'] = 0  # Reset trail reward count
 
                 # Entering enemy territory
                 elif cell_value > 0 and cell_value != player_id:
@@ -202,9 +207,16 @@ class PaperIoEnv:
                     self.players[owner_id - 1]['territory'] -= 1
                     self.players[player_id - 1]['territory'] += 1
 
-                # Check long trail penalty
+                #NEW Combined check for exceeding max_trail_length and penalizing distance:
                 if len(player['trail']) > self.reward_config['max_trail_length']:
-                    rewards[i] += self.reward_config['long_trail_penalty']
+                    distance = self._distance_from_territory(player_id, new_x, new_y) 
+                    # Base penalty for exceeding the threshold
+                    base_penalty = self.reward_config['long_trail_penalty']
+                    # For example, only penalize distance beyond 3 cells
+                    extra_distance = max(0, distance - 3)
+                    distance_penalty = extra_distance * self.reward_config['distance_penalty_factor']
+                    total_penalty = base_penalty - distance_penalty  # negative value overall
+                    rewards[i] += total_penalty  # add the combined penalty
                 
                 # Check camping
                 if self.grid[new_x, new_y] == player_id:
@@ -212,7 +224,7 @@ class PaperIoEnv:
                 else:
                     player['steps_in_own_territory'] = 0
 
-                if player['steps_in_own_territory'] >= CAMPING_THRESHOLD:
+                if player['steps_in_own_territory'] >= self.CAMPING_THRESHOLD:
                     rewards[i] += self.reward_config['long_camping_penalty']
                     player['steps_in_own_territory'] = 0  # reset after penalizing
 
@@ -333,6 +345,8 @@ class PaperIoEnv:
         self.grid[x : x+3, y : y+3] = player_id
         player['territory'] = 9
         self.directions[idx] = self._random_direction()
+        player['steps_in_own_territory'] = 0
+        player['trail_reward_count'] = 0 
 
     def get_observation_for_player(self, player_idx):
         if self.partial_observability:
@@ -412,3 +426,15 @@ class PaperIoEnv:
             self.players[player_id - 1]['territory'] += 1
 
         return len(coords[0])  # number of enclosed cells
+    
+    # Helper function to compute distance from (x,y) to the nearest cell of player_id's territory.
+    def _distance_from_territory(self, player_id, x, y):
+        # Find all cells that belong to the player's territory.
+        territory_indices = np.argwhere(self.grid == player_id)
+        if territory_indices.size == 0:
+            return 9999  # If no territory is found, return a large distance.
+        
+        # Compute Manhattan distances from (x, y) to all territory cells.
+        distances = np.abs(territory_indices[:, 0] - x) + np.abs(territory_indices[:, 1] - y)
+        return int(distances.min())
+
