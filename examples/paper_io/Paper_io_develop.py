@@ -13,21 +13,21 @@ class PaperIoEnv:
         Initialize the Paper.io environment.
         """
         self.reward_config = {
-            'self_elimination_penalty': -300,
-            'long_camping_penalty': -400,
+            'self_elimination_penalty': -600,
+            'long_camping_penalty': -100,
 
             'trail_reward': 5,              #reward for each new trail cell
-            'max_trail_reward_count': 10,   #Maximum times agent can receive trail_reward before it stops  
+            'max_trail_reward_count': 7,   #Maximum times agent can receive trail_reward before it stops  
 
-            'max_trail_length': 15,         #NEW Maximum trail length before penalty
-            'long_trail_penalty': -5,      #NEW Penalty if agent's trail exceeds max_trail_length
+            'max_trail_length': 10,         #NEW Maximum trail length before penalty
+            'long_trail_penalty': -10,      #NEW Penalty if agent's trail exceeds max_trail_length
             'distance_penalty_factor': 0.75,   
 
             'opponent_elimination_reward': 300,
             'opponent_elimination_penalty': -100,
             'enemy_territory_capture_reward_per_cell': 30,
             'territory_loss_penalty_per_cell': -50,
-            'elimination_reward_modifier': 0.80,
+            'elimination_reward_modifier': 0.75,
 
             'territory_capture_reward_per_cell': 40,
         }

@@ -63,8 +63,8 @@ explicit_q_table_paths = {
 algorithm_config = {
     "Q-Learning": True,   # Train Q-Learning agents
     "SARSA": True,        # Train SARSA agents
-    "MonteCarlo": False,  # Train Monte Carlo agents
-    "TD": False,            # Train TD agents
+    "MonteCarlo": True,  # Train Monte Carlo agents
+    "TD": True,            # Train TD agents
 }
 
 agents = []

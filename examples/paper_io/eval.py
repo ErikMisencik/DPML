@@ -14,7 +14,7 @@ from examples.paper_io.utils.agent_colors import assign_agent_colors
 render_game = True  # Set to True if you want to render the game during evaluation
 
 # Initialize the environment with rendering enabled and max_steps
-steps_per_episode = 500  # Use the same max_steps as in training
+steps_per_episode = 300  # Use the same max_steps as in training
 env = PaperIoEnv(render=render_game, max_steps=steps_per_episode)
 
 
@@ -115,11 +115,11 @@ def main():
 
     base_models_path = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/"
 
-    # saved_model_path1 = "New_M_2_Q-Learning_SARSA_6/trained_model/qlagent_ag_0_end.pkl"
-    # saved_model_path2 = "New_M_2_Q-Learning_SARSA_6/trained_model/sarsaagent_ag_1_end.pkl"
+    saved_model_path1 = "New_M_2_Q-Learning_SARSA_3/trained_model/qlagent_ag_0_end.pkl"
+    saved_model_path2 = "New_M_2_Q-Learning_SARSA_3/trained_model/sarsaagent_ag_1_end.pkl"
 
-    saved_model_path1 =  "New_M_2_Q-Learning_TD_1/trained_model/qlagent_ag_0_end.pkl"
-    saved_model_path2 =  "New_M_2_Q-Learning_TD_1/trained_model/tdagent_ag_1_end.pkl"
+    # saved_model_path1 =  "New_M_2_Q-Learning_TD_1/trained_model/qlagent_ag_0_end.pkl"
+    # saved_model_path2 =  "New_M_2_Q-Learning_TD_1/trained_model/tdagent_ag_1_end.pkl"
 
     q_table_path_agent1 = os.path.join(base_models_path, saved_model_path1)
     q_table_path_agent2 = os.path.join(base_models_path, saved_model_path2)
