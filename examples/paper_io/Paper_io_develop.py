@@ -26,10 +26,10 @@ class PaperIoEnv:
             'opponent_elimination_reward': 300,
             'opponent_elimination_penalty': -100,
             'enemy_territory_capture_reward_per_cell': 30,
-            'territory_loss_penalty_per_cell': -50,
+            'territory_loss_penalty_per_cell': -20,
             'elimination_reward_modifier': 0.75,
 
-            'territory_capture_reward_per_cell': 40,
+            'territory_capture_reward_per_cell': 20,
 
             'shaping_return_bonus': 20,       # Immediate bonus for stepping into own territory from outside.
             'shaping_distance_factor': 2,       # Factor multiplied by the improvement in distance.
@@ -399,7 +399,7 @@ class PaperIoEnv:
         player['trail'].clear()
 
         # Non-linear bonus for area
-        bonus = (total_area ** 1.5) * self.reward_config['territory_capture_reward_per_cell']
+        bonus = (total_area ** 1.2) * self.reward_config['territory_capture_reward_per_cell']
         rewards[player_id - 1] += bonus
         return bonus
 
