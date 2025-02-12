@@ -1,6 +1,6 @@
 === Training Information ===
-Trained Date         : 16.01.2025
-Trained Time         : 336.63 minutes
+Trained Date         : 12.02.2025
+Trained Time         : 176.75 minutes
 
 Objective: The agents aim to maximize territory gain.
 Policy Name           : New_M_2_Q-Learning_TD
@@ -20,31 +20,38 @@ Epsilon Reset Value   : 0.5
 
 === Agent-Specific Information ===
 Agent 0 (QLAgent):
-  - Avg Cumulative Reward : -321.40
-  - Wins                  : 5602
-  - Eliminations          : 6353
-  - Self-Eliminations     : 175334
-  - Color Assigned        : Blue
+  - Avg Cumulative Reward : -543.25
+  - Wins                  : 2212
+  - Eliminations          : 4016
+  - Self-Eliminations     : 175542
+  - Color Assigned        : Pink
   - Loaded Q-Table Path   : None (Training from scratch)
 
 Agent 1 (TDAgent):
-  - Avg Cumulative Reward : 1123.71
-  - Wins                  : 4398
-  - Eliminations          : 3196
-  - Self-Eliminations     : 91879
-  - Color Assigned        : Purple
+  - Avg Cumulative Reward : 79.34
+  - Wins                  : 7788
+  - Eliminations          : 3249
+  - Self-Eliminations     : 94664
+  - Color Assigned        : Yellow
   - Loaded Q-Table Path   : None (Training from scratch)
 
 === Reward Information ===
-Self elimination penalty : -300
-Long camping penalty     : -400
-Trail reward             : 0
-Max trail reward         : 0
-Territory capture reward per cell: 40
-Max trail length         : 15
-Long trail penalty       : -20
+Self elimination penalty : -250
+Long camping penalty     : -100
+Trail reward             : 5
+Max trail reward count   : 7
+Max trail length         : 10
+Long trail penalty       : -5
+Distance penalty factor  : 0.3
 Opponent elimination reward: 300
 Opponent elimination penalty: -100
 Enemy territory capture reward per cell: 30
-Territory loss penalty per cell: -50
-Elimination reward modifier: 0.8
+Territory loss penalty per cell: -20
+Elimination reward modifier: 0.75
+Territory capture reward per cell: 20
+Shaping return bonus     : 20
+Shaping distance factor  : 2
+Expansion bonus          : 10
+Expansion inactivity penalty: -5
+Expansion interval       : 50
+Expansion growth threshold: 1

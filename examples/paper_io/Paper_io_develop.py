@@ -13,7 +13,7 @@ class PaperIoEnv:
         Initialize the Paper.io environment.
         """
         self.reward_config = {
-            'self_elimination_penalty': -300,
+            'self_elimination_penalty': -250,
             'long_camping_penalty': -100,
 
             'trail_reward': 5,              #reward for each new trail cell
@@ -33,10 +33,15 @@ class PaperIoEnv:
 
             'shaping_return_bonus': 20,       # Immediate bonus for stepping into own territory from outside.
             'shaping_distance_factor': 2,       # Factor multiplied by the improvement in distance.
+
+            'expansion_bonus': 10,                      #NEW bonus for sufficient territory expansion
+            'expansion_inactivity_penalty': -5,     #NEW penalty for inactivity in territory expansion
+            'expansion_interval': 50,               #NEW check expansion every 50 steps
+            'expansion_growth_threshold': 1,        #NEW minimum territory growth to be rewarded
         }
 
-        self.CAMPING_THRESHOLD = 15
-        self.INCREMENTAL_CAMPING_PENALTY = -5
+        self.CAMPING_THRESHOLD = 20
+        self.INCREMENTAL_CAMPING_PENALTY = -2
         self.BORDER_VALUE = 99
         self.grid_size = grid_size
         self.num_players = num_players
@@ -112,7 +117,10 @@ class PaperIoEnv:
                 'trail': set(),
                 'territory': 9,
                 'steps_in_own_territory': 0,
-                'trail_reward_count': 0,  #how many times the agent has received the trail_reward
+                'trail_reward_count': 0,            #how many times the agent has received the trail_reward
+                'camping_penalty_multiplier': 1,    #progressive multiplier for camping penalty
+                'last_territory': 9,                #initial territory for expansion bonus tracking
+                'last_expansion_step': 0,           #initial step for expansion bonus tracking
             })
             self.grid[x : x+3, y : y+3] = player_id
 
@@ -238,13 +246,31 @@ class PaperIoEnv:
                     player['steps_in_own_territory'] += 1
                 else:
                     player['steps_in_own_territory'] = 0
+                    player['camping_penalty_multiplier'] = 1  #NEW reset multiplier when leaving own territory
 
                 if player['steps_in_own_territory'] > 0 and player['steps_in_own_territory'] % 5 == 0:
-                    rewards[i] += self.INCREMENTAL_CAMPING_PENALTY
+                    penalty = self.INCREMENTAL_CAMPING_PENALTY * player['camping_penalty_multiplier']  #NEW
+                    rewards[i] += penalty  #NEW
+                    player['camping_penalty_multiplier'] *= 1.5  #NEW
 
                 if player['steps_in_own_territory'] >= self.CAMPING_THRESHOLD:
-                    rewards[i] += self.reward_config['long_camping_penalty']
+                    penalty = self.reward_config['long_camping_penalty'] * player['camping_penalty_multiplier']  #NEW
+                    rewards[i] += penalty  #NEW
                     player['steps_in_own_territory'] = 0  # reset after penalizing
+                    player['camping_penalty_multiplier'] = 1  #NEW
+
+         # Time-Based Expansion Bonus / Inactivity Penalty #NEW
+        if self.steps_taken % self.reward_config['expansion_interval'] == 0:  #NEW
+            for i in range(self.num_players):  #NEW
+                if self.alive[i]:  #NEW
+                    player = self.players[i]  #NEW
+                    territory_growth = player['territory'] - player.get('last_territory', player['territory'])  #NEW
+                    if territory_growth >= self.reward_config['expansion_growth_threshold']:  #NEW
+                        rewards[i] += self.reward_config['expansion_bonus']  #NEW
+                    else:  #NEW
+                        rewards[i] += self.reward_config['expansion_inactivity_penalty']  #NEW
+                    player['last_territory'] = player['territory']  #NEW
+                    player['last_expansion_step'] = self.steps_taken  #NEW
 
         # Average trail length for each player for episode statistics
         for i in range(self.num_players):

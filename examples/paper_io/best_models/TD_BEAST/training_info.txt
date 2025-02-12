@@ -1,6 +1,6 @@
 === Training Information ===
 Trained Date         : 12.02.2025
-Trained Time         : 160.82 minutes
+Trained Time         : 159.86 minutes
 
 Objective: The agents aim to maximize territory gain.
 Policy Name           : New_M_2_Q-Learning_TD
@@ -20,23 +20,23 @@ Epsilon Reset Value   : 0.5
 
 === Agent-Specific Information ===
 Agent 0 (QLAgent):
-  - Avg Cumulative Reward : -553.41
-  - Wins                  : 2478
-  - Eliminations          : 3826
-  - Self-Eliminations     : 175081
-  - Color Assigned        : Cyan
+  - Avg Cumulative Reward : -734.02
+  - Wins                  : 1568
+  - Eliminations          : 3701
+  - Self-Eliminations     : 175256
+  - Color Assigned        : Indigo
   - Loaded Q-Table Path   : None (Training from scratch)
 
 Agent 1 (TDAgent):
-  - Avg Cumulative Reward : -57.91
-  - Wins                  : 7522
-  - Eliminations          : 3155
-  - Self-Eliminations     : 99476
-  - Color Assigned        : Pink
+  - Avg Cumulative Reward : 318.24
+  - Wins                  : 8432
+  - Eliminations          : 2980
+  - Self-Eliminations     : 62802
+  - Color Assigned        : Orange
   - Loaded Q-Table Path   : None (Training from scratch)
 
 === Reward Information ===
-Self elimination penalty : -250
+Self elimination penalty : -300
 Long camping penalty     : -100
 Trail reward             : 5
 Max trail reward count   : 7
@@ -51,7 +51,3 @@ Elimination reward modifier: 0.75
 Territory capture reward per cell: 20
 Shaping return bonus     : 20
 Shaping distance factor  : 2
-Expansion bonus          : 10
-Expansion inactivity penalty: -5
-Expansion interval       : 50
-Expansion growth threshold: 1
