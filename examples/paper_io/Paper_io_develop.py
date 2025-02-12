@@ -13,14 +13,14 @@ class PaperIoEnv:
         Initialize the Paper.io environment.
         """
         self.reward_config = {
-            'self_elimination_penalty': -600,
+            'self_elimination_penalty': -300,
             'long_camping_penalty': -100,
 
             'trail_reward': 5,              #reward for each new trail cell
             'max_trail_reward_count': 7,   #Maximum times agent can receive trail_reward before it stops  
 
-            'max_trail_length': 10,         #NEW Maximum trail length before penalty
-            'long_trail_penalty': -10,      #NEW Penalty if agent's trail exceeds max_trail_length
+            'max_trail_length': 10,         # Maximum trail length before penalty
+            'long_trail_penalty': -10,      # Penalty if agent's trail exceeds max_trail_length
             'distance_penalty_factor': 0.75,   
 
             'opponent_elimination_reward': 300,
@@ -30,9 +30,13 @@ class PaperIoEnv:
             'elimination_reward_modifier': 0.75,
 
             'territory_capture_reward_per_cell': 40,
+
+            'shaping_return_bonus': 20,       # Immediate bonus for stepping into own territory from outside.
+            'shaping_distance_factor': 2,       # Factor multiplied by the improvement in distance.
         }
 
-        self.CAMPING_THRESHOLD = 40
+        self.CAMPING_THRESHOLD = 15
+        self.INCREMENTAL_CAMPING_PENALTY = -5
         self.BORDER_VALUE = 99
         self.grid_size = grid_size
         self.num_players = num_players
@@ -137,6 +141,7 @@ class PaperIoEnv:
             player = self.players[i]
             (x, y) = player['position']
             player_id = player['id']
+            old_distance = self._distance_from_territory(player_id, x, y)
 
             # Update direction
             if action == 0:
@@ -184,6 +189,14 @@ class PaperIoEnv:
                 # Update player position
                 player['position'] = (new_x, new_y)
 
+                # Compute new Manhattan distance to nearest territory cell after moving.
+                new_distance = self._distance_from_territory(player_id, new_x, new_y)  
+                if new_distance < old_distance:  # Reward for moving closer.
+                    improvement = old_distance - new_distance  #
+                    rewards[i] += improvement * self.reward_config['shaping_distance_factor']  
+                if new_distance == 0 and old_distance > 0:  # Immediate bonus for returning to territory.
+                    rewards[i] += self.reward_config['shaping_return_bonus']  
+
                 # Stepping into empty or own trail
                 if cell_value == 0 or cell_value == -player_id:
                     self.grid[new_x, new_y] = -player_id
@@ -207,22 +220,27 @@ class PaperIoEnv:
                     self.players[owner_id - 1]['territory'] -= 1
                     self.players[player_id - 1]['territory'] += 1
 
-                #NEW Combined check for exceeding max_trail_length and penalizing distance:
+                #Combined check for exceeding max_trail_length and penalizing distance:
                 if len(player['trail']) > self.reward_config['max_trail_length']:
-                    distance = self._distance_from_territory(player_id, new_x, new_y) 
-                    # Base penalty for exceeding the threshold
-                    base_penalty = self.reward_config['long_trail_penalty']
-                    # For example, only penalize distance beyond 3 cells
-                    extra_distance = max(0, distance - 3)
-                    distance_penalty = extra_distance * self.reward_config['distance_penalty_factor']
-                    total_penalty = base_penalty - distance_penalty  # negative value overall
-                    rewards[i] += total_penalty  # add the combined penalty
+                    new_distance_combined = self._distance_from_territory(player_id, new_x, new_y)  
+                    base_penalty = self.reward_config['long_trail_penalty']  
+                    extra_distance = max(0, new_distance_combined - 3)  
+                    distance_penalty = extra_distance * self.reward_config['distance_penalty_factor'] 
+                    improvement = max(0, old_distance - new_distance_combined)  
+                    shaping_reward = improvement * self.reward_config['shaping_distance_factor']  
+                    net_effect = base_penalty - distance_penalty + shaping_reward  
+                    rewards[i] += net_effect  
+                    if new_distance_combined == 0 and old_distance > 0:  
+                        rewards[i] += self.reward_config['shaping_return_bonus']  
                 
                 # Check camping
                 if self.grid[new_x, new_y] == player_id:
                     player['steps_in_own_territory'] += 1
                 else:
                     player['steps_in_own_territory'] = 0
+
+                if player['steps_in_own_territory'] > 0 and player['steps_in_own_territory'] % 5 == 0:
+                    rewards[i] += self.INCREMENTAL_CAMPING_PENALTY
 
                 if player['steps_in_own_territory'] >= self.CAMPING_THRESHOLD:
                     rewards[i] += self.reward_config['long_camping_penalty']
