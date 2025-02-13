@@ -13,7 +13,7 @@ class PaperIoEnv:
         Initialize the Paper.io environment.
         """
         self.reward_config = {
-            'self_elimination_penalty': -250,
+            'self_elimination_penalty': -150,
             'long_camping_penalty': -100,
 
             'trail_reward': 5,              #reward for each new trail cell
@@ -29,18 +29,21 @@ class PaperIoEnv:
             'territory_loss_penalty_per_cell': -20,
             'elimination_reward_modifier': 0.75,
 
-            'territory_capture_reward_per_cell': 20,
+            'territory_capture_reward_per_cell': 30,
 
             'shaping_return_bonus': 20,       # Immediate bonus for stepping into own territory from outside.
             'shaping_distance_factor': 2,       # Factor multiplied by the improvement in distance.
 
-            'expansion_bonus': 10,                      #NEW bonus for sufficient territory expansion
-            'expansion_inactivity_penalty': -5,     #NEW penalty for inactivity in territory expansion
-            'expansion_interval': 50,               #NEW check expansion every 50 steps
-            'expansion_growth_threshold': 1,        #NEW minimum territory growth to be rewarded
+            'expansion_bonus': 20,                  # bonus for sufficient territory expansion
+            'expansion_inactivity_penalty': -5,     # penalty for inactivity in territory expansion
+            'expansion_interval': 50,               # check expansion every 50 steps
+            'expansion_growth_threshold': 1,        # minimum territory growth to be rewarded
+
+            'max_camping_penalty_per_episode': 30,  # The agent cannot exceed -30 total camping penalty #NEW
+            'exploration_reward': 1,                # Reward for stepping outside own territory #NEW
         }
 
-        self.CAMPING_THRESHOLD = 20
+        self.CAMPING_THRESHOLD = 25
         self.INCREMENTAL_CAMPING_PENALTY = -2
         self.BORDER_VALUE = 99
         self.grid_size = grid_size
@@ -121,6 +124,7 @@ class PaperIoEnv:
                 'camping_penalty_multiplier': 1,    #progressive multiplier for camping penalty
                 'last_territory': 9,                #initial territory for expansion bonus tracking
                 'last_expansion_step': 0,           #initial step for expansion bonus tracking
+                'camping_penalty_accumulated': 0,   #NEW track total camping penalty this episode
             })
             self.grid[x : x+3, y : y+3] = player_id
 
@@ -197,6 +201,10 @@ class PaperIoEnv:
                 # Update player position
                 player['position'] = (new_x, new_y)
 
+                # Exploration reward if outside own territory #NEW
+                if cell_value != player_id:  # stepping onto anything that's not the player's territory
+                    rewards[i] += self.reward_config['exploration_reward']  #NEW
+
                 # Compute new Manhattan distance to nearest territory cell after moving.
                 new_distance = self._distance_from_territory(player_id, new_x, new_y)  
                 if new_distance < old_distance:  # Reward for moving closer.
@@ -246,31 +254,33 @@ class PaperIoEnv:
                     player['steps_in_own_territory'] += 1
                 else:
                     player['steps_in_own_territory'] = 0
-                    player['camping_penalty_multiplier'] = 1  #NEW reset multiplier when leaving own territory
-
+                    player['camping_penalty_multiplier'] = 1  # reset multiplier when leaving own territory
+                
+                # Incremental camping penalty
                 if player['steps_in_own_territory'] > 0 and player['steps_in_own_territory'] % 5 == 0:
-                    penalty = self.INCREMENTAL_CAMPING_PENALTY * player['camping_penalty_multiplier']  #NEW
-                    rewards[i] += penalty  #NEW
-                    player['camping_penalty_multiplier'] *= 1.5  #NEW
+                    penalty = self.INCREMENTAL_CAMPING_PENALTY * player['camping_penalty_multiplier']
+                    self._apply_camping_penalty(i, penalty)  #NEW (cap it)
+                    player['camping_penalty_multiplier'] *= 1.5  # example multiplier growth
 
+                # Threshold-based camping penalty
                 if player['steps_in_own_territory'] >= self.CAMPING_THRESHOLD:
-                    penalty = self.reward_config['long_camping_penalty'] * player['camping_penalty_multiplier']  #NEW
-                    rewards[i] += penalty  #NEW
-                    player['steps_in_own_territory'] = 0  # reset after penalizing
-                    player['camping_penalty_multiplier'] = 1  #NEW
+                    penalty = self.reward_config['long_camping_penalty'] * player['camping_penalty_multiplier']
+                    self._apply_camping_penalty(i, penalty)  #NEW (cap it)
+                    player['steps_in_own_territory'] = 0
+                    player['camping_penalty_multiplier'] = 1
 
-         # Time-Based Expansion Bonus / Inactivity Penalty #NEW
-        if self.steps_taken % self.reward_config['expansion_interval'] == 0:  #NEW
-            for i in range(self.num_players):  #NEW
-                if self.alive[i]:  #NEW
-                    player = self.players[i]  #NEW
-                    territory_growth = player['territory'] - player.get('last_territory', player['territory'])  #NEW
-                    if territory_growth >= self.reward_config['expansion_growth_threshold']:  #NEW
-                        rewards[i] += self.reward_config['expansion_bonus']  #NEW
-                    else:  #NEW
-                        rewards[i] += self.reward_config['expansion_inactivity_penalty']  #NEW
-                    player['last_territory'] = player['territory']  #NEW
-                    player['last_expansion_step'] = self.steps_taken  #NEW
+         # Time-Based Expansion Bonus / Inactivity Penalty #
+        if self.steps_taken % self.reward_config['expansion_interval'] == 0:  #
+            for i in range(self.num_players):  #
+                if self.alive[i]:  #
+                    player = self.players[i]  #
+                    territory_growth = player['territory'] - player.get('last_territory', player['territory'])  #
+                    if territory_growth >= self.reward_config['expansion_growth_threshold']:  #
+                        rewards[i] += self.reward_config['expansion_bonus']  #
+                    else:  #
+                        rewards[i] += self.reward_config['expansion_inactivity_penalty']  #
+                    player['last_territory'] = player['territory']  #
+                    player['last_expansion_step'] = self.steps_taken  #
 
         # Average trail length for each player for episode statistics
         for i in range(self.num_players):
@@ -391,6 +401,7 @@ class PaperIoEnv:
         self.directions[idx] = self._random_direction()
         player['steps_in_own_territory'] = 0
         player['trail_reward_count'] = 0 
+        player['camping_penalty_accumulated'] = 0
 
     def get_observation_for_player(self, player_idx):
         if self.partial_observability:
@@ -482,3 +493,16 @@ class PaperIoEnv:
         distances = np.abs(territory_indices[:, 0] - x) + np.abs(territory_indices[:, 1] - y)
         return int(distances.min())
 
+    def _apply_camping_penalty(self, i, penalty):  #NEW
+        if penalty >= 0:
+            return
+        player = self.players[i]
+        limit = self.reward_config['max_camping_penalty_per_episode']
+        if player['camping_penalty_accumulated'] >= limit:
+            return
+
+        needed = abs(penalty)
+        room = limit - player['camping_penalty_accumulated']
+        actual_penalty = -min(needed, room)
+        player['camping_penalty_accumulated'] += min(needed, room)
+        self.cumulative_rewards[i] += actual_penalty

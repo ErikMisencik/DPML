@@ -101,8 +101,8 @@ def main():
 
     # Specify model paths.
     model_paths = [
-        "New_M_2_Q-Learning_TD_1/trained_model/qlagent_ag_0_end.pkl",
-        "New_M_2_Q-Learning_TD_1/trained_model/tdagent_ag_1_end.pkl",
+        "New_M_2_Q-Learning_TD_5/trained_model/qlagent_ag_0_end.pkl",
+        "New_M_2_Q-Learning_TD_5/trained_model/tdagent_ag_1_end.pkl",
         # "New_M_4_Q-Learning_SARSA_MonteCarlo_TD_2/trained_model/sarsaagent_ag_1_end.pkl",
         # "New_M_4_Q-Learning_SARSA_MonteCarlo_TD_2/trained_model/tdagent_ag_3_end.pkl"
     ]
