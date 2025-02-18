@@ -99,12 +99,25 @@ def main():
 
     base_models_path = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/"
 
+
     # Specify model paths.
     model_paths = [
-        "New_M_2_Q-Learning_TD_5/trained_model/qlagent_ag_0_end.pkl",
-        "New_M_2_Q-Learning_TD_5/trained_model/tdagent_ag_1_end.pkl",
+        # "New_M_2_Q-Learning_TD_5/trained_model/qlagent_ag_0_end.pkl",
+        # "New_M_2_Q-Learning_TD_5/trained_model/tdagent_ag_1_end.pkl",
+
+        # "New_M_2_Q-Learning_TD_6_BIG/trained_model/qlagent_ag_0_end.pkl",
+        # "New_M_2_Q-Learning_TD_6_BIG/trained_model/tdagent_ag_1_end.pkl",
+
+        "New_M_2_Q-Learning_TD_6_BIG/trained_model/qlagent_ag_0_30000.pkl",
+        "New_M_2_Q-Learning_TD_6_BIG/trained_model/tdagent_ag_1_30000.pkl",
+
+        # "New_M_4_Q-Learning_SARSA_MonteCarlo_TD_2/trained_model/mcagent_ag_2_end.pkl",
+        # "New_M_4_Q-Learning_SARSA_MonteCarlo_TD_2/trained_model/qlagent_ag_0_end.pkl",
         # "New_M_4_Q-Learning_SARSA_MonteCarlo_TD_2/trained_model/sarsaagent_ag_1_end.pkl",
         # "New_M_4_Q-Learning_SARSA_MonteCarlo_TD_2/trained_model/tdagent_ag_3_end.pkl"
+
+        # "TD_BEAST/trained_model/tdagent_ag_1_end.pkl"
+
     ]
     # Filter out any empty paths in case you want to use less than 4 models.
     model_paths = [p for p in model_paths if p]
