@@ -12,10 +12,13 @@ class PaperIoEnv:
         """
         Initialize the Paper.io environment.
         """
+        self.CAMPING_PENALTY = False
+
         self.reward_config = {
             'self_elimination_penalty': -150,
 
-            'max_camping_penalty_per_episode': 30,          # The agent cannot exceed -30 total camping penalty 
+            'camping_penalty': self.CAMPING_PENALTY,        # Whether to apply camping penalty  
+            'max_camping_penalty_per_episode': 30,          # The agent cannot exceed -30 total camping penalty        
 
             'trail_reward': 5,                              # reward for each new trail cell
             'max_trail_reward_count': 7,                  # Maximum times agent can receive trail_reward before it stops  
@@ -36,7 +39,6 @@ class PaperIoEnv:
             'shaping_distance_factor': 2,                # Factor multiplied by the improvement in distance.
 
             'expansion_bonus': 20,                        # Bonus for sufficient territory expansion
-            'expansion_inactivity_penalty': -5,           # Penalty for inactivity in territory expansion
 
             'expansion_interval': 50,                    # Check expansion every 50 steps
             'expansion_growth_threshold': 1,             # Minimum territory growth to be rewarded
@@ -257,7 +259,7 @@ class PaperIoEnv:
                     player['camping_penalty_multiplier'] = 1  # reset multiplier when leaving own territory
 
                 # Incremental camping penalty
-                if player['steps_in_own_territory'] > 0 and player['steps_in_own_territory'] % 5 == 0:
+                if player['steps_in_own_territory'] > 0 and player['steps_in_own_territory'] % 5 == 0 and self.CAMPING_PENALTY == True:
                     penalty = self.INCREMENTAL_CAMPING_PENALTY * player['camping_penalty_multiplier']
                     self._apply_camping_penalty(i, penalty)  # Apply penalty (capped)
                     player['camping_penalty_multiplier'] *= 1.5  # Increase multiplier for subsequent penalties
@@ -272,8 +274,6 @@ class PaperIoEnv:
                     territory_growth = player['territory'] - player.get('last_territory', player['territory'])
                     if territory_growth >= self.reward_config['expansion_growth_threshold']:
                         rewards[i] += self.reward_config['expansion_bonus']
-                    else:
-                        rewards[i] += self.reward_config['expansion_inactivity_penalty']
                     player['last_territory'] = player['territory']
                     player['last_expansion_step'] = self.steps_taken
 

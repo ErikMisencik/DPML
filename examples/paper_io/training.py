@@ -47,11 +47,11 @@ else:
     num_episodes = 30000        # Full training length 10000
     epsilon = 1.0                  # High exploration at start
     learning_rate = 0.0025          # Standard learning rate for initial training
-    epsilon_reset = True          # No epsilon reset for initial training
+    epsilon_reset = False          # No epsilon reset for initial training
     epsilon_reset_value = 0.40     # Not used if epsilon_reset is False
     epsilon_reset_interval = 5000  # Not used if epsilon_reset is False
-    epsilon_decay = 0.9994         # Standard decay rate
-    min_epsilon = 0.05              # Minimum exploration rate
+    epsilon_decay = 0.99992         # Standard decay rate
+    min_epsilon = 0.1              # Minimum exploration rate
 
 # Explicit Q-table paths for LOADING pre-trained models
 explicit_q_table_paths = {
