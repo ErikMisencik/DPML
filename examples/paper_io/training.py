@@ -46,7 +46,7 @@ else:
     # Parameters for initial training
     num_episodes = 30000        # Full training length 10000
     epsilon = 1.0                  # High exploration at start
-    learning_rate = 0.003          # Standard learning rate for initial training
+    learning_rate = 0.01          # Standard learning rate for initial training
     epsilon_reset = False          # No epsilon reset for initial training
     epsilon_reset_value = 0.40     # Not used if epsilon_reset is False
     epsilon_reset_interval = 5000  # Not used if epsilon_reset is False
