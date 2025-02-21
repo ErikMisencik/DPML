@@ -72,7 +72,7 @@ def evaluate(agents, agent_names, num_games=10):
                 agent_game_rewards[i] += rewards[i]
 
             if render_game:
-                sleep(0.025)
+                sleep(0.04)
 
         # After the game ends, update win counts and print game results
         winners = info.get('winners', [])
@@ -108,8 +108,15 @@ def main():
         # "New_M_2_Q-Learning_TD_6_BIG/trained_model/qlagent_ag_0_end.pkl",
         # "New_M_2_Q-Learning_TD_6_BIG/trained_model/tdagent_ag_1_end.pkl",
 
-        "New_M_2_Q-Learning_TD_8/trained_model/qlagent_ag_0_30000.pkl",
-        "New_M_2_Q-Learning_TD_8/trained_model/tdagent_ag_1_30000.pkl",
+        # "New_M_2_Q-Learning_TD_8/trained_model/qlagent_ag_0_30000.pkl",
+        # "New_M_2_Q-Learning_TD_8/trained_model/tdagent_ag_1_30000.pkl",
+
+        # "New_M_2_Q-Learning_TD_10_BESTGRAPHS/trained_model/qlagent_ag_0_30000.pkl",
+        # "New_M_2_Q-Learning_TD_10_BESTGRAPHS/trained_model/tdagent_ag_1_30000.pkl",
+
+        "New_M_2_Q-Learning_TD_11/trained_model/qlagent_ag_0_30000.pkl",
+        "New_M_2_Q-Learning_TD_11/trained_model/tdagent_ag_1_30000.pkl",
+        
 
         # "New_M_4_Q-Learning_SARSA_MonteCarlo_TD_2/trained_model/mcagent_ag_2_end.pkl",
         # "New_M_4_Q-Learning_SARSA_MonteCarlo_TD_2/trained_model/qlagent_ag_0_end.pkl",
@@ -125,7 +132,7 @@ def main():
     num_agents = len(model_paths)
 
     # Initialize the environment with the appropriate number of players
-    steps_per_episode = 300  # Use the same max_steps as in training
+    steps_per_episode = 500  # Use the same max_steps as in training
     global env
     env = PaperIoEnv(render=render_game, max_steps=steps_per_episode, num_players=num_agents)
 

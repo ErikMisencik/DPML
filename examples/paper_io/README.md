@@ -154,3 +154,4 @@ self.reward_config = {
 - If i give them big penalty punish for self elimination their priority is not leaving their initial territory to be protected from self elimination
 - If i give agent reward for making long trail but after some steps i will give them negative reward, it will be for them more appealing to do long trail and then self eliminate on their own trail
 - If I give agent big penalty for staying in his territory he will not go back to his territory. 
+
