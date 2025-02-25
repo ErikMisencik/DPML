@@ -72,7 +72,7 @@ def evaluate(agents, agent_names, num_games=10):
                 agent_game_rewards[i] += rewards[i]
 
             if render_game:
-                sleep(0.04)
+                sleep(0.01)
 
         # After the game ends, update win counts and print game results
         winners = info.get('winners', [])
@@ -114,8 +114,10 @@ def main():
         # "New_M_2_Q-Learning_TD_10_BESTGRAPHS/trained_model/qlagent_ag_0_30000.pkl",
         # "New_M_2_Q-Learning_TD_10_BESTGRAPHS/trained_model/tdagent_ag_1_30000.pkl",
 
-        "New_M_2_Q-Learning_TD_11/trained_model/qlagent_ag_0_30000.pkl",
-        "New_M_2_Q-Learning_TD_11/trained_model/tdagent_ag_1_30000.pkl",
+        # "New_M_2_Q-Learning_TD_11/trained_model/qlagent_ag_0_30000.pkl",
+        # "New_M_2_Q-Learning_TD_11/trained_model/tdagent_ag_1_30000.pkl",
+
+        "New_S_1_TD_1/trained_model/tdagent_ag_0_30000.pkl",
         
 
         # "New_M_4_Q-Learning_SARSA_MonteCarlo_TD_2/trained_model/mcagent_ag_2_end.pkl",
