@@ -32,7 +32,7 @@ class PaperIoEnv:
             'enemy_territory_capture_reward_per_cell': 30,
             'territory_loss_penalty_per_cell': -20,
 
-            'elimination_reward_modifier': 0.25,
+            'elimination_reward_modifier': 0.40,
 
             'territory_capture_reward_per_cell': 30,
 
