@@ -119,7 +119,7 @@ def main():
 
         # "New_S_1_TD_1/trained_model/tdagent_ag_0_30000.pkl",
         # "New_S_1_TD_2/trained_model/tdagent_ag_0_30000.pkl",
-        "New_S_1_TD_5/trained_model/tdagent_ag_0_end.pkl",
+        "New_S_1_TD_4/trained_model/tdagent_ag_0_end.pkl",
         
 
         # "New_M_4_Q-Learning_SARSA_MonteCarlo_TD_2/trained_model/mcagent_ag_2_end.pkl",
