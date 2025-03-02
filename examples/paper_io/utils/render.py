@@ -74,8 +74,8 @@ def render_game(screen, grid, players, alive, cell_size, window_size, num_player
         pygame.draw.line(screen, shadow_color, rect.bottomright, (rect.left, rect.bottom), 2)
 
     # Display the number of steps in the top-left corner
-    step_text = font.render(f'Steps: {steps}', True, (0, 0, 0))  # Black text
-    screen.blit(step_text, (10, 10))  # Render in the top-left corner
+    step_text = font.render(f'Počet Krokov: {steps}', True, (0, 0, 0))  # Black text
+    screen.blit(step_text, (15, 15))  # Render in the top-left corner
 
     # Update display
     pygame.display.flip()

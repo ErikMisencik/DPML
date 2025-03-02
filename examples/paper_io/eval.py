@@ -118,7 +118,7 @@ def main():
         # "New_M_2_Q-Learning_TD_11/trained_model/tdagent_ag_1_30000.pkl",
 
         # "New_S_1_TD_1/trained_model/tdagent_ag_0_30000.pkl",
-        # "New_S_1_TD_2/trained_model/tdagent_ag_0_30000.pkl",
+        "New_S_1_TD_2/trained_model/tdagent_ag_0_30000.pkl",
         "New_S_1_TD_4/trained_model/tdagent_ag_0_end.pkl",
         
 
