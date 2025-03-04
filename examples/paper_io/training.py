@@ -27,8 +27,16 @@ window_size = 50               # For smoothing graphs
 loading_bar_length = 20;       # Length of the loading bar
 
 # Training variables
-discount_factor = 0.99  # Typically remains the same for both training and retraining
+discount_factor = 0.99  # Discount factor for future rewards
+
+# Specific parameters for each algorithm that helps to better train the agents
+batch_size=64            # Batch size for training (for QLAgent, SARSAAgent, and TDAgent)
 lambda_value = 0.8      # λ parameter for eligibility traces (for TDAgent)
+batch_updates = 2        # Apply updates every N episodes (for MCAgent)
+n_step_q = 2                # n-step return (for QLAgent) 
+replay_size_q = 5000        # Replay buffer size (for QLAgent)
+n_step_s = 2                  # n-step return (for SARSAAgent)
+replay_size_s = 1000          # Replay buffer size (for SARSAAgent)
 
 # Set parameters based on whether we are training from scratch or retraining
 if load_existing_model:
@@ -50,7 +58,7 @@ else:
     epsilon_reset = False          # No epsilon reset for initial training
     epsilon_reset_value = 0.40     # Not used if epsilon_reset is False
     epsilon_reset_interval = 5000  # Not used if epsilon_reset is False
-    epsilon_decay = 0.99992         # Standard decay rate
+    epsilon_decay = 99992         # Standard decay rate 0.9998  for 10000 num episodes   | 0.99992 for 30000 num episodes
     min_epsilon = 0.1              # Minimum exploration rate
 
 # Explicit Q-table paths for LOADING pre-trained models
@@ -61,8 +69,8 @@ explicit_q_table_paths = {
 
 # Selection of algorithms to train
 algorithm_config = {
-    "Q-Learning": False,   # Train Q-Learning agents
-    "SARSA": False,        # Train SARSA agents
+    "Q-Learning": True,   # Train Q-Learning agents
+    "SARSA": True,        # Train SARSA agents
     "MonteCarlo": False,  # Train Monte Carlo agents
     "TD": True,            # Train TD agents
 }
@@ -74,13 +82,13 @@ agents_per_algorithm = 1  # Number of agents per algorithm
 
 for algo in enabled_algorithms:
     if algo == "Q-Learning":
-        agents += [QLAgent(None, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon)
+        agents += [QLAgent(None, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon, n_step_q, replay_size_q, batch_size, lambda_value)
                    for _ in range(agents_per_algorithm)]
     elif algo == "SARSA":
-        agents += [SARSAAgent(None, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon)
+        agents += [SARSAAgent(None, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon, n_step_s, replay_size_s, batch_size, lambda_value)
                    for _ in range(agents_per_algorithm)]
     elif algo == "MonteCarlo":
-        agents += [MCAgent(None, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon)
+        agents += [MCAgent(None, learning_rate, discount_factor, epsilon, epsilon_decay, min_epsilon, n_step_q, replay_size_q, batch_updates, batch_size)
                    for _ in range(agents_per_algorithm)]
     elif algo == "TD":
         agents += [TDAgent(None, learning_rate, discount_factor, lambda_value, epsilon, epsilon_decay, min_epsilon)
@@ -362,15 +370,19 @@ while episode_num < num_episodes:
 total_training_time = (time.time() - training_start_time) / 60
 
 agent_names = [agent.__class__.__name__ for agent in agents]
-td_errors = []
-for agent in agents:
-    if hasattr(agent, "td_errors"):
-        td_errors.extend(agent.td_errors)
+
+# td_errors = []
+# for agent in agents:
+#     if hasattr(agent, "td_errors"):
+#         td_errors.extend(agent.td_errors)
+
+# Save the training information
+save_training_info(training_info_file, num_episodes, steps_per_episode, agents, env.reward_config, loaded_q_paths, total_training_time)
 
 plot_training_progress(episodes, episode_rewards, moving_avg_rewards, plots_folder)
 plot_epsilon_decay(episodes, epsilon_values, plots_folder)
-if td_errors:
-    plot_td_error(td_errors, plots_folder)
+# if td_errors:
+#     plot_td_error(td_errors, plots_folder)
 plot_agent_wins(agent_wins, plots_folder, agent_names)
 plot_agent_eliminations(agent_eliminations, plots_folder, agent_names)
 plot_cumulative_self_eliminations(episodes, self_eliminations_per_episode, plots_folder, agent_names)

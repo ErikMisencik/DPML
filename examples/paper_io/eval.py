@@ -118,9 +118,15 @@ def main():
         # "New_M_2_Q-Learning_TD_11/trained_model/tdagent_ag_1_30000.pkl",
 
         # "New_S_1_TD_1/trained_model/tdagent_ag_0_30000.pkl",
-        "New_S_1_TD_2/trained_model/tdagent_ag_0_30000.pkl",
-        "New_S_1_TD_4/trained_model/tdagent_ag_0_end.pkl",
-        
+        # "New_S_1_TD_2/trained_model/tdagent_ag_0_30000.pkl",
+        # "New_S_1_TD_4/trained_model/tdagent_ag_0_end.pkl",
+
+
+        # "New_M_2_SARSA_MonteCarlo_1/trained_model/mcagent_ag_1_end.pkl",
+        # "New_M_2_SARSA_MonteCarlo_1/trained_model/sarsaagent_ag_0_end.pkl",
+
+        "New_M_4_Q-Learning_SARSA_MonteCarlo_TD_2/trained_model/mcagent_ag_2_end.pkl",
+        "New_M_4_Q-Learning_SARSA_MonteCarlo_TD_2/trained_model/qlagent_ag_0_end.pkl",
 
         # "New_M_4_Q-Learning_SARSA_MonteCarlo_TD_2/trained_model/mcagent_ag_2_end.pkl",
         # "New_M_4_Q-Learning_SARSA_MonteCarlo_TD_2/trained_model/qlagent_ag_0_end.pkl",

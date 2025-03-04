@@ -68,84 +68,14 @@ python training.py
 - Actor-Critic (without neural networks) (When combining value functions with policy learning)
 
 
-## Reward Config Strategies Learning
 
-### =========================================================
-### Config A: Aggressive Expansion Focus
-### Emphasizes territory capture over safety; encourages building larger trails quickly.
-### =========================================================
-self.reward_config = {
-    'self_elimination_penalty': -200,   # Slightly less punishing to allow more risk-taking
-    'long_camping_penalty': -250,       # Still penalize camping, but not as harshly
-    'trail_reward': 50,                 # More reward for extending trails
-    'max_trail_reward': 300,            # Higher cap, encouraging big loops
-    'territory_capture_reward_per_cell': 50,  # Significantly increased to push expansion
-    'max_trail_length': 15,
-    'long_trail_penalty': -10,          # Reduced penalty, bigger loops are less risky
-    'opponent_elimination_reward': 150, # Somewhat rewarding, but not the main focus
-    'opponent_elimination_penalty': -50,
-    'enemy_territory_capture_reward_per_cell': 40,  # Capturing enemy territory is lucrative
-    'territory_loss_penalty_per_cell': -50,
-    'elimination_reward_modifier': 0.70,
-}
+## Improvements to algorithms
+✅ N-Step SARSA (3-Step Lookahead)
+✅ Prioritized Experience Replay (PER)
+✅ Boltzmann Exploration Instead of ε-Greedy
+✅ Q-Table Normalization (Min-Max Scaling)
+✅ Batch Updates for Stability
 
-### =========================================================
-### Config B: Kill-or-Be-Killed Aggression
-### Greatly rewards eliminating opponents, encourages direct confrontation and risk.
-### =========================================================
-self.reward_config = {
-    'self_elimination_penalty': -300,   # Still quite punishing for suicidal moves
-    'long_camping_penalty': -200,       # Medium penalty for camping
-    'trail_reward': 30,                 # Basic reward for building trails
-    'max_trail_reward': 200,
-    'territory_capture_reward_per_cell': 30,
-    'max_trail_length': 15,
-    'long_trail_penalty': -20,          # Standard penalty if trail is too long
-    'opponent_elimination_reward': 400, # Very high reward to incentivize kills
-    'opponent_elimination_penalty': -100, # Victim gets penalized more
-    'enemy_territory_capture_reward_per_cell': 25,  # Slightly lowered to keep focus on kills
-    'territory_loss_penalty_per_cell': -60,
-    'elimination_reward_modifier': 0.70,
-}
-
-### =========================================================
-### Config C: Defensive / Safe Strategies
-### Focuses on holding territory, penalizes self-elimination severely, encourages minimal risk.
-### =========================================================
-self.reward_config = {
-    'self_elimination_penalty': -400,    # Extra harsh to discourage risky behavior
-    'long_camping_penalty': -400,        # Also punishes staying still too long
-    'trail_reward': 20,                  # Lower trail reward
-    'max_trail_reward': 150,             # Cap smaller to reduce risky big loops
-    'territory_capture_reward_per_cell': 30,
-    'max_trail_length': 10,              # Encourage short, safe expansions
-    'long_trail_penalty': -40,           # Bigger penalty for overly long trails
-    'opponent_elimination_reward': 150,  # Some reward, but not huge
-    'opponent_elimination_penalty': -50,
-    'enemy_territory_capture_reward_per_cell': 25,  # Moderately beneficial
-    'territory_loss_penalty_per_cell': -80,         # Large penalty for losing territory
-    'elimination_reward_modifier': 0.70,
-}
-
-
-### =========================================================
-### Config D: Balanced or “Point Control” Approach
-### Tries to keep every aspect moderate, no single dimension dominates the strategy.
-### =========================================================
-self.reward_config = {
-    'self_elimination_penalty': -300,    # Medium-level punishment
-    'long_camping_penalty': -300,        # Punish inactivity, but not extremely
-    'trail_reward': 40,                  # Decent reward for building trails
-    'max_trail_reward': 200,
-    'territory_capture_reward_per_cell': 30,
-    'max_trail_length': 15,
-    'long_trail_penalty': -20,           # Minor penalty for excessive loops
-    'opponent_elimination_reward': 200,  # Reward is relevant, but not huge
-    'opponent_elimination_penalty': -50,
-    'enemy_territory_capture_reward_per_cell': 30,  # Balanced approach
-    'territory_loss_penalty_per_cell': -50,
-    'elimination_reward_modifier': 0.70,
-}
 
 
 # Beaviour of Agents
