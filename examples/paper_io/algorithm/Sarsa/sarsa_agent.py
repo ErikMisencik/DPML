@@ -8,7 +8,7 @@ from examples.paper_io.algorithm.base_agent import BaseAgent
 class SARSAAgent(BaseAgent):
     def __init__(self, env, learning_rate=0.01, discount_factor=0.99,
                  epsilon=1.0, epsilon_decay=0.9995, min_epsilon=0.1,
-                 n_step=3, replay_size=5000, batch_size=64, lambda_value=0.8, load_only=False):
+                 n_step=3, replay_size=2000, batch_size=64, lambda_value=0.8, load_only=False):
         super().__init__(env)
         self.learning_rate = learning_rate
         self.discount_factor = discount_factor
@@ -19,14 +19,13 @@ class SARSAAgent(BaseAgent):
         self.batch_size = batch_size
         self.lambda_value = lambda_value  
         self.q_table = defaultdict(float)  
-        self.replay_memory = []  # Use list for heapq compatibility
-        self.replay_size = replay_size  # Limit replay size
+        self.replay_memory = []  
+        self.replay_size = replay_size  
         self.n_step_buffer = []  
         self.e_trace = defaultdict(float)  
         self.load_only = load_only  
 
     def get_state(self, observation, player_idx):
-        """Extracts a hashable state representation."""
         grid = observation[player_idx]
         player = self.env.players[player_idx]
         player_id = player['id']
@@ -45,7 +44,6 @@ class SARSAAgent(BaseAgent):
         return (position_status, trail_length, nearest_enemy_direction, nearest_enemy_distance)
 
     def get_action(self, observation, player_idx):
-        """Boltzmann Exploration for action selection."""
         if not self.env.alive[player_idx]:
             return None
 
@@ -53,15 +51,14 @@ class SARSAAgent(BaseAgent):
         num_actions = self.env.action_spaces[player_idx].n
         q_values = np.array([self.q_table[(state, a)] for a in range(num_actions)])
 
-        tau = max(0.1, self.epsilon)  
-        q_values = q_values - np.max(q_values)  
+        tau = max(0.1, self.epsilon)
+        q_values -= np.max(q_values)  
         exp_q = np.exp(q_values / tau)
         probabilities = exp_q / np.sum(exp_q)
 
         return np.random.choice(num_actions, p=probabilities)
 
     def update(self, state, action, reward, next_state, next_action, done, player_idx):
-        """N-Step SARSA(λ) update with Prioritized Experience Replay and Eligibility Traces."""
         if self.load_only:
             return  
 
@@ -72,7 +69,6 @@ class SARSAAgent(BaseAgent):
             G = sum(self.discount_factor ** i * r for i, (_, _, r, _, _) in enumerate(self.n_step_buffer))
             s, a, _, ns, na = self.n_step_buffer.pop(0)  
 
-            # Trim replay buffer if exceeding limit
             if len(self.replay_memory) >= self.replay_size:
                 heapq.heappop(self.replay_memory)  
 
@@ -83,30 +79,35 @@ class SARSAAgent(BaseAgent):
 
         self._td_lambda_update(state, action, reward, next_state, next_action, done, player_idx)
 
+        # **Clear buffers at episode end**
+        if done:
+            self.n_step_buffer.clear()
+            self.e_trace.clear()
+
     def _td_lambda_update(self, state, action, reward, next_state, next_action, done, player_idx):
-        """TD(λ) update using eligibility traces."""
-        next_q = self.q_table[(next_state, next_action)] if (next_state and next_action and not done) else 0
+        next_q = self.q_table[(next_state, next_action)] if not done else 0
         td_error = reward + self.discount_factor * next_q - self.q_table[(state, action)]
 
         for (s, a), trace_value in list(self.e_trace.items()):
             self.q_table[(s, a)] += self.learning_rate * td_error * trace_value
             self.e_trace[(s, a)] *= self.discount_factor * self.lambda_value  
 
+        if len(self.e_trace) > 500:
+            self.e_trace.pop(next(iter(self.e_trace)))
+
         for key in list(self.e_trace.keys()):
             if self.e_trace[key] < 1e-5:
                 del self.e_trace[key]
 
     def _update_from_replay(self, player_idx):
-        """Efficient batch updates using Prioritized Experience Replay."""
-        batch = []
-        for _ in range(min(self.batch_size, len(self.replay_memory))):
-            if self.replay_memory:
-                batch.append(heapq.heappop(self.replay_memory)[1])  
+        if len(self.replay_memory) < self.batch_size:
+            return  
+
+        batch = [heapq.heappop(self.replay_memory)[1] for _ in range(min(self.batch_size, len(self.replay_memory)))]
 
         for s, a, r, ns, na in batch:
             current_q = self.q_table[(s, a)]
             next_q = self.q_table[(ns, na)] if ns else 0
-
             td_error = r + self.discount_factor * next_q - current_q
             self.q_table[(s, a)] += self.learning_rate * td_error
 
@@ -135,7 +136,6 @@ class SARSAAgent(BaseAgent):
         enemy_positions = np.argwhere((grid > 0) & (grid != player_id))
         if enemy_positions.size == 0:
             return self.env.grid_size * 2  
-
         return np.min(np.sum(np.abs(enemy_positions - np.array([x_local, y_local])), axis=1))
 
     def _get_nearest_enemy_direction(self, grid, player_id, x_local, y_local):

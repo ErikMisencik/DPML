@@ -31,9 +31,7 @@ class MCAgent(BaseAgent):
         grid = observation[player_idx]
         player = self.env.players[player_idx]
         player_id = player['id']
-
-        x_local, y_local = player['position'] if grid.shape == (self.env.grid_size, self.env.grid_size) else (
-            grid.shape[0] // 2, grid.shape[1] // 2)
+        x_local, y_local = player['position']
 
         cell_value = grid[x_local, y_local]
         position_status = (
@@ -69,7 +67,7 @@ class MCAgent(BaseAgent):
 
     def update(self):
         """Performs the Monte Carlo update after each episode."""
-        if self.load_only:
+        if self.load_only or not self.episode_history:
             return  
 
         G = 0  
@@ -87,9 +85,13 @@ class MCAgent(BaseAgent):
                 self.returns_count[state_action] += 1
                 self.returns_priority[state_action] = abs(G)  
 
+                # Importance Sampling (Preventing division by zero)
                 W = 1.0 / (self.returns_count[state_action] + 1e-5)
                 self.q_table[state_action] = (1 - W) * self.q_table[state_action] + W * G
 
+        # Store episode in replay memory
+        if len(self.replay_memory) >= self.batch_size:
+            self.replay_memory.popleft()
         self.replay_memory.append(list(self.episode_history))  
 
         if self.episode_count % self.batch_updates == 0:
@@ -98,12 +100,22 @@ class MCAgent(BaseAgent):
         self.episode_history.clear()
 
     def _apply_prioritized_updates(self):
-        """Efficient batch updates using prioritized experience replay."""
+        """Safe batch updates using Prioritized Experience Replay."""
+        if not self.returns_priority:
+            return  # Avoid crashing if empty
+
         batch = heapq.nlargest(self.batch_size, self.returns_priority.items(), key=lambda x: x[1])  
 
         for (state, action), _ in batch:
+            if self.returns_count[(state, action)] == 0:
+                continue  # Prevent division by zero
+
             W = 1.0 / (self.returns_count[(state, action)] + 1e-5)
             self.q_table[(state, action)] = (1 - W) * self.q_table[(state, action)] + W * self.returns_sum[(state, action)]
+
+        # **Limit priority buffer size**
+        if len(self.returns_priority) > 500:
+            self.returns_priority.pop(next(iter(self.returns_priority)))
 
     def decay_epsilon(self):
         """Epsilon decay."""

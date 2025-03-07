@@ -70,11 +70,12 @@ python training.py
 
 
 ## Improvements to algorithms
-✅ N-Step SARSA (3-Step Lookahead)
+✅ N-Step (3-Step Lookahead)
 ✅ Prioritized Experience Replay (PER)
 ✅ Boltzmann Exploration Instead of ε-Greedy
 ✅ Q-Table Normalization (Min-Max Scaling)
 ✅ Batch Updates for Stability
+✅ Lambda for Q learning, Sarsa, TD learning
 
 
 

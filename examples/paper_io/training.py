@@ -32,11 +32,11 @@ discount_factor = 0.99  # Discount factor for future rewards
 # Specific parameters for each algorithm that helps to better train the agents
 batch_size=64            # Batch size for training (for QLAgent, SARSAAgent, and TDAgent)
 lambda_value = 0.8      # λ parameter for eligibility traces (for TDAgent)
-batch_updates = 2        # Apply updates every N episodes (for MCAgent)
-n_step_q = 2                # n-step return (for QLAgent) 
+batch_updates = 10        # Apply updates every N episodes (for MCAgent)
+n_step_q = 4                # n-step return (for QLAgent) 
 replay_size_q = 5000        # Replay buffer size (for QLAgent)
 n_step_s = 2                  # n-step return (for SARSAAgent)
-replay_size_s = 1000          # Replay buffer size (for SARSAAgent)
+replay_size_s = 2000          # Replay buffer size (for SARSAAgent)
 
 # Set parameters based on whether we are training from scratch or retraining
 if load_existing_model:
@@ -58,7 +58,7 @@ else:
     epsilon_reset = False          # No epsilon reset for initial training
     epsilon_reset_value = 0.40     # Not used if epsilon_reset is False
     epsilon_reset_interval = 5000  # Not used if epsilon_reset is False
-    epsilon_decay = 99992         # Standard decay rate 0.9998  for 10000 num episodes   | 0.99992 for 30000 num episodes
+    epsilon_decay = 0.99992         # Standard decay rate 0.9998  for 10000 num episodes   | 0.99992 for 30000 num episodes
     min_epsilon = 0.1              # Minimum exploration rate
 
 # Explicit Q-table paths for LOADING pre-trained models
@@ -70,9 +70,9 @@ explicit_q_table_paths = {
 # Selection of algorithms to train
 algorithm_config = {
     "Q-Learning": True,   # Train Q-Learning agents
-    "SARSA": True,        # Train SARSA agents
+    "SARSA":                    False,        # Train SARSA agents
     "MonteCarlo": False,  # Train Monte Carlo agents
-    "TD": True,            # Train TD agents
+    "TD": False,            # Train TD agents
 }
 
 agents = []

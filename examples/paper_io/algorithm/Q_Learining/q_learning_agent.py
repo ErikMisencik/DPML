@@ -19,12 +19,11 @@ class QLAgent(BaseAgent):
         self.q_table = defaultdict(float)  
         self.replay_buffer = deque(maxlen=replay_size)  
         self.n_step_buffer = deque(maxlen=n_step)
-        self.lambda_value = lambda_value  # TD(λ) parameter
-        self.e_trace = defaultdict(float)  # Eligibility traces (for TD(λ))
+        self.lambda_value = lambda_value  
+        self.e_trace = defaultdict(float)  
         self.load_only = load_only
 
     def get_state(self, observation, player_idx):
-        """Extracts a simplified and efficient state representation."""
         grid = observation[player_idx]
         player = self.env.players[player_idx]
         player_id = player['id']
@@ -43,73 +42,76 @@ class QLAgent(BaseAgent):
         return (position_status, trail_length, nearest_enemy_direction, nearest_enemy_distance)
 
     def get_action(self, observation, player_idx):
-        """Chooses an action using Boltzmann Exploration instead of ε-greedy."""
         if not self.env.alive[player_idx]:
             return None
-        
+
         state = self.get_state(observation, player_idx)
         num_actions = self.env.action_spaces[player_idx].n
         q_values = np.array([self.q_table[(state, a)] for a in range(num_actions)])
 
         tau = max(0.1, self.epsilon)
-        q_values = q_values - np.max(q_values)  # Prevents numerical overflow
+        q_values = q_values - np.max(q_values)  
         exp_q = np.exp(q_values / tau)
         probabilities = exp_q / np.sum(exp_q)
 
         return np.random.choice(num_actions, p=probabilities)
 
     def update(self, state, action, reward, next_state, done, player_idx):
-        """Updates Q-values using TD(λ) with Eligibility Traces."""
         if self.load_only:
             return
 
         self.n_step_buffer.append((state, action, reward))
-
-        # Store eligibility trace for the visited state-action pair
         self.e_trace[(state, action)] += 1  
 
-        # Compute TD(λ) error
         max_future_q = 0 if done else max(self.q_table[(next_state, a)] for a in range(self.env.action_spaces[player_idx].n))
         td_error = reward + self.discount_factor * max_future_q - self.q_table[(state, action)]
 
-        # Update all previous state-action pairs using TD(λ) traces
         for (s, a), trace_value in list(self.e_trace.items()):
             self.q_table[(s, a)] += self.learning_rate * td_error * trace_value
-            self.e_trace[(s, a)] *= self.discount_factor * self.lambda_value  # Decay eligibility trace
+            self.e_trace[(s, a)] *= self.discount_factor * self.lambda_value  
 
-        # Remove small traces to save memory
-        for key in list(self.e_trace.keys()):
-            if self.e_trace[key] < 1e-5:
-                del self.e_trace[key]
+        # **Capping Eligibility Traces to prevent excessive memory usage**
+        if len(self.e_trace) > 500:
+            self.e_trace.pop(next(iter(self.e_trace)))
 
-        # Store experience in replay buffer
         if len(self.n_step_buffer) == self.n_step:
             G = sum(self.discount_factor ** i * r for i, (_, _, r) in enumerate(self.n_step_buffer))
             s, a, _ = self.n_step_buffer.popleft()
             self.replay_buffer.append((s, a, G, next_state, done))
 
-        # Prioritized experience replay
         if len(self.replay_buffer) >= self.batch_size:
             self._update_from_replay(player_idx)
 
-    def _update_from_replay(self, player_idx):
-        """Updates Q-values using prioritized experience replay."""
-        batch_size = min(self.batch_size, len(self.replay_buffer))
-        experiences = random.sample(self.replay_buffer, batch_size)
+        # **Ensure buffer is cleared at episode end**
+        if done:
+            self.n_step_buffer.clear()
+            self.e_trace.clear()
 
-        for state, action, reward, next_state, done in experiences:
+    def _update_from_replay(self, player_idx):
+        if len(self.replay_buffer) < self.batch_size:
+            return  
+
+        batch = random.sample(self.replay_buffer, self.batch_size)
+        for state, action, reward, next_state, done in batch:
             current_q = self.q_table[(state, action)]
             max_future_q = 0 if done else max(self.q_table[(next_state, a)] for a in range(self.env.action_spaces[player_idx].n))
-            
             td_error = reward + self.discount_factor * max_future_q - current_q
             self.q_table[(state, action)] += self.learning_rate * td_error
 
+    def _normalize_q_table(self):
+        q_values = np.array(list(self.q_table.values()))
+        if q_values.size == 0 or np.all(q_values == q_values[0]):  
+            return
+        min_q, max_q = np.min(q_values), np.max(q_values)
+        if max_q - min_q > 1e-5:
+            scale = max_q - min_q
+            for key in self.q_table:
+                self.q_table[key] = (self.q_table[key] - min_q) / scale
+
     def decay_epsilon(self):
-        """Gradually decreases ε for exploration-exploitation tradeoff."""
         self.epsilon = max(self.min_epsilon, self.epsilon * self.epsilon_decay)
 
     def save(self, filepath):
-        """Saves the Q-table to a file."""
         try:
             with open(filepath, 'wb') as f:
                 pickle.dump(dict(self.q_table), f)
@@ -118,7 +120,6 @@ class QLAgent(BaseAgent):
             print(f"Error saving Q-table: {e}")
 
     def load(self, filepath):
-        """Loads the Q-table from a file."""
         try:
             with open(filepath, 'rb') as f:
                 self.q_table.update(pickle.load(f))
