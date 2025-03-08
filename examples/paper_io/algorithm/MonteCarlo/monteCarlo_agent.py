@@ -46,7 +46,7 @@ class MCAgent(BaseAgent):
         return (position_status, trail_length, nearest_enemy_direction, nearest_enemy_distance)
 
     def get_action(self, observation, player_idx):
-        """Efficient Boltzmann Exploration for action selection."""
+        """Boltzmann Exploration for action selection."""
         if not self.env.alive[player_idx]:
             return None
 
@@ -85,11 +85,9 @@ class MCAgent(BaseAgent):
                 self.returns_count[state_action] += 1
                 self.returns_priority[state_action] = abs(G)  
 
-                # Importance Sampling (Preventing division by zero)
                 W = 1.0 / (self.returns_count[state_action] + 1e-5)
                 self.q_table[state_action] = (1 - W) * self.q_table[state_action] + W * G
 
-        # Store episode in replay memory
         if len(self.replay_memory) >= self.batch_size:
             self.replay_memory.popleft()
         self.replay_memory.append(list(self.episode_history))  
@@ -102,27 +100,26 @@ class MCAgent(BaseAgent):
     def _apply_prioritized_updates(self):
         """Safe batch updates using Prioritized Experience Replay."""
         if not self.returns_priority:
-            return  # Avoid crashing if empty
+            return  
 
         batch = heapq.nlargest(self.batch_size, self.returns_priority.items(), key=lambda x: x[1])  
 
         for (state, action), _ in batch:
             if self.returns_count[(state, action)] == 0:
-                continue  # Prevent division by zero
+                continue  
 
             W = 1.0 / (self.returns_count[(state, action)] + 1e-5)
             self.q_table[(state, action)] = (1 - W) * self.q_table[(state, action)] + W * self.returns_sum[(state, action)]
 
-        # **Limit priority buffer size**
         if len(self.returns_priority) > 500:
             self.returns_priority.pop(next(iter(self.returns_priority)))
 
     def decay_epsilon(self):
-        """Epsilon decay."""
+        """Gradually decreases ε for exploration-exploitation tradeoff."""
         self.epsilon = max(self.min_epsilon, self.epsilon * self.epsilon_decay)
 
     def save(self, filepath):
-        """Save Q-table."""
+        """Saves the Q-table to a file."""
         try:
             with open(filepath, 'wb') as f:
                 pickle.dump(dict(self.q_table), f)
@@ -131,7 +128,7 @@ class MCAgent(BaseAgent):
             print(f"Error saving Q-table: {e}")
 
     def load(self, filepath):
-        """Load Q-table."""
+        """Loads the Q-table from a file."""
         try:
             with open(filepath, 'rb') as f:
                 self.q_table.update(pickle.load(f))  
@@ -146,7 +143,6 @@ class MCAgent(BaseAgent):
         enemy_positions = np.argwhere((grid > 0) & (grid != player_id))
         if enemy_positions.size == 0:
             return self.env.grid_size * 2  
-
         return np.min(np.sum(np.abs(enemy_positions - np.array([x_local, y_local])), axis=1))
 
     def _get_nearest_enemy_direction(self, grid, player_id, x_local, y_local):
