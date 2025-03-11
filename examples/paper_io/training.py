@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt # type: ignore
 import numpy as np
 import sys
 import time  
+from examples.paper_io.algorithm.ActorCritic.ac_agent import ACAgent
 from examples.paper_io.algorithm.MonteCarlo.monteCarlo_agent import MCAgent
 from examples.paper_io.algorithm.Sarsa.sarsa_agent import SARSAAgent
 from examples.paper_io.algorithm.TD_Learning.td_learning_agent import TDAgent
@@ -58,7 +59,7 @@ else:
     epsilon_reset = False          # No epsilon reset for initial training
     epsilon_reset_value = 0.40     # Not used if epsilon_reset is False
     epsilon_reset_interval = 5000  # Not used if epsilon_reset is False
-    epsilon_decay = 0.999925         # Standard decay rate 0.9998  for 10000 num episodes   | 0.99992 for 30000 num episodes | 0.99996 for 50000 num episodes
+    epsilon_decay = 0.999925         # Standard decay rate 0.9998  for 10000 num episodes   | 0.999925 for 30000 num episodes | 0.99996 for 50000 num episodes
     min_epsilon = 0.1              # Minimum exploration rate
 
 # Explicit Q-table paths for LOADING pre-trained models
@@ -69,10 +70,11 @@ explicit_q_table_paths = {
 
 # Selection of algorithms to train
 algorithm_config = {
-    "Q-Learning": False,   # Train Q-Learning agents
-    "SARSA":      False,        # Train SARSA agents
-    "MonteCarlo": False,  # Train Monte Carlo agents
-    "TD": True,            # Train TD agents
+    "Q-Learning":   True,      # Train Q-Learning agents
+    "SARSA":        False,      # Train SARSA agents
+    "MonteCarlo":   False,      # Train Monte Carlo agents
+    "TD":           False,      # Train TD agents
+    "ActorCritic":  True        # Train Actor-Critic agents
 }
 
 agents = []
@@ -92,6 +94,9 @@ for algo in enabled_algorithms:
                    for _ in range(agents_per_algorithm)]
     elif algo == "TD":
         agents += [TDAgent(None, learning_rate, discount_factor, lambda_value, epsilon, epsilon_decay, min_epsilon)
+                   for _ in range(agents_per_algorithm)]
+    elif algo == "ActorCritic":
+        agents += [ACAgent(None, learning_rate, discount_factor, lambda_value, epsilon, epsilon_decay, min_epsilon)
                    for _ in range(agents_per_algorithm)]
 
 # Set num_agents to the actual number of agents
