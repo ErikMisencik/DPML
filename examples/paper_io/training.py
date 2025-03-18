@@ -53,13 +53,13 @@ if load_existing_model:
 
 else:
     # Parameters for initial training
-    num_episodes = 30000        # Full training length 10000
+    num_episodes = 10000        # Full training length 10000
     epsilon = 1.0                  # High exploration at start
-    learning_rate = 0.03          # Standard learning rate for initial training
+    learning_rate = 0.0025          # Standard learning rate for initial training
     epsilon_reset = False          # No epsilon reset for initial training
     epsilon_reset_value = 0.40     # Not used if epsilon_reset is False
     epsilon_reset_interval = 5000  # Not used if epsilon_reset is False
-    epsilon_decay = 0.999925         # Standard decay rate 0.9998  for 10000 num episodes   | 0.999925 for 30000 num episodes | 0.99996 for 50000 num episodes
+    epsilon_decay = 0.9998         # Standard decay rate 0.9998  for 10000 num episodes   | 0.999925 for 30000 num episodes | 0.99996 for 50000 num episodes
     min_epsilon = 0.1              # Minimum exploration rate
 
 # Explicit Q-table paths for LOADING pre-trained models
