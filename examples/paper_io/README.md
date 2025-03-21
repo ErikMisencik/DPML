@@ -86,3 +86,10 @@ python training.py
 - If i give agent reward for making long trail but after some steps i will give them negative reward, it will be for them more appealing to do long trail and then self eliminate on their own trail
 - If I give agent big penalty for staying in his territory he will not go back to his territory. 
 
+# Thoughts
+
+- TD learning agent learns better with higher learning rate and bigger cumulative loss of reward after elimination
+- Q Learning is not good in this type of Environment it is hard for him to learn
+- Sarsa aget learn better with lower learning rate and smaller cumulative loss of reward after elimination
+- Monte Carlo is not good in this type of Environment it is hard for him to learn
+- Actor Critic agent learns better with lower learning rate and bigger cumulative loss of reward after elimination

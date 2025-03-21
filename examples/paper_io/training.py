@@ -55,7 +55,7 @@ else:
     # Parameters for initial training
     num_episodes = 10000        # Full training length 10000
     epsilon = 1.0                  # High exploration at start
-    learning_rate = 0.0002          # Standard learning rate for initial training
+    learning_rate = 0.001         # Standard learning rate for initial training
     epsilon_reset = False          # No epsilon reset for initial training
     epsilon_reset_value = 0.30     # Not used if epsilon_reset is False
     epsilon_reset_interval = 5000  # Not used if epsilon_reset is False
@@ -70,11 +70,11 @@ explicit_q_table_paths = {
 
 # Selection of algorithms to train
 algorithm_config = {
-    "Q-Learning":   True,      # Train Q-Learning agents
-    "SARSA":        True,      # Train SARSA agents
+    "Q-Learning":   False,      # Train Q-Learning agents
+    "SARSA":        False,      # Train SARSA agents
     "MonteCarlo":   False,      # Train Monte Carlo agents
     "TD":           False,      # Train TD agents
-    "ActorCritic":  False        # Train Actor-Critic agents
+    "ActorCritic":  True        # Train Actor-Critic agents
 }
 
 agents = []
