@@ -92,4 +92,4 @@ python training.py
 - Q Learning is not good in this type of Environment it is hard for him to learn
 - Sarsa aget learn better with lower learning rate and smaller cumulative loss of reward after elimination
 - Monte Carlo is not good in this type of Environment it is hard for him to learn
-- Actor Critic agent learns better with lower learning rate and bigger cumulative loss of reward after elimination
+- Actor Critic agent learns better with smaller learning rate and bigger cumulative loss of reward after elimination
