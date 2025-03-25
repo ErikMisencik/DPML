@@ -20,28 +20,29 @@ class PaperIoEnv:
             'camping_penalty': self.CAMPING_PENALTY,        # Whether to apply camping penalty  
             'max_camping_penalty_per_episode': 30,          # The agent cannot exceed -30 total camping penalty        
 
-            'trail_reward': 5,                              # reward for each new trail cell
-            'max_trail_reward_count': 7,                  # Maximum times agent can receive trail_reward before it stops  
+            'trail_reward': 15,                              # reward for each new trail cell
+            'max_trail_reward_count': 5,                  # Maximum times agent can receive trail_reward before it stops  
 
             'max_trail_length': 10,                       # Maximum trail length before penalty
-            'long_trail_penalty': -5,                     # Penalty if agent's trail exceeds max_trail_length
-            'distance_penalty_factor': 0.3,   
+            'long_trail_penalty': -15,                     # Penalty if agent's trail exceeds max_trail_length
+            'distance_penalty_factor': 0.5,   
 
             'opponent_elimination_reward': 300,
             'opponent_elimination_penalty': -100,
             'enemy_territory_capture_reward_per_cell': 30,
             'territory_loss_penalty_per_cell': -20,
 
-            'elimination_reward_modifier': 0.70,
+            'elimination_reward_modifier': 0.50,
+            'elimination_static_penalty': -800,
 
-            'territory_capture_reward_per_cell': 30,
+            'territory_capture_reward_per_cell': 40,
 
-            'shaping_return_bonus': 20,                  # Immediate bonus for stepping into own territory from outside.
-            'shaping_distance_factor': 2,                # Factor multiplied by the improvement in distance.
+            'shaping_return_bonus': 30,                  # Immediate bonus for stepping into own territory from outside.
+            'shaping_distance_factor': 3,                # Factor multiplied by the improvement in distance.
 
-            'expansion_bonus': 20,                        # Bonus for sufficient territory expansion
+            'expansion_bonus': 50,                        # Bonus for sufficient territory expansion
 
-            'expansion_interval': 50,                    # Check expansion every 50 steps
+            'expansion_interval': 25,                    # Check expansion every 10 steps
             'expansion_growth_threshold': 1,             # Minimum territory growth to be rewarded
 
             'exploration_reward': 1,                     # Reward for stepping outside own territory 
@@ -204,10 +205,7 @@ class PaperIoEnv:
 
                 # Update player position
                 player['position'] = (new_x, new_y)
-
-                # Exploration reward if outside own territory
-                if cell_value != player_id:
-                    rewards[i] += self.reward_config['exploration_reward']
+                    
 
                 # Compute new Manhattan distance to nearest territory cell after moving.
                 new_distance = self._distance_from_territory(player_id, new_x, new_y)  
@@ -251,6 +249,8 @@ class PaperIoEnv:
                     rewards[i] += net_effect
                     if new_distance_combined == 0 and old_distance > 0:
                         rewards[i] += self.reward_config['shaping_return_bonus']
+                elif len(player['trail']) < self.reward_config['max_trail_length'] and cell_value != player_id:
+                    rewards[i] += self.reward_config['exploration_reward']
 
                 # Check camping: count steps in own territory
                 if self.grid[new_x, new_y] == player_id:
@@ -376,6 +376,7 @@ class PaperIoEnv:
 
         # Survival penalty
         self.cumulative_rewards[idx] *= self.reward_config['elimination_reward_modifier']
+        # self.cumulative_rewards[idx] += self.reward_config['elimination_static_penalty']
 
         # Respawn
         while True:

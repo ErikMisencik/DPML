@@ -93,3 +93,10 @@ python training.py
 - Sarsa aget learn better with lower learning rate and smaller cumulative loss of reward after elimination
 - Monte Carlo is not good in this type of Environment it is hard for him to learn
 - Actor Critic agent learns better with smaller learning rate and bigger cumulative loss of reward after elimination
+
+
+TD 9 -800 static penalty
+TD 10 cumulative -50%
+TD 11 0,0001 LR
+Q learnig really small penalties
+SARSA model ???

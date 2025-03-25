@@ -1,0 +1,50 @@
+=== Training Information ===
+Trained Date         : 25.03.2025
+Trained Time         : 216.84 minutes
+
+Objective: The agents aim to maximize territory gain.
+Policy Name           : New_GEN2_S_1_Q-Learning
+Partial Observability : False
+Number of Episodes    : 30000
+Max Steps per Episode : 350
+
+=== Training Parameters ===
+Learning Rate         : 0.001
+Discount Factor       : 0.99
+Initial Epsilon       : 1.0
+Final Epsilon         : 0.10539033143266671
+Epsilon Decay Rate    : 0.999925
+Minimum Epsilon       : 0.1
+Epsilon Reset Every   : N/A episodes
+Epsilon Reset Value   : N/A
+
+=== Agent-Specific Information ===
+Agent 0 (QLAgent):
+  - Avg Cumulative Reward : 557.77
+  - Wins                  : 30000
+  - Eliminations          : 0
+  - Self-Eliminations     : 141517
+  - Color Assigned        : Green
+  - Loaded Q-Table Path   : None (Training from scratch)
+
+=== Reward Information ===
+Self elimination penalty : -150
+Camping penalty          : False
+Max camping penalty per episode: 30
+Trail reward             : 20
+Max trail reward count   : 5
+Max trail length         : 8
+Long trail penalty       : -20
+Distance penalty factor  : 0.5
+Opponent elimination reward: 300
+Opponent elimination penalty: -100
+Enemy territory capture reward per cell: 30
+Territory loss penalty per cell: -20
+Elimination reward modifier: 0.5
+Territory capture reward per cell: 40
+Shaping return bonus     : 30
+Shaping distance factor  : 3
+Expansion bonus          : 30
+Expansion interval       : 15
+Expansion growth threshold: 1
+Exploration reward       : 4

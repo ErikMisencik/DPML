@@ -72,7 +72,7 @@ def evaluate(agents, agent_names, num_games=10):
                 agent_game_rewards[i] += rewards[i]
 
             if render_game:
-                sleep(0.01)
+                sleep(0.02)
 
         # After the game ends, update win counts and print game results
         winners = info.get('winners', [])
@@ -98,6 +98,7 @@ def main():
     print("Starting evaluation...")
 
     base_models_path = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/"
+    # base_models_path = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/compare_models/"
 
 
     # Specify model paths.
@@ -120,7 +121,7 @@ def main():
         # "New_S_1_TD_1/trained_model/tdagent_ag_0_30000.pkl",
         # "New_S_1_TD_2/trained_model/tdagent_ag_0_30000.pkl",
         # "New_S_1_TD_4/trained_model/tdagent_ag_0_end.pkl",
-        "New_S_1_SARSA_3/trained_model/sarsaagent_ag_0_end.pkl",
+        # "New_S_1_SARSA_3/trained_model/sarsaagent_ag_0_end.pkl",
 
 
         # "New_M_2_SARSA_MonteCarlo_1/trained_model/mcagent_ag_1_end.pkl",
@@ -135,6 +136,24 @@ def main():
         # "New_M_4_Q-Learning_SARSA_MonteCarlo_TD_2/trained_model/tdagent_ag_3_end.pkl"
 
         # "TD_BEAST/trained_model/tdagent_ag_1_end.pkl"
+
+        # "New_S_1_ActorCritic_1_LR_0,001/trained_model/acagent_ag_0_end.pkl",
+        # "New_S_1_ActorCritic_1_LR_0,001_30k/trained_model/acagent_ag_0_end.pkl",
+        # "New_S_1_MonteCarlo_1_LR_0,01/trained_model/mcagent_ag_0_end.pkl",
+        # "New_S_1_Q-Learning_1_LR_0,0001/trained_model/qlagent_ag_0_end.pkl",
+        #  "New_S_1_SARSA_2_LR_0,00001/trained_model/sarsaagent_ag_0_end.pkl",
+        # "New_S_1_TD_5/trained_model/tdagent_ag_0_end.pkl",
+
+        # "New_REWARD_S_1_TD_4/trained_model/tdagent_ag_0_end.pkl",
+
+        #GEN 2
+        # "New_GEN2_S_1_TD_1/trained_model/tdagent_ag_0_end.pkl",
+        # "New_GEN2_S_1_SARSA_3/trained_model/sarsaagent_ag_0_end.pkl",
+        # "New_GEN2_S_1_Q-Learning_3/trained_model/qlagent_ag_0_end.pkl",
+        # "New_GEN2_S_1_ActorCritic_1_500P_ELIMINATION/trained_model/acagent_ag_0_end.pkl",
+        # "New_GEN2_S_1_MonteCarlo_1/trained_model/mcagent_ag_0_end.pkl",
+
+
 
     ]
     # Filter out any empty paths in case you want to use less than 4 models.
