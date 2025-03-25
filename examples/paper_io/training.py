@@ -28,7 +28,7 @@ window_size = 50               # For smoothing graphs
 loading_bar_length = 20;       # Length of the loading bar
 
 # Training variables
-discount_factor = 0.99  # Discount factor for future rewards
+discount_factor = 0.20  # Discount factor for future rewards
 
 # Specific parameters for each algorithm that helps to better train the agents
 batch_size=64            # Batch size for training (for QLAgent, SARSAAgent, and TDAgent)
@@ -55,7 +55,7 @@ else:
     # Parameters for initial training
     num_episodes = 10000        # Full training length 10000
     epsilon = 1.0                  # High exploration at start
-    learning_rate = 0.0001         # Standard learning rate for initial training
+    learning_rate = 0.001         # Standard learning rate for initial training
     epsilon_reset = False          # No epsilon reset for initial training
     epsilon_reset_value = 0.30     # Not used if epsilon_reset is False
     epsilon_reset_interval = 30000  # Not used if epsilon_reset is False
@@ -72,8 +72,8 @@ explicit_q_table_paths = {
 algorithm_config = {
     "Q-Learning":   False,      # Train Q-Learning agents
     "SARSA":        False,      # Train SARSA agents
-    "MonteCarlo":   False,      # Train Monte Carlo agents
-    "TD":           True,      # Train TD agents
+    "MonteCarlo":   True,      # Train Monte Carlo agents
+    "TD":           False,      # Train TD agents
     "ActorCritic":  False        # Train Actor-Critic agents
 }
 
@@ -111,7 +111,7 @@ for agent in agents:
 agent_types = [agent.__class__.__name__ for agent in agents]
 
 policy_name = "PreTrained" if load_existing_model else "New" 
-policy_name += f"{'_GEN2'}" 
+policy_name += f"{'_DF20'}" 
 policy_name += f"{'_P' if partial_observability else ''}"
 policy_name += f"_{'M' if num_agents > 1 else 'S'}_{num_agents}_"   
 policy_name += f"{'_'.join(enabled_algorithms)}"

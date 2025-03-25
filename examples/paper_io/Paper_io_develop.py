@@ -375,8 +375,8 @@ class PaperIoEnv:
         player['territory'] = 0
 
         # Survival penalty
-        self.cumulative_rewards[idx] *= self.reward_config['elimination_reward_modifier']
-        # self.cumulative_rewards[idx] += self.reward_config['elimination_static_penalty']
+        # self.cumulative_rewards[idx] *= self.reward_config['elimination_reward_modifier']
+        self.cumulative_rewards[idx] += self.reward_config['elimination_static_penalty']
 
         # Respawn
         while True:

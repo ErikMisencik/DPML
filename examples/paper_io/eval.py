@@ -72,7 +72,7 @@ def evaluate(agents, agent_names, num_games=10):
                 agent_game_rewards[i] += rewards[i]
 
             if render_game:
-                sleep(0.02)
+                sleep(0.01)
 
         # After the game ends, update win counts and print game results
         winners = info.get('winners', [])
@@ -144,14 +144,26 @@ def main():
         #  "New_S_1_SARSA_2_LR_0,00001/trained_model/sarsaagent_ag_0_end.pkl",
         # "New_S_1_TD_5/trained_model/tdagent_ag_0_end.pkl",
 
-        # "New_REWARD_S_1_TD_4/trained_model/tdagent_ag_0_end.pkl",
+        # "New_REWARD_S_1_TD_1/trained_model/tdagent_ag_0_end.pkl",
 
         #GEN 2
-        # "New_GEN2_S_1_TD_1/trained_model/tdagent_ag_0_end.pkl",
-        # "New_GEN2_S_1_SARSA_3/trained_model/sarsaagent_ag_0_end.pkl",
+        # "New_GEN2_S_1_TD_12/trained_model/tdagent_ag_0_end.pkl",
+        # "New_GEN2_S_1_SARSA_2/trained_model/sarsaagent_ag_0_end.pkl",
         # "New_GEN2_S_1_Q-Learning_3/trained_model/qlagent_ag_0_end.pkl",
         # "New_GEN2_S_1_ActorCritic_1_500P_ELIMINATION/trained_model/acagent_ag_0_end.pkl",
         # "New_GEN2_S_1_MonteCarlo_1/trained_model/mcagent_ag_0_end.pkl",
+
+        #GEN 2 BEST
+        # "New_GEN2_S_1_SARSA_X_TOPKA/trained_model/sarsaagent_ag_0_end.pkl",
+
+        #DF DIscount Factor
+        "New_DF_S_1_TD_1/trained_model/tdagent_ag_0_end.pkl",
+        # "New_DF_S_1_ActorCritic_1/trained_model/acagent_ag_0_end.pkl",
+        # "New_DF_S_1_MonteCarlo_1/trained_model/mcagent_ag_0_end.pkl",
+        # "New_DF_S_1_Q-Learning_1/trained_model/qlagent_ag_0_end.pkl",
+        # "New_DF_S_1_SARSA_1/trained_model/sarsaagent_ag_0_end.pkl",
+
+
 
 
 
