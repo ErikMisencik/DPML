@@ -24,7 +24,7 @@ class PaperIoEnv:
             'max_trail_reward_count': 5,                  # Maximum times agent can receive trail_reward before it stops  
 
             'max_trail_length': 10,                       # Maximum trail length before penalty
-            'long_trail_penalty': -15,                     # Penalty if agent's trail exceeds max_trail_length
+            'long_trail_penalty': -35,                     # Penalty if agent's trail exceeds max_trail_length
             'distance_penalty_factor': 0.5,   
 
             'opponent_elimination_reward': 300,

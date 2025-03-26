@@ -147,7 +147,7 @@ def main():
         # "New_REWARD_S_1_TD_1/trained_model/tdagent_ag_0_end.pkl",
 
         #GEN 2
-        # "New_GEN2_S_1_TD_12/trained_model/tdagent_ag_0_end.pkl",
+        # "New_GEN2_S_1_TD_14/trained_model/tdagent_ag_0_end.pkl",
         # "New_GEN2_S_1_SARSA_2/trained_model/sarsaagent_ag_0_end.pkl",
         # "New_GEN2_S_1_Q-Learning_3/trained_model/qlagent_ag_0_end.pkl",
         # "New_GEN2_S_1_ActorCritic_1_500P_ELIMINATION/trained_model/acagent_ag_0_end.pkl",
@@ -157,14 +157,18 @@ def main():
         # "New_GEN2_S_1_SARSA_X_TOPKA/trained_model/sarsaagent_ag_0_end.pkl",
 
         #DF DIscount Factor
-        "New_DF_S_1_TD_1/trained_model/tdagent_ag_0_end.pkl",
-        # "New_DF_S_1_ActorCritic_1/trained_model/acagent_ag_0_end.pkl",
+        # "New_DF_S_1_TD_1/trained_model/tdagent_ag_0_end.pkl",
+        # "New_DF_S_2_ActorCritic_2/trained_model/acagent_ag_0_end.pkl",
         # "New_DF_S_1_MonteCarlo_1/trained_model/mcagent_ag_0_end.pkl",
         # "New_DF_S_1_Q-Learning_1/trained_model/qlagent_ag_0_end.pkl",
         # "New_DF_S_1_SARSA_1/trained_model/sarsaagent_ag_0_end.pkl",
 
-
-
+        #DF DIscount Factor 20
+        # "New_DF20_S_1_MonteCarlo_1/trained_model/mcagent_ag_0_end.pkl",
+        "New_DF20_S_1_Q-Learning_1/trained_model/qlagent_ag_0_end.pkl",
+        # "New_DF20_S_1_SARSA_3/trained_model/sarsaagent_ag_0_end.pkl",
+        # "New_DF20_S_1_TD_1/trained_model/tdagent_ag_0_end.pkl",
+        # "New_DF20_S_1_ActorCritic_1/trained_model/acagent_ag_0_end.pkl",
 
 
     ]
