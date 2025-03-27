@@ -97,54 +97,14 @@ def evaluate(agents, agent_names, num_games=10):
 def main():
     print("Starting evaluation...")
 
-    base_models_path = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/"
+    # base_models_path = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/models/"
+    base_models_path = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/best_models/"
     # base_models_path = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/compare_models/"
 
 
     # Specify model paths.
     model_paths = [
-        # "New_M_2_Q-Learning_TD_5/trained_model/qlagent_ag_0_end.pkl",
-        # "New_M_2_Q-Learning_TD_5/trained_model/tdagent_ag_1_end.pkl",
-
-        # "New_M_2_Q-Learning_TD_6_BIG/trained_model/qlagent_ag_0_end.pkl",
-        # "New_M_2_Q-Learning_TD_6_BIG/trained_model/tdagent_ag_1_end.pkl",
-
-        # "New_M_2_Q-Learning_TD_8/trained_model/qlagent_ag_0_30000.pkl",
-        # "New_M_2_Q-Learning_TD_8/trained_model/tdagent_ag_1_30000.pkl",
-
-        # "New_M_2_Q-Learning_TD_10_BESTGRAPHS/trained_model/qlagent_ag_0_30000.pkl",
-        # "New_M_2_Q-Learning_TD_10_BESTGRAPHS/trained_model/tdagent_ag_1_30000.pkl",
-
-        # "New_M_2_Q-Learning_TD_11/trained_model/qlagent_ag_0_30000.pkl",
-        # "New_M_2_Q-Learning_TD_11/trained_model/tdagent_ag_1_30000.pkl",
-
-        # "New_S_1_TD_1/trained_model/tdagent_ag_0_30000.pkl",
-        # "New_S_1_TD_2/trained_model/tdagent_ag_0_30000.pkl",
-        # "New_S_1_TD_4/trained_model/tdagent_ag_0_end.pkl",
-        # "New_S_1_SARSA_3/trained_model/sarsaagent_ag_0_end.pkl",
-
-
-        # "New_M_2_SARSA_MonteCarlo_1/trained_model/mcagent_ag_1_end.pkl",
-        # "New_M_2_SARSA_MonteCarlo_1/trained_model/sarsaagent_ag_0_end.pkl",
-
-        # "New_M_4_Q-Learning_SARSA_MonteCarlo_TD_2/trained_model/mcagent_ag_2_end.pkl",
-        # "New_M_4_Q-Learning_SARSA_MonteCarlo_TD_2/trained_model/qlagent_ag_0_end.pkl",
-
-        # "New_M_4_Q-Learning_SARSA_MonteCarlo_TD_2/trained_model/mcagent_ag_2_end.pkl",
-        # "New_M_4_Q-Learning_SARSA_MonteCarlo_TD_2/trained_model/qlagent_ag_0_end.pkl",
-        # "New_M_4_Q-Learning_SARSA_MonteCarlo_TD_2/trained_model/sarsaagent_ag_1_end.pkl",
-        # "New_M_4_Q-Learning_SARSA_MonteCarlo_TD_2/trained_model/tdagent_ag_3_end.pkl"
-
-        # "TD_BEAST/trained_model/tdagent_ag_1_end.pkl"
-
-        # "New_S_1_ActorCritic_1_LR_0,001/trained_model/acagent_ag_0_end.pkl",
-        # "New_S_1_ActorCritic_1_LR_0,001_30k/trained_model/acagent_ag_0_end.pkl",
-        # "New_S_1_MonteCarlo_1_LR_0,01/trained_model/mcagent_ag_0_end.pkl",
-        # "New_S_1_Q-Learning_1_LR_0,0001/trained_model/qlagent_ag_0_end.pkl",
-        #  "New_S_1_SARSA_2_LR_0,00001/trained_model/sarsaagent_ag_0_end.pkl",
-        # "New_S_1_TD_5/trained_model/tdagent_ag_0_end.pkl",
-
-        # "New_REWARD_S_1_TD_1/trained_model/tdagent_ag_0_end.pkl",
+       
 
         #GEN 2
         # "New_GEN2_S_1_TD_14/trained_model/tdagent_ag_0_end.pkl",
@@ -158,18 +118,51 @@ def main():
 
         #DF DIscount Factor
         # "New_DF_S_1_TD_1/trained_model/tdagent_ag_0_end.pkl",
-        # "New_DF_S_2_ActorCritic_2/trained_model/acagent_ag_0_end.pkl",
+        # "New_DF_S_1_ActorCritic_4/trained_model/acagent_ag_0_end.pkl",
         # "New_DF_S_1_MonteCarlo_1/trained_model/mcagent_ag_0_end.pkl",
-        # "New_DF_S_1_Q-Learning_1/trained_model/qlagent_ag_0_end.pkl",
+        # "New_DF_S_1_Q-Learning_1_FAJN/trained_model/qlagent_ag_0_end.pkl",
         # "New_DF_S_1_SARSA_1/trained_model/sarsaagent_ag_0_end.pkl",
 
         #DF DIscount Factor 20
         # "New_DF20_S_1_MonteCarlo_1/trained_model/mcagent_ag_0_end.pkl",
-        "New_DF20_S_1_Q-Learning_1/trained_model/qlagent_ag_0_end.pkl",
+        # "New_DF20_S_1_Q-Learning_9_FAJN/trained_model/qlagent_ag_0_end.pkl",
+        # "New_DF20_S_1_Q-Learning_12/trained_model/qlagent_ag_0_end.pkl",
         # "New_DF20_S_1_SARSA_3/trained_model/sarsaagent_ag_0_end.pkl",
         # "New_DF20_S_1_TD_1/trained_model/tdagent_ag_0_end.pkl",
-        # "New_DF20_S_1_ActorCritic_1/trained_model/acagent_ag_0_end.pkl",
+        # "New_DF20_S_1_ActorCritic_7/trained_model/acagent_ag_0_end.pkl",
 
+
+#################################################################################################
+
+        #BEST SARSA
+        # "New_X_DF20_S_1_SARSA/trained_model/sarsaagent_ag_0_end.pkl",  #NAJLEPSIE ROBI CESTY, NEKEMPUJE
+        # "New_X_DF50_S_1_SARSA/trained_model/sarsaagent_ag_0_end.pkl",     
+        # "New_X_GEN2_S_1_SARSA/trained_model/sarsaagent_ag_0_end.pkl",  #CAMPUJE 
+
+        #BEST QLearning
+        # "New_Y_DF20_S_1_Q-Learning/trained_model/qlagent_ag_0_end.pkl",         #ROBI DLHSIE CESTY
+        # "New_Y_DF50_S_1_Q-Learning/trained_model/qlagent_ag_0_end.pkl",
+        # "New_Y_GEN2_S_1_Q-Learning/trained_model/qlagent_ag_0_end.pkl",         #CAMPUJE
+        #  "New_DF20_S_1_Q-Learning_9_FAJN/trained_model/qlagent_ag_0_end.pkl",    #V POHODE UZ ROBI KRATSIE CESTY NO STALE DLHSIE AKO SARSA
+
+
+        #BEST MonteCarlo
+        # "New_DF20_S_1_MonteCarlo/trained_model/mcagent_ag_0_end.pkl",
+
+        #BEST TDlearning
+        # "New_DF20_S_1_TD/trained_model/tdagent_ag_0_end.pkl",
+        # "TD_BEAST/trained_model/tdagent_ag_1_end.pkl",      #CAMPUJE SEMTAM, NAJLEPSI
+        # "New_REWARD_S_1_TD_1_DLHE_TRASY/trained_model/tdagent_ag_0_end.pkl",  #DLHE TRASY, DOBRY, AK MA UZ NADOBUDNUTU ODMENU POTOM CAMPUJE
+
+        #NAJEFFICIENTNEJSI
+        # "New_X_DF20_S_1_SARSA/trained_model/sarsaagent_ag_0_end.pkl", 
+        # "TD_BEAST/trained_model/tdagent_ag_1_end.pkl",  
+
+        #  "New_DF20_S_1_Q-Learning_9_FAJN/trained_model/qlagent_ag_0_end.pkl",    #V POHODE UZ ROBI KRATSIE CESTY NO STALE DLHSIE AKO SARSA
+
+
+
+        # CESTA AKO STENA
 
     ]
     # Filter out any empty paths in case you want to use less than 4 models.
