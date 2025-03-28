@@ -7,51 +7,45 @@ from gym.spaces import Box, Discrete
 from examples.paper_io.utils.render import render_game
 
 class PaperIoEnv:
-    def __init__(self, grid_size=50, num_players=2, render=False, max_steps=1000,
-                 partial_observability=False, 
-                 trail_obs_representation="negative",    # "negative" or "border"
-                 territory_obs_representation="raw"):      # "raw" or "transformed"
+
+    def __init__(self, grid_size=50, num_players=2, render=False, max_steps=1000, partial_observability=False):
         """
         Initialize the Paper.io environment.
-
-        Parameters:
-          - grid_size: size of the grid.
-          - num_players: number of players.
-          - render: whether to initialize rendering.
-          - max_steps: maximum steps per episode.
-          - partial_observability: whether to use a local observation window.
-          - trail_obs_representation: 
-                "negative" => trails remain as negative player indices.
-                "border"   => own trail is shown as BORDER_VALUE (99) and enemy trails as -77.
-          - territory_obs_representation:
-                "raw"         => territory cells are returned as player IDs.
-                "transformed" => own territory appears as OWN_TERRITORY_VALUE (111)
-                                 and enemy territory as ENEMY_TERRITORY_VALUE (-88).
         """
         self.CAMPING_PENALTY = False
 
         self.reward_config = {
             'self_elimination_penalty': -150,
-            'camping_penalty': self.CAMPING_PENALTY,
-            'max_camping_penalty_per_episode': 30,
-            'trail_reward': 15,
-            'max_trail_reward_count': 5,
-            'max_trail_length': 10,
-            'long_trail_penalty': -15,
-            'distance_penalty_factor': 0.5,
+
+            'camping_penalty': self.CAMPING_PENALTY,        # Whether to apply camping penalty  
+            'max_camping_penalty_per_episode': 30,          # The agent cannot exceed -30 total camping penalty        
+
+            'trail_reward': 15,                              # reward for each new trail cell
+            'max_trail_reward_count': 5,                     # Maximum times agent can receive trail_reward before it stops  
+
+            'max_trail_length': 10,                          # Maximum trail length before penalty
+            'long_trail_penalty': -15,                       # Penalty if agent's trail exceeds max_trail_length
+            'distance_penalty_factor': 0.5,   
+
             'opponent_elimination_reward': 300,
             'opponent_elimination_penalty': -100,
             'enemy_territory_capture_reward_per_cell': 30,
             'territory_loss_penalty_per_cell': -20,
+
             'elimination_reward_modifier': 0.50,
             'elimination_static_penalty': -800,
+
             'territory_capture_reward_per_cell': 40,
-            'shaping_return_bonus': 30,
-            'shaping_distance_factor': 3,
-            'expansion_bonus': 50,
-            'expansion_interval': 25,
-            'expansion_growth_threshold': 1,
-            'exploration_reward': 1,
+
+            'shaping_return_bonus': 30,                      # Immediate bonus for stepping into own territory from outside.
+            'shaping_distance_factor': 3,                    # Factor multiplied by the improvement in distance.
+
+            'expansion_bonus': 50,                           # Bonus for sufficient territory expansion
+
+            'expansion_interval': 25,                        # Check expansion every 25 steps
+            'expansion_growth_threshold': 1,                 # Minimum territory growth to be rewarded
+
+            'exploration_reward': 1,                         # Reward for stepping outside own territory 
         }
 
         self.INCREMENTAL_CAMPING_PENALTY = -2
@@ -64,23 +58,6 @@ class PaperIoEnv:
         self.screen = None
         self.partial_observability = partial_observability
 
-        # Set default overall transformation settings.
-        # "negative" leaves trails unchanged; "border" converts:
-        #   own trail -> BORDER_VALUE (99)
-        #   enemy trails -> -77.
-        self.trail_obs_representation = trail_obs_representation
-
-        # "raw" leaves territory as player IDs; "transformed" converts:
-        #   own territory -> OWN_TERRITORY_VALUE (111)
-        #   enemy territory -> ENEMY_TERRITORY_VALUE (-88).
-        self.territory_obs_representation = territory_obs_representation
-        self.OWN_TERRITORY_VALUE = 111
-        self.ENEMY_TERRITORY_VALUE = -88
-
-        # Dictionary to store per-agent observation configuration.
-        # Example: {0: {"trail": "border", "territory": "transformed"}, ...}
-        self.agent_observation_config = {}
-
         if self.render_game:
             pygame.init()
             self.screen = pygame.display.set_mode((self.window_size, self.window_size))
@@ -90,26 +67,26 @@ class PaperIoEnv:
         self.max_steps = max_steps
         self.steps_taken = 0
 
-        # Trackers for statistics on trail lengths
-        self.trail_length_sums = [0] * self.num_players
-        self.trail_length_counts = [0] * self.num_players
-
-        # Other trackers
+        # Trackers
         self.directions = [(0, 1)] * self.num_players
         self.eliminations_by_agent = [0] * self.num_players
         self.self_eliminations_by_agent = [0] * self.num_players
         self.agent_wins = [0] * self.num_players
         self.cumulative_rewards = [0] * self.num_players
+
+        # (Removed old trail_length_sums and trail_length_counts accumulation)  #NEW: No longer used
+
         self.initial_territories = [0] * self.num_players
 
         self.reset()
 
-        # Observation and action spaces
+        # Observation space
         self.observation_spaces = [
             Box(low=-self.num_players, high=self.num_players,
                 shape=(self.grid_size, self.grid_size), dtype=np.int8)
             for _ in range(self.num_players)
         ]
+        # Action space: 0 - turn left, 1 - turn right, 2 - go straight
         self.action_spaces = [Discrete(3) for _ in range(self.num_players)]
 
     def reset(self):
@@ -124,16 +101,16 @@ class PaperIoEnv:
         self.directions = [self._random_direction() for _ in range(self.num_players)]
         self.steps_taken = 0
 
+        # Reset trackers
         self.eliminations_by_agent = [0] * self.num_players
         self.self_eliminations_by_agent = [0] * self.num_players
         self.cumulative_rewards = [0] * self.num_players
 
-        # Reset trail length trackers
-        self.trail_length_sums = [0] * self.num_players
-        self.trail_length_counts = [0] * self.num_players
+        # (Removed old trail_length_sums and trail_length_counts reset)  #NEW
 
         self.initial_territories = [0] * self.num_players
 
+        # Place players away from the border
         for i in range(self.num_players):
             while True:
                 x = np.random.randint(5, self.grid_size - 5)
@@ -147,13 +124,14 @@ class PaperIoEnv:
                 'trail': set(),
                 'territory': 9,
                 'steps_in_own_territory': 0,
-                'trail_reward_count': 0,
-                'camping_penalty_multiplier': 1,
-                'last_territory': 9,
-                'last_expansion_step': 0,
-                'camping_penalty_accumulated': 0,
+                'trail_reward_count': 0,            # How many times the agent has received the trail_reward
+                'camping_penalty_multiplier': 1,    # Progressive multiplier for camping penalty
+                'last_territory': 9,                # Initial territory for expansion bonus tracking
+                'last_expansion_step': 0,           # Initial step for expansion bonus tracking
+                'camping_penalty_accumulated': 0,   # Track total camping penalty this episode
+                'trail_lengths': []  #NEW: Record completed/incomplete trail lengths
             })
-            self.grid[x:x+3, y:y+3] = player_id
+            self.grid[x : x+3, y : y+3] = player_id
 
         for i in range(self.num_players):
             self.initial_territories[i] = self.players[i]['territory']
@@ -193,6 +171,7 @@ class PaperIoEnv:
 
             # Check grid boundaries
             if not (0 <= new_x < self.grid_size and 0 <= new_y < self.grid_size):
+                # Out of grid => elimination
                 rewards[i] += self.reward_config['self_elimination_penalty']
                 self.self_eliminations_by_agent[i] += 1
                 self._process_elimination(i)
@@ -216,7 +195,7 @@ class PaperIoEnv:
                     self._process_elimination(i)
                     continue
 
-                # Stepping on opponent's trail => eliminate opponent
+                # Stepping on opponent's trail => (now handled by border check)
                 if cell_value < 0 and cell_value != -player_id:
                     owner_id = -cell_value
                     rewards[owner_id - 1] += self.reward_config['opponent_elimination_penalty']
@@ -226,40 +205,40 @@ class PaperIoEnv:
 
                 # Update player position
                 player['position'] = (new_x, new_y)
-
-                # Compute new Manhattan distance to nearest territory cell
-                new_distance = self._distance_from_territory(player_id, new_x, new_y)
-                if new_distance < old_distance:
+                    
+                # Compute new Manhattan distance to nearest territory cell after moving.
+                new_distance = self._distance_from_territory(player_id, new_x, new_y)  
+                if new_distance < old_distance:  # Reward for moving closer.
                     improvement = old_distance - new_distance
                     rewards[i] += improvement * self.reward_config['shaping_distance_factor']
-                if new_distance == 0 and old_distance > 0:
+                if new_distance == 0 and old_distance > 0:  # Immediate bonus for returning to territory.
                     rewards[i] += self.reward_config['shaping_return_bonus']
 
-                # Stepping into empty or own trail cell
-                if cell_value == 0 or cell_value == -player_id:
-                    self.grid[new_x, new_y] = -player_id  # keep internal trail as negative
-                    player['trail'].add((new_x, new_y))
+                # Stepping into empty or own trail
+                if cell_value == 0 or cell_value == -player_id:  #NEW: condition remains the same
+                    self.grid[new_x, new_y] = self.BORDER_VALUE  #NEW: changed trail value to border value
+                    player['trail'].add((new_x, new_y))  #NEW: add cell to trail
+                    # Simple trail reward
                     if player['trail_reward_count'] < self.reward_config['max_trail_reward_count']:
                         rewards[i] += self.reward_config['trail_reward']
-                        player['trail_reward_count'] += 1
+                        player['trail_reward_count'] += 1  # track how many times rewarded
 
-                # Returning to own territory => convert trail to territory
+                # Returning to own territory => close loop
                 elif cell_value == player_id and player['trail']:
-                    # Record the trail length before converting
-                    self.trail_length_sums[player_id - 1] += len(player['trail'])
-                    self.trail_length_counts[player_id - 1] += 1
+                    # Record completed trail length before conversion  #NEW
+                    player.setdefault('trail_lengths', []).append(len(player['trail']))  #NEW
                     self.convert_trail_to_territory(player_id, rewards)
-                    player['trail_reward_count'] = 0
+                    player['trail_reward_count'] = 0  # Reset trail reward count
 
                 # Entering enemy territory
-                elif cell_value > 0 and cell_value != player_id:
-                    owner_id = cell_value
-                    self.grid[new_x, new_y] = -player_id
-                    player['trail'].add((new_x, new_y))
-                    self.players[owner_id - 1]['territory'] -= 1
-                    self.players[player_id - 1]['territory'] += 1
+                elif cell_value > 0 and cell_value != player_id:  #NEW: entering enemy territory
+                    owner_id = cell_value  #NEW: get enemy owner id
+                    self.grid[new_x, new_y] = self.BORDER_VALUE  #NEW: changed trail value to border value
+                    player['trail'].add((new_x, new_y))  #NEW: add cell to trail
+                    self.players[owner_id - 1]['territory'] -= 1  #NEW: reduce enemy territory
+                    self.players[player_id - 1]['territory'] += 1  #NEW: increase player's territory
 
-                # Check if trail length exceeds maximum and apply penalties
+                # Combined check for exceeding max_trail_length and penalizing distance:
                 if len(player['trail']) > self.reward_config['max_trail_length']:
                     new_distance_combined = self._distance_from_territory(player_id, new_x, new_y)
                     base_penalty = self.reward_config['long_trail_penalty']
@@ -279,13 +258,19 @@ class PaperIoEnv:
                     player['steps_in_own_territory'] += 1
                 else:
                     player['steps_in_own_territory'] = 0
-                    player['camping_penalty_multiplier'] = 1
+                    player['camping_penalty_multiplier'] = 1  # reset multiplier when leaving own territory
 
-                if player['steps_in_own_territory'] > 0 and player['steps_in_own_territory'] % 5 == 0 and self.CAMPING_PENALTY:
+                # Incremental camping penalty
+                if player['steps_in_own_territory'] > 0 and player['steps_in_own_territory'] % 5 == 0 and self.CAMPING_PENALTY == True:
                     penalty = self.INCREMENTAL_CAMPING_PENALTY * player['camping_penalty_multiplier']
-                    self._apply_camping_penalty(i, penalty)
-                    player['camping_penalty_multiplier'] *= 1.5
+                    self._apply_camping_penalty(i, penalty)  # Apply penalty (capped)
+                    player['camping_penalty_multiplier'] *= 1.5  # Increase multiplier for subsequent penalties
 
+                # (Removed threshold-based camping penalty that used -100)
+                
+        # (Removed per-step trail length accumulation)  #NEW
+
+        # Time-Based Expansion Bonus / Inactivity Penalty
         if self.steps_taken % self.reward_config['expansion_interval'] == 0:
             for i in range(self.num_players):
                 if self.alive[i]:
@@ -296,20 +281,23 @@ class PaperIoEnv:
                     player['last_territory'] = player['territory']
                     player['last_expansion_step'] = self.steps_taken
 
+        # Update cumulative rewards
         for i, rew in enumerate(rewards):
             self.cumulative_rewards[i] += rew
 
+        # Check if done
         if self.steps_taken >= self.max_steps:
             done = True
 
         observations = [self.get_observation_for_player(i) for i in range(self.num_players)]
 
+        # Determine winner and set info (omitted for brevity; unchanged)
         if done:
             winners = []
             max_reward = max(self.cumulative_rewards)
             if self.cumulative_rewards.count(max_reward) == 1:
                 winners = [i for i, r in enumerate(self.cumulative_rewards) if r == max_reward]
-            else:
+            if not winners:
                 max_elims = max(self.eliminations_by_agent)
                 candidates = [i for i, r in enumerate(self.cumulative_rewards) if r == max_reward]
                 winners = [i for i in candidates if self.eliminations_by_agent[i] == max_elims]
@@ -321,19 +309,25 @@ class PaperIoEnv:
                 for w in winners:
                     self.agent_wins[w] += 1
 
+            # Compute average trail length for each agent using recorded trails and any active trail  #NEW
             average_trail_by_agent = []
             for i in range(self.num_players):
-                if self.trail_length_counts[i] > 0:
-                    avg_trail = self.trail_length_sums[i] / self.trail_length_counts[i]
-                else:
-                    avg_trail = 0.0
-                average_trail_by_agent.append(avg_trail)
+                player = self.players[i]
+                active_trail = len(player['trail'])  #NEW: current active trail length
+                recorded_trails = player.get('trail_lengths', [])  #NEW: recorded completed/incomplete trail lengths
+                all_trails = recorded_trails + ([active_trail] if active_trail > 0 else [])  #NEW: include active trail if exists
+                if all_trails:  #NEW
+                    avg_trail = sum(all_trails) / len(all_trails)  #NEW
+                else:  #NEW
+                    avg_trail = 0.0  #NEW
+                average_trail_by_agent.append(avg_trail)  #NEW
 
             territory_increase_by_agent = []
             for i in range(self.num_players):
                 start_territory = self.initial_territories[i]
                 end_territory = self.players[i]['territory']
-                territory_increase_by_agent.append(end_territory - start_territory)
+                territory_increase = end_territory - start_territory
+                territory_increase_by_agent.append(territory_increase)
 
             info = {
                 'eliminations_by_agent': self.eliminations_by_agent[:],
@@ -341,7 +335,7 @@ class PaperIoEnv:
                 'winners': winners,
                 'cumulative_rewards': self.cumulative_rewards[:],
                 'territory_by_agent': [p['territory'] for p in self.players],
-                'average_trail_by_agent': average_trail_by_agent,
+                'average_trail_by_agent': average_trail_by_agent,  #NEW
                 'average_territory_increase_by_agent': territory_increase_by_agent,
             }
         else:
@@ -372,37 +366,41 @@ class PaperIoEnv:
     def _process_elimination(self, idx):
         player = self.players[idx]
         player_id = player['id']
-        # If the agent has an active trail, record its length before clearing.
-        if player['trail']:
-            self.trail_length_sums[player_id - 1] += len(player['trail'])
-            self.trail_length_counts[player_id - 1] += 1
 
+        # Record any active trail length before clearing  #NEW
+        if player['trail']:
+            player.setdefault('trail_lengths', []).append(len(player['trail']))  #NEW
+
+        # Clear trail
         for (cx, cy) in player['trail']:
             self.grid[cx, cy] = 0
         player['trail'].clear()
 
+        # Clear territory
         self.grid[self.grid == player_id] = 0
         player['territory'] = 0
 
+        # Survival penalty
+        # self.cumulative_rewards[idx] *= self.reward_config['elimination_reward_modifier']
         self.cumulative_rewards[idx] += self.reward_config['elimination_static_penalty']
 
+        # Respawn
         while True:
             x = np.random.randint(5, self.grid_size - 5)
             y = np.random.randint(5, self.grid_size - 5)
             if 0 <= x < self.grid_size and 0 <= y < self.grid_size:
-                subgrid = self.grid[x:x+3, y:y+3]
-                if subgrid.max() == 0:
+                subgrid = self.grid[x : x+3, y : y+3]
+                if subgrid.max() == 0:  # area is free
                     break
         player['position'] = (x, y)
-        self.grid[x:x+3, y:y+3] = player_id
+        self.grid[x : x+3, y : y+3] = player_id
         player['territory'] = 9
         self.directions[idx] = self._random_direction()
         player['steps_in_own_territory'] = 0
-        player['trail_reward_count'] = 0
+        player['trail_reward_count'] = 0 
         player['camping_penalty_accumulated'] = 0
 
     def get_observation_for_player(self, player_idx):
-        # Get raw observation: full grid or local window.
         if self.partial_observability:
             player = self.players[player_idx]
             x, y = player['position']
@@ -411,50 +409,29 @@ class PaperIoEnv:
             x_max = min(self.grid_size, x + obs_radius + 1)
             y_min = max(0, y - obs_radius)
             y_max = min(self.grid_size, y + obs_radius + 1)
+
             local_grid = self.grid[x_min:x_max, y_min:y_max]
-            padded_grid = np.full((2 * obs_radius + 1, 2 * obs_radius + 1), -127, dtype=np.int8)
+            padded_grid = np.full((2*obs_radius + 1, 2*obs_radius + 1), -127, dtype=np.int8)
+
             x_offset = x_min - (x - obs_radius)
             y_offset = y_min - (y - obs_radius)
-            padded_grid[x_offset:x_offset + local_grid.shape[0],
-                        y_offset:y_offset + local_grid.shape[1]] = local_grid
-            obs = padded_grid
+
+            padded_grid[x_offset : x_offset + local_grid.shape[0],
+                        y_offset : y_offset + local_grid.shape[1]] = local_grid
+            return padded_grid
         else:
-            obs = self.grid.copy()
-
-        # Get per-agent configuration (if any); otherwise, use default.
-        config = self.agent_observation_config.get(player_idx, {})
-        trail_rep = config.get("trail", self.trail_obs_representation)
-        territory_rep = config.get("territory", self.territory_obs_representation)
-
-        # Transform trail representation.
-        if trail_rep == "border":
-            own_id = player_idx + 1
-            own_trail_mask = (obs < 0) & (np.abs(obs) == own_id)
-            enemy_trail_mask = (obs < 0) & (np.abs(obs) != own_id)
-            obs[own_trail_mask] = self.BORDER_VALUE
-            obs[enemy_trail_mask] = -77
-
-        # Transform territory representation.
-        if territory_rep == "transformed":
-            own_id = player_idx + 1
-            own_territory_mask = (obs > 0) & (obs == own_id)
-            enemy_territory_mask = (obs > 0) & (obs != own_id) & (obs != self.BORDER_VALUE)
-            obs[own_territory_mask] = self.OWN_TERRITORY_VALUE
-            obs[enemy_territory_mask] = self.ENEMY_TERRITORY_VALUE
-
-        return obs
+            return self.grid.copy()
 
     def convert_trail_to_territory(self, player_id, rewards):
         player = self.players[player_id - 1]
-        # Record the trail length before conversion
-        self.trail_length_sums[player_id - 1] += len(player['trail'])
-        self.trail_length_counts[player_id - 1] += 1
         for (cx, cy) in player['trail']:
             self.grid[cx, cy] = player_id
             player['territory'] += 1
 
         captured_area = self.capture_area(player_id, rewards)
         total_area = len(player['trail']) + captured_area
+
+        # (Trail length already recorded before calling this method in step)  #NEW
         player['trail'].clear()
 
         bonus = (total_area ** 1.2) * self.reward_config['territory_capture_reward_per_cell']
@@ -498,7 +475,7 @@ class PaperIoEnv:
             self.players[player_id - 1]['territory'] += 1
 
         return len(coords[0])
-
+    
     def _distance_from_territory(self, player_id, x, y):
         territory_indices = np.argwhere(self.grid == player_id)
         if territory_indices.size == 0:
@@ -513,6 +490,7 @@ class PaperIoEnv:
         limit = self.reward_config['max_camping_penalty_per_episode']
         if player['camping_penalty_accumulated'] >= limit:
             return
+
         needed = abs(penalty)
         room = limit - player['camping_penalty_accumulated']
         actual_penalty = -min(needed, room)
