@@ -111,9 +111,17 @@ def main():
     # Specify model paths.
     model_paths = [
         # "New_UPDATE_S_1_MonteCarlo_1/trained_model/mcagent_ag_0_end.pkl",
+      
+        # "New_UPDATE_S_1_TD_Learning_1/trained_model/tdagent_ag_0_end.pkl",
+        # "New_UPDATE_S_1_ActorCritic_1/trained_model/acagent_ag_0_end.pkl",
+        # "New_UPDATE_S_1_Q-Learning_1/trained_model/qlagent_ag_0_5000.pkl",
+
+
+        # BEST
         # "New_X_BORDERTRAIL_TRAILAVG_S_1_TD_2/trained_model/tdagent_ag_0_end.pkl",
+        # "New_UPDATE_S_1_SARSA_1/trained_model/sarsaagent_ag_0_end.pkl",
         # "New_X_BORDERTRAIL_TRAILAVG_S_1_Q-Learning_2/trained_model/qlagent_ag_0_end.pkl",
-        # Add additional model paths for other algorithms if needed.
+ 
     ]
     model_paths = [p for p in model_paths if p]
     num_agents = len(model_paths)

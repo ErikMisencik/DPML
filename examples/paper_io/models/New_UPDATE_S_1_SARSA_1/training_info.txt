@@ -1,0 +1,51 @@
+=== Training Information ===
+Trained Date         : 28.03.2025
+Trained Time         : 143.52 minutes
+
+Objective: The agents aim to maximize territory gain.
+Policy Name           : New_UPDATE_S_1_SARSA
+Partial Observability : False
+Number of Episodes    : 10000
+Max Steps per Episode : 350
+
+=== Training Parameters ===
+Learning Rate         : 0.001
+Discount Factor       : 0.2
+Initial Epsilon       : 1.0
+Final Epsilon         : 0.13530821527775866
+Epsilon Decay Rate    : 0.9998
+Minimum Epsilon       : 0.1
+Epsilon Reset Every   : N/A episodes
+Epsilon Reset Value   : N/A
+
+=== Agent-Specific Information ===
+Agent 0 (SARSAAgent):
+  - Avg Cumulative Reward : 6896.36
+  - Wins                  : 10000
+  - Eliminations          : 0
+  - Self-Eliminations     : 23334
+  - Color Assigned        : Cyan
+  - Loaded Q-Table Path   : None (Training from scratch)
+
+=== Reward Information ===
+Self elimination penalty : -150
+Camping penalty          : False
+Max camping penalty per episode: 30
+Trail reward             : 15
+Max trail reward count   : 5
+Max trail length         : 10
+Long trail penalty       : -15
+Distance penalty factor  : 0.5
+Opponent elimination reward: 300
+Opponent elimination penalty: -100
+Enemy territory capture reward per cell: 30
+Territory loss penalty per cell: -20
+Elimination reward modifier: 0.5
+Elimination static penalty: -800
+Territory capture reward per cell: 40
+Shaping return bonus     : 30
+Shaping distance factor  : 3
+Expansion bonus          : 50
+Expansion interval       : 25
+Expansion growth threshold: 1
+Exploration reward       : 1
