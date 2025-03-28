@@ -1,9 +1,9 @@
 === Training Information ===
-Trained Date         : 27.03.2025
-Trained Time         : 192.71 minutes
+Trained Date         : 28.03.2025
+Trained Time         : 219.04 minutes
 
 Objective: The agents aim to maximize territory gain.
-Policy Name           : New_DF20_S_1_ActorCritic
+Policy Name           : New_UPDATE_S_1_TD
 Partial Observability : False
 Number of Episodes    : 10000
 Max Steps per Episode : 350
@@ -19,12 +19,12 @@ Epsilon Reset Every   : N/A episodes
 Epsilon Reset Value   : N/A
 
 === Agent-Specific Information ===
-Agent 0 (ACAgent):
-  - Avg Cumulative Reward : -3949.74
+Agent 0 (TDAgent):
+  - Avg Cumulative Reward : -3288.93
   - Wins                  : 10000
   - Eliminations          : 0
-  - Self-Eliminations     : 114038
-  - Color Assigned        : Indigo
+  - Self-Eliminations     : 93781
+  - Color Assigned        : Teal
   - Loaded Q-Table Path   : None (Training from scratch)
 
 === Reward Information ===
@@ -42,7 +42,7 @@ Enemy territory capture reward per cell: 30
 Territory loss penalty per cell: -20
 Elimination reward modifier: 0.5
 Elimination static penalty: -800
-Territory capture reward per cell: 60
+Territory capture reward per cell: 40
 Shaping return bonus     : 30
 Shaping distance factor  : 3
 Expansion bonus          : 50
