@@ -307,15 +307,15 @@ class PaperIoEnv:
         if done:
             winners = []
             max_reward = max(self.cumulative_rewards)
-            if self.cumulative_rewards.count(max_reward) == 1:
-                winners = [i for i, r in enumerate(self.cumulative_rewards) if r == max_reward]
+            # Find all agents with the maximum cumulative reward.
+            candidates = [i for i, r in enumerate(self.cumulative_rewards) if r == max_reward]
+            if len(candidates) == 1:
+                winners = candidates
             else:
-                max_elims = max(self.eliminations_by_agent)
-                candidates = [i for i, r in enumerate(self.cumulative_rewards) if r == max_reward]
-                winners = [i for i in candidates if self.eliminations_by_agent[i] == max_elims]
-                if len(winners) > 1:
-                    min_self_elims = min(self.self_eliminations_by_agent[idx] for idx in winners)
-                    winners = [idx for idx in winners if self.self_eliminations_by_agent[idx] == min_self_elims]
+                # Among candidates, compute territory gain for each.
+                territory_gains = [self.players[i]['territory'] - self.initial_territories[i] for i in candidates]
+                max_territory = max(territory_gains)
+                winners = [candidates[i] for i, gain in enumerate(territory_gains) if gain == max_territory]
 
             if winners:
                 for w in winners:

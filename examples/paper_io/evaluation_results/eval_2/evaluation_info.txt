@@ -1,0 +1,53 @@
+=== Hodnotiace Informácie ===
+Počet hier: 1000
+
+Agent 0: Q Learning Agent
+  - Celkové víťazstvá              : 242
+  - Celkové eliminácie             : 580
+  - Celkové vlastné eliminácie     : 306
+  - Priemerná kumulatívna odmena     : 7893.57
+  - Priemerná dĺžka stopy           : 2.03
+  - Priemerný zisk teritórií        : 78.88
+  - Priemerný počet eliminácií      : 0.58
+  - Priemerný počet vlastných eliminácií: 0.31
+
+Agent 1: Sarsa Agent
+  - Celkové víťazstvá              : 414
+  - Celkové eliminácie             : 545
+  - Celkové vlastné eliminácie     : 1689
+  - Priemerná kumulatívna odmena     : 7548.67
+  - Priemerná dĺžka stopy           : 3.64
+  - Priemerný zisk teritórií        : 65.52
+  - Priemerný počet eliminácií      : 0.55
+  - Priemerný počet vlastných eliminácií: 1.69
+
+Agent 2: MonteCarlo Agent
+  - Celkové víťazstvá              : 0
+  - Celkové eliminácie             : 482
+  - Celkové vlastné eliminácie     : 17381
+  - Priemerná kumulatívna odmena     : -13291.65
+  - Priemerná dĺžka stopy           : 7.96
+  - Priemerný zisk teritórií        : 12.03
+  - Priemerný počet eliminácií      : 0.48
+  - Priemerný počet vlastných eliminácií: 17.38
+
+Agent 3: TD Agent
+  - Celkové víťazstvá              : 259
+  - Celkové eliminácie             : 548
+  - Celkové vlastné eliminácie     : 306
+  - Priemerná kumulatívna odmena     : 7941.96
+  - Priemerná dĺžka stopy           : 2.01
+  - Priemerný zisk teritórií        : 79.18
+  - Priemerný počet eliminácií      : 0.55
+  - Priemerný počet vlastných eliminácií: 0.31
+
+Agent 4: ActorCritic Agent
+  - Celkové víťazstvá              : 85
+  - Celkové eliminácie             : 579
+  - Celkové vlastné eliminácie     : 1977
+  - Priemerná kumulatívna odmena     : 5960.81
+  - Priemerná dĺžka stopy           : 2.77
+  - Priemerný zisk teritórií        : 39.65
+  - Priemerný počet eliminácií      : 0.58
+  - Priemerný počet vlastných eliminácií: 1.98
+

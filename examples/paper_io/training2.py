@@ -20,7 +20,7 @@ from Paper_io_develop import PaperIoEnv
 from examples.paper_io.algorithm.Q_Learining.q_learning_agent import QLAgent
 
 render_game = False  # Set to True if you want to render the game during training 
-load_existing_model = False  # Set to True to load an existing model
+load_existing_model = True  # Set to True to load an existing model
 partial_observability = False  # Set to True for partial observability
 steps_per_episode = 350
 
@@ -41,13 +41,13 @@ replay_size_s = 2000       # Replay buffer size (for SARSAAgent)
 
 # Set parameters based on whether we are training from scratch or retraining
 if load_existing_model:
-    num_episodes = 5000           # Fewer episodes for retraining
-    epsilon = 0.35                # Lower initial exploration rate for retraining
-    learning_rate = 0.003         # Smaller learning rate for fine-tuning
+    num_episodes = 10000           # Fewer episodes for retraining
+    epsilon = 0.5                # Lower initial exploration rate for retraining
+    learning_rate = 0.001         # Smaller learning rate for fine-tuning
     epsilon_reset = False          
     epsilon_reset_value = 0.15      # Mid-range value for epsilon reset
     epsilon_reset_interval = 2500   # More frequent exploration resets
-    epsilon_decay = 0.9994          # Keep similar decay rate
+    epsilon_decay = 0.9998          # Keep similar decay rate
     min_epsilon = 0.1              # Minimum exploration rate remains the same
 else:
     num_episodes = 10000          # Full training length 10000
@@ -61,17 +61,20 @@ else:
 
 # Explicit Q-table paths for LOADING pre-trained models
 explicit_q_table_paths = {
-    0: os.path.join('models', 'PreTrained_S_QLAgent_4', 'trained_model', 'q_table_qlearning_ag_0_end.pkl'),
-    1: os.path.join('models', 'PreTrained_S_SARSA_2', 'trained_model', 'q_table_sarsa_ag_1_end.pkl'),
+    0: os.path.join('best_models', 'New_BEST_S_1_Q-Learning_1', 'trained_model', 'qlagent_ag_0_end.pkl'),
+    1: os.path.join('best_models', 'New_BEST_S_1_SARSA_1', 'trained_model', 'sarsaagent_ag_0_end.pkl'),
+    2: os.path.join('best_models', 'New_BEST_S_1_MonteCarlo_1', 'trained_model', 'mcagent_ag_0_end.pkl'),
+    3: os.path.join('best_models', 'New_BEST_S_1_TD_1', 'trained_model', 'tdagent_ag_0_end.pkl'),
+    4: os.path.join('best_models', 'New_BEST_S_1_ActorCritic_1', 'trained_model', 'acagent_ag_0_end.pkl')
 }
 
 # Selection of algorithms to train
 algorithm_config = {
-    "Q-Learning":   False,  # Train Q-Learning agents
-    "SARSA":        False,  # Train SARSA agents
+    "Q-Learning":   True,  # Train Q-Learning agents
+    "SARSA":        True,  # Train SARSA agents
     "MonteCarlo":   True,  # Train Monte Carlo agents
-    "TD":           False,  # Train TD agents
-    "ActorCritic":  False   # Train Actor-Critic agents
+    "TD":           True,  # Train TD agents
+    "ActorCritic":  True   # Train Actor-Critic agents
 }
 
 agents = []
