@@ -290,18 +290,24 @@ def main():
     base_models_path = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/best_models/"
     # Špecifikujte cesty k modelom (upravte alebo odkomentujte podľa potreby)
     model_paths = [
-        "New_BEST_S_1_Q-Learning_1/trained_model/qlagent_ag_0_end.pkl",
-        "New_BEST_S_1_SARSA_1/trained_model/sarsaagent_ag_0_end.pkl",
-        "New_BEST_S_1_MonteCarlo_1/trained_model/mcagent_ag_0_end.pkl",
-        "New_BEST_S_1_TD_1/trained_model/tdagent_ag_0_end.pkl",
-        "New_BEST_S_1_ActorCritic_1/trained_model/acagent_ag_0_end.pkl",
+        # "New_BEST_S_1_Q-Learning_1/trained_model/qlagent_ag_0_end.pkl",
+        # "New_BEST_S_1_SARSA_1/trained_model/sarsaagent_ag_0_end.pkl",
+        # "New_BEST_S_1_MonteCarlo_1/trained_model/mcagent_ag_0_end.pkl",
+        # "New_BEST_S_1_TD_1/trained_model/tdagent_ag_0_end.pkl",
+        # "New_BEST_S_1_ActorCritic_1/trained_model/acagent_ag_0_end.pkl",
+
+        "PreTrained_UPDATE_M_5/trained_model/qlagent_ag_0_end.pkl",
+        "PreTrained_UPDATE_M_5/trained_model/sarsaagent_ag_1_end.pkl",
+        "PreTrained_UPDATE_M_5/trained_model/mcagent_ag_2_end.pkl",
+        "PreTrained_UPDATE_M_5/trained_model/tdagent_ag_3_end.pkl",
+        "PreTrained_UPDATE_M_5/trained_model/acagent_ag_4_end.pkl",
     ]
     model_paths = [p for p in model_paths if p]
     num_agents = len(model_paths)
 
     # Inicializácia prostredia
     steps_per_episode = 350
-    num_games = 1000  # Nastavte počet hodnotiacich hier podľa potreby
+    num_games = 10000  # Nastavte počet hodnotiacich hier podľa potreby
 
     global env
     env = PaperIoEnv(render=render_game, max_steps=steps_per_episode, num_players=num_agents)

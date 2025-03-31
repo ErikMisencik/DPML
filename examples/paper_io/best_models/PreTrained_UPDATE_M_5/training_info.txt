@@ -1,0 +1,83 @@
+=== Training Information ===
+Trained Date         : 30.03.2025
+Trained Time         : 476.84 minutes
+
+Objective: The agents aim to maximize territory gain.
+Policy Name           : PreTrained_UPDATE_M_5_Q-Learning_SARSA_MonteCarlo_TD_ActorCritic
+Partial Observability : False
+Number of Episodes    : 10000
+Max Steps per Episode : 350
+
+=== Training Parameters ===
+Learning Rate         : 0.001
+Discount Factor       : 0.2
+Initial Epsilon       : 0.5
+Final Epsilon         : 0.5
+Epsilon Decay Rate    : 0.9998
+Minimum Epsilon       : 0.1
+Epsilon Reset Every   : N/A episodes
+Epsilon Reset Value   : N/A
+
+=== Agent-Specific Information ===
+Agent 0 (QLAgent):
+  - Avg Cumulative Reward : 8604.33
+  - Wins                  : 7402
+  - Eliminations          : 10635
+  - Self-Eliminations     : 2998
+  - Color Assigned        : Purple
+  - Loaded Q-Table Path   : best_models\New_BEST_S_1_Q-Learning_1\trained_model\qlagent_ag_0_end.pkl
+
+Agent 1 (SARSAAgent):
+  - Avg Cumulative Reward : 4918.05
+  - Wins                  : 2293
+  - Eliminations          : 10410
+  - Self-Eliminations     : 26029
+  - Color Assigned        : Indigo
+  - Loaded Q-Table Path   : best_models\New_BEST_S_1_SARSA_1\trained_model\sarsaagent_ag_0_end.pkl
+
+Agent 2 (MCAgent):
+  - Avg Cumulative Reward : -13211.35
+  - Wins                  : 0
+  - Eliminations          : 12189
+  - Self-Eliminations     : 171869
+  - Color Assigned        : Orange
+  - Loaded Q-Table Path   : best_models\New_BEST_S_1_MonteCarlo_1\trained_model\mcagent_ag_0_end.pkl
+
+Agent 3 (TDAgent):
+  - Avg Cumulative Reward : -5638.78
+  - Wins                  : 80
+  - Eliminations          : 11320
+  - Self-Eliminations     : 97256
+  - Color Assigned        : Brown
+  - Loaded Q-Table Path   : best_models\New_BEST_S_1_TD_1\trained_model\tdagent_ag_0_end.pkl
+
+Agent 4 (ACAgent):
+  - Avg Cumulative Reward : -1485.32
+  - Wins                  : 225
+  - Eliminations          : 11205
+  - Self-Eliminations     : 63698
+  - Color Assigned        : Teal
+  - Loaded Q-Table Path   : best_models\New_BEST_S_1_ActorCritic_1\trained_model\acagent_ag_0_end.pkl
+
+=== Reward Information ===
+Self elimination penalty : -150
+Camping penalty          : False
+Max camping penalty per episode: 30
+Trail reward             : 15
+Max trail reward count   : 5
+Max trail length         : 10
+Long trail penalty       : -15
+Distance penalty factor  : 0.5
+Opponent elimination reward: 300
+Opponent elimination penalty: -100
+Enemy territory capture reward per cell: 30
+Territory loss penalty per cell: -20
+Elimination reward modifier: 0.5
+Elimination static penalty: -800
+Territory capture reward per cell: 40
+Shaping return bonus     : 30
+Shaping distance factor  : 3
+Expansion bonus          : 50
+Expansion interval       : 25
+Expansion growth threshold: 1
+Exploration reward       : 1
