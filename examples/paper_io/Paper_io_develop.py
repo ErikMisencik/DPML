@@ -101,6 +101,7 @@ class PaperIoEnv:
         self.agent_wins = [0] * self.num_players
         self.cumulative_rewards = [0] * self.num_players
         self.initial_territories = [0] * self.num_players
+        self.enemy_territory_captured = [0] * self.num_players
 
         self.reset()
 
@@ -133,6 +134,7 @@ class PaperIoEnv:
         self.trail_length_counts = [0] * self.num_players
 
         self.initial_territories = [0] * self.num_players
+        self.enemy_territory_captured = [0] * self.num_players
 
         for i in range(self.num_players):
             while True:
@@ -256,8 +258,6 @@ class PaperIoEnv:
                     owner_id = cell_value
                     self.grid[new_x, new_y] = -player_id
                     player['trail'].add((new_x, new_y))
-                    self.players[owner_id - 1]['territory'] -= 1
-                    self.players[player_id - 1]['territory'] += 1
 
                 # Check if trail length exceeds maximum and apply penalties
                 if len(player['trail']) > self.reward_config['max_trail_length']:
@@ -343,6 +343,7 @@ class PaperIoEnv:
                 'territory_by_agent': [p['territory'] for p in self.players],
                 'average_trail_by_agent': average_trail_by_agent,
                 'average_territory_increase_by_agent': territory_increase_by_agent,
+                'enemy_territory_captured': self.enemy_territory_captured[:],
             }
         else:
             info = {}
@@ -492,6 +493,7 @@ class PaperIoEnv:
             old_id = self.grid[rx, ry]
             if old_id > 0 and old_id != player_id:
                 self.players[old_id - 1]['territory'] -= 1
+                self.enemy_territory_captured[player_id - 1] += 1
             elif old_id == 0:
                 rewards[player_id - 1] += self.reward_config['territory_capture_reward_per_cell']
             self.grid[rx, ry] = player_id

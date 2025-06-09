@@ -15,7 +15,7 @@ from examples.paper_io.algorithm.ActorCritic.ac_agent import ACAgent
 from examples.paper_io.utils.agent_colors import assign_agent_colors
 
 # Ak chcete počas hodnotenia zobraziť hru, nastavte render_game na True
-render_game = False
+render_game = True
 
 def get_next_eval_folder(base_folder="evaluation_results"):
     """
@@ -42,7 +42,7 @@ def get_agent_name_from_path(path: str) -> str:
     """
     path_lower = path.lower()
     if "qlagent" in path_lower:
-        return "Q Learning Agent"
+        return "QL Agent"
     elif "sarsaagent" in path_lower:
         return "Sarsa Agent"
     elif "mcagent" in path_lower:
@@ -120,12 +120,12 @@ def plot_agent_wins(agent_wins, plots_folder, agent_names):
 def plot_average_trail(avg_trails, plots_folder, agent_names):
     plt.figure(figsize=(10, 5))
     plt.bar(agent_names, avg_trails, color=plt.cm.tab20.colors[:len(avg_trails)])
-    plt.ylabel('Priemerná dĺžka stopy')
-    plt.title('Priemerná dĺžka stopy agentov')
+    plt.ylabel('Priemerná dĺžka trasy')
+    plt.title('Priemerná dĺžka trasy agentov')
     plt.grid(axis='y')
     plot_path = os.path.join(plots_folder, 'average_trail.png')
     plt.savefig(plot_path)
-    print(f"Graf priemernej dĺžky stopy uložený v {plot_path}")
+    print(f"Graf priemernej dĺžky trasy uložený v {plot_path}")
     plt.close()
 
 def plot_average_cumulative_reward(avg_rewards, plots_folder, agent_names):
@@ -173,6 +173,20 @@ def plot_average_territory(avg_territory, plots_folder, agent_names):
     print(f"Graf priemerného zisku teritórií uložený v {plot_path}")
     plt.close()
 
+def plot_enemy_territory_captured(avg_enemy_territory, plots_folder, agent_names):
+    """
+    Vytvorí bar graf pre priemerný počet blokov nepriateľskej teritórií, ktoré agent zachytil.
+    """
+    plt.figure(figsize=(10, 5))
+    plt.bar(agent_names, avg_enemy_territory, color=plt.cm.tab20.colors[:len(avg_enemy_territory)])
+    plt.ylabel('Priemerný počet blokov')
+    plt.title('Priemerný zisk nepriateľskej teritórií nadobudných agentmi')
+    plt.grid(axis='y')
+    plot_path = os.path.join(plots_folder, 'enemy_territory_captured.png')
+    plt.savefig(plot_path)
+    print(f"Graf nepriateľskej teritórií uložený v {plot_path}")
+    plt.close()
+
 def evaluate(agents, agent_names, num_games=10):
     """
     Spustí hodnotiace hry, zaznamená štatistiky a uloží súhrnné údaje do súboru v novej priečinku eval_<index>.
@@ -195,6 +209,7 @@ def evaluate(agents, agent_names, num_games=10):
     trail_all = [[] for _ in range(num_players)]
     eliminations_all = [[] for _ in range(num_players)]
     self_eliminations_all = [[] for _ in range(num_players)]
+    enemy_territory_all = [[] for _ in range(num_players)]  # NEW: pre enemy teritóriu
     total_eliminations = [0] * num_players
     total_self_eliminations = [0] * num_players
 
@@ -213,7 +228,7 @@ def evaluate(agents, agent_names, num_games=10):
             for i in range(num_players):
                 agent_game_rewards[i] += rewards[i]
             if render_game:
-                sleep(0.03)
+                sleep(0.08)
 
         # Získanie informácií z env.info (ak sú k dispozícii)
         winners = info.get('winners', [])
@@ -222,6 +237,7 @@ def evaluate(agents, agent_names, num_games=10):
         average_trail = info.get('average_trail_by_agent', [0] * num_players)
         eliminations = info.get('eliminations_by_agent', [0] * num_players)
         self_elims = info.get('self_eliminations_by_agent', [0] * num_players)
+        enemy_territory = info.get('enemy_territory_captured', [0] * num_players)  # NEW
 
         # Aktualizácia štatistík pre každého agenta
         for i in range(num_players):
@@ -230,6 +246,7 @@ def evaluate(agents, agent_names, num_games=10):
             trail_all[i].append(average_trail[i])
             eliminations_all[i].append(eliminations[i])
             self_eliminations_all[i].append(self_elims[i])
+            enemy_territory_all[i].append(enemy_territory[i])  # NEW
             total_eliminations[i] += eliminations[i]
             total_self_eliminations[i] += self_elims[i]
         for winner in winners:
@@ -260,6 +277,7 @@ def evaluate(agents, agent_names, num_games=10):
     avg_eliminations = [sum(lst) / len(lst) if lst else 0 for lst in eliminations_all]
     avg_self_elims = [sum(lst) / len(lst) if lst else 0 for lst in self_eliminations_all]
     avg_territory = [sum(lst) / len(lst) if lst else 0 for lst in territory_all]
+    avg_enemy_territory = [sum(lst) / len(lst) if lst else 0 for lst in enemy_territory_all]  # NEW
 
     # Vypísanie súhrnných údajov do terminálu
     print(f"\nHodnotiace výsledky (po {num_games} hrách):")
@@ -270,7 +288,8 @@ def evaluate(agents, agent_names, num_games=10):
         print(f"  - Priemerná dĺžka stopy: {avg_trails[i]:.2f}")
         print(f"  - Priemerný zisk teritórií: {avg_territory[i]:.2f}")
         print(f"  - Priemerný počet eliminácií: {avg_eliminations[i]:.2f}")
-        print(f"  - Priemerný počet vlastných eliminácií: {avg_self_elims[i]:.2f}\n")
+        print(f"  - Priemerný počet vlastných eliminácií: {avg_self_elims[i]:.2f}")
+        print(f"  - Priemerný počet blokov nepriateľskej teritórií: {avg_enemy_territory[i]:.2f}\n")  # NEW
 
     # Vytvorenie priečinka pre grafy v rámci aktuálnej evaluácie
     plots_folder = os.path.join(evaluation_folder, "plots")
@@ -283,6 +302,7 @@ def evaluate(agents, agent_names, num_games=10):
     plot_average_eliminations(avg_eliminations, plots_folder, agent_names)
     plot_average_self_eliminations(avg_self_elims, plots_folder, agent_names)
     plot_average_territory(avg_territory, plots_folder, agent_names)
+    plot_enemy_territory_captured(avg_enemy_territory, plots_folder, agent_names)  # NEW
 
 def main():
     print("Spúšťam hodnotenie...")
@@ -290,17 +310,17 @@ def main():
     base_models_path = "C:/Users/Erik/TUKE/Diplomovka/paper_io/ai-arena/examples/paper_io/best_models/"
     # Špecifikujte cesty k modelom (upravte alebo odkomentujte podľa potreby)
     model_paths = [
-        # "New_BEST_S_1_Q-Learning_1/trained_model/qlagent_ag_0_end.pkl",
-        # "New_BEST_S_1_SARSA_1/trained_model/sarsaagent_ag_0_end.pkl",
-        # "New_BEST_S_1_MonteCarlo_1/trained_model/mcagent_ag_0_end.pkl",
-        # "New_BEST_S_1_TD_1/trained_model/tdagent_ag_0_end.pkl",
-        # "New_BEST_S_1_ActorCritic_1/trained_model/acagent_ag_0_end.pkl",
+        "New_BEST_S_1_Q-Learning_1/trained_model/qlagent_ag_0_end.pkl",
+        "New_BEST_S_1_SARSA_1/trained_model/sarsaagent_ag_0_end.pkl",
+        "New_BEST_S_1_MonteCarlo_1/trained_model/mcagent_ag_0_end.pkl",
+        "New_BEST_S_1_TD_1/trained_model/tdagent_ag_0_end.pkl",
+        "New_BEST_S_1_ActorCritic_1/trained_model/acagent_ag_0_end.pkl",
 
-        "PreTrained_UPDATE_M_5/trained_model/qlagent_ag_0_end.pkl",
-        "PreTrained_UPDATE_M_5/trained_model/sarsaagent_ag_1_end.pkl",
-        "PreTrained_UPDATE_M_5/trained_model/mcagent_ag_2_end.pkl",
-        "PreTrained_UPDATE_M_5/trained_model/tdagent_ag_3_end.pkl",
-        "PreTrained_UPDATE_M_5/trained_model/acagent_ag_4_end.pkl",
+        # "PreTrained_UPDATE_M_5/trained_model/qlagent_ag_0_end.pkl",
+        # "PreTrained_UPDATE_M_5/trained_model/sarsaagent_ag_1_end.pkl",
+        # "PreTrained_UPDATE_M_5/trained_model/mcagent_ag_2_end.pkl",
+        # "PreTrained_UPDATE_M_5/trained_model/tdagent_ag_3_end.pkl",
+        # "PreTrained_UPDATE_M_5/trained_model/acagent_ag_4_end.pkl",
     ]
     model_paths = [p for p in model_paths if p]
     num_agents = len(model_paths)
