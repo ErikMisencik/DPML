@@ -1,4 +1,4 @@
-# Deep Paper.io Agent Training
+# Paper.io Agent Training
 
 This repository provides a framework for training and evaluating reinforcement learning agents in a custom Paper.io-like environment.
 
